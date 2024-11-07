@@ -10,11 +10,19 @@ In a nutshell:
 
 **Using LiveF1, you can access real-time and historical racing data, making it easy to feed analytics and visualizations.**
 
+## INSTALLATION
+Please use `pip` to install livef1:
+```bash
+pip install livef1
+```
+
+It is simple. You are ready.
+
 ## USAGE
 
 #### Import the library
 ```python
-from livef1 as livef1
+import livef1 as livef1
 ```
 
 #### Get season object and its meetings + sessions
