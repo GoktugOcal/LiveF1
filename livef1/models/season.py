@@ -15,21 +15,29 @@ from ..utils.helper import json_parser_for_objects, build_session_endpoint
 class Season:
     """
     Represents a Formula 1 season, containing methods to load and manage the season's meetings and sessions.
-    
-    Attributes:
-        year (int): The year of the season.
-        meetings (list): A list of Meeting objects for the season.
+
+    Attributes
+    ----------
+    year : int
+        The year of the season.
+    meetings : list of Meeting
+        A list of Meeting objects for the season.
     """
-    
+
     def __init__(self, year, meetings):
         """
         Initializes the Season object with the given year and meetings.
-        
-        Args:
-            year (int): The year of the season.
-            meetings (list): Raw meetings data.
+
+        Parameters
+        ----------
+        year : int
+            The year of the season.
+        meetings : list
+            Raw meetings data.
         """
+
         self.year = year
+        """int: The year of the season"""
         self.load()  # Load the data for the season upon initialization.
 
     def load(self):

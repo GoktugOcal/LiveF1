@@ -12,17 +12,27 @@ def download_data(
 ):
     """
     Downloads and filters F1 data based on the provided season, location, and session identifiers.
+
+    Parameters
+    ----------
     
-    Parameters:
-    - season_identifier (int): The unique identifier for the F1 season. This is a required parameter.
-    - location_identifier (str, optional): The location (circuit or country name) for filtering meetings (races).
-    - session_identifier (str or int, optional): The session name (e.g., 'FP1', 'Qualifying') or key (integer) to filter a specific session within a meeting.
+    season_identifier : :class:`int`
+        The unique identifier for the F1 season. This is a required parameter.
+    location_identifier : :class:`str`
+        The location (circuit or country name) for filtering meetings (races).
+    session_identifier : :class:`str`
+        The session name (e.g., 'FP1', 'Qualifying') or key (integer) to filter a specific session within a meeting.
     
-    Returns:
-    - dict: The filtered dataset containing the requested season, meeting, or session data.
+    Returns
+    ----------
+    dict
+        The filtered dataset containing the requested season, meeting, or session data.
     
-    Raises:
-    - livef1Exception: Raised if any of the required parameters are missing or if no matching data is found.
+    Raises
+    ----------
+    livef1Exception
+        Raised if any of the required parameters are missing or if no matching data is found.
+    
     """
     
     # Initialize a variable to store the final filtered data
