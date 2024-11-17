@@ -29,10 +29,19 @@ jobs:
       - name: Build the documentation
         run: |
           cd doc/source
-          sphinx-build -b html . ../build
-        
-      - name: Upload docs as an artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-docs
-          path: doc/build
+          sphinx-build doc _build
+        #   sphinx-build -b html . ../_build
+    #   - name: Upload docs as an artifact
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: generated-docs
+    #       path: doc/_build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+          if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          with:
+            publish_branch: gh-pages
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            publish_dir: _build/
+            force_orphan: true
