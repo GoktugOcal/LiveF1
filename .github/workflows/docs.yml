@@ -29,7 +29,7 @@ jobs:
       - name: Build the documentation
         run: |
           cd doc/source
-          sphinx-build doc _build
+          sphinx-build . _build
         #   sphinx-build -b html . ../_build
     #   - name: Upload docs as an artifact
     #     uses: actions/upload-artifact@v4
@@ -42,5 +42,5 @@ jobs:
         with:
             publish_branch: gh-pages
             github_token: ${{ secrets.GITHUB_TOKEN }}
-            publish_dir: _build/
+            publish_dir: doc/source/_build/
             force_orphan: true
