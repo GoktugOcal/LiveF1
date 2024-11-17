@@ -1,0 +1,110 @@
+name: Build Documentation
+
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # fetch the complete repo history (for setuptools-scm)
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-cache-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-cache
+
+      - name: Install python requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build twine
+          python -m pip install -r requirements.txt
+          python -m pip install -r docs/requirements.txt
+
+      - name: Create cache directory
+        run: |
+          mkdir doc_cache  # make sure cache dir exists
+
+      - name: Restore cache for livef1
+        id: cache-doc-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ./doc_cache
+           # Restore any matching cache independent of hash suffix. We cannot
+           # know if anything has changed at this stage.
+          key: livef1-doc-cache-${{ hashFiles('./doc_cache/**/*.*') }}
+          restore-keys: |
+            livef1-doc-cache
+
+      - name: Install at pinned tag
+        if: inputs.pin-tag != ''
+        run: |
+          git checkout ${{ inputs.pin-tag }}
+
+      - name: Install Fast-F1 from sources
+        run: |
+          python -m pip install -e .
+
+      - name: Re-checkout current commit after install at pinned tag
+        if: inputs.pin-tag != ''
+        run: |
+          git checkout ${{ github.sha }}
+
+      - name: Build docs
+        run: |
+          mkdir test_cache  # not really need but pytest setup relies on it 
+          cd docs
+          make html
+
+      - name: Upload docs as artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html/
+
+      - name: Save cache for livef1
+        id: cache-doc-save
+        # Save the cache even in case of a failure but only if the content of
+        # the cached directory has changed.
+        if: always() && steps.cache-doc-restore.outputs.cache-matched-key != hashFiles('./doc_cache/**/*.*')
+        uses: actions/cache/save@v4
+        with:
+          key: livef1-doc-cache-${{ hashFiles('./doc_cache/**/*.*') }}
+          path: ./doc_cache
+
+  deploy:
+    name: Deploy Documentation
+
+    # Add a dependency to the build job
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # or specific "vX.X.X" version tag for this action
