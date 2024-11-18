@@ -18,10 +18,10 @@ class Season:
 
     Attributes
     ----------
-    year : int
+    year : :class:`int`
         The year of the season.
-    meetings : list of Meeting
-        A list of Meeting objects for the season.
+    meetings : list of :class:`~Meeting`
+        A list of :class:`Meeting` objects for the season.
     """
 
     def __init__(self, year, meetings):
@@ -30,19 +30,18 @@ class Season:
 
         Parameters
         ----------
-        year : int
+        year : :class:`int`
             The year of the season.
         meetings : list
-            Raw meetings data.
+            Raw meetings data to initialize the season.
         """
 
         self.year = year
-        """int: The year of the season"""
         self.load()  # Load the data for the season upon initialization.
 
     def load(self):
         """
-        Loads the season data from the API and populates the meetings attribute.
+        Loads the season data from the API and populates the `meetings` attribute.
         """
         self.json_data = download_data(self.year)  # Download data for the specified year.
         
@@ -58,7 +57,8 @@ class Season:
 
     def set_meetings(self):
         """
-        Creates Meeting objects for each meeting in the meetings_json attribute and adds them to the meetings list.
+        Creates :class:`~Meeting` objects for each meeting in the `meetings_json` attribute
+        and adds them to the `meetings` list.
         """
         self.meetings = []  # Reset meetings list.
         
@@ -75,6 +75,9 @@ class Season:
     def parse_sessions(self):
         """
         Parses session data from the meetings and organizes it into a DataFrame.
+
+        The resulting DataFrame is stored in the `meetings_table` attribute, indexed by
+        `season_year`, `meeting_location`, and `session_type`.
         """
         session_all_data = []  # List to hold all session data.
 
@@ -109,12 +112,12 @@ class Season:
 
     def __repr__(self):
         """
-        Returns a string representation of the meetings table for display.
+        Returns a string representation of the `meetings_table` for display.
         """
         display(self.meetings_table)  # Display the meetings table.
 
     def __str__(self):
         """
-        Returns a string representation of the meetings table for easy reading.
+        Returns a string representation of the `meetings_table` for easy reading.
         """
         return self.meetings_table.__str__()  # Return the string representation of the meetings table.

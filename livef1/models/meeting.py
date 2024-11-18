@@ -18,29 +18,29 @@ class Meeting:
 
     Attributes
     ----------
-    season : :class:`season`
+    season : :class:`~Season`
         The season this meeting belongs to.
-    year : int
-        The year of the meeting. :class:`season`
-    code : int
+    year : :class:`int`
+        The year of the meeting.
+    code : :class:`int`
         The unique code for the meeting.
-    key : str
+    key : :class:`str`
         The unique identifier for the meeting.
-    number : int
+    number : :class:`int`
         The sequential number of the meeting in the season.
-    location : str
+    location : :class:`str`
         The location (e.g., circuit name) of the meeting.
-    officialname : str
+    officialname : :class:`str`
         The official name of the meeting.
-    name : str
+    name : :class:`str`
         The name of the meeting.
-    country : Dict
+    country : :class:`dict`
         Details about the country where the meeting takes place (e.g., key, code, name).
-    circuit : Dict
+    circuit : :class:`dict`
         Details about the circuit where the meeting takes place (e.g., key, short name).
-    sessions : List
+    sessions : :class:`list`
         List of session objects associated with the meeting.
-    loaded : bool
+    loaded : :class:`bool`
         Indicates whether the meeting data has been loaded.
     """
 

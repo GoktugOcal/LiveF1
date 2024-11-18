@@ -15,23 +15,33 @@ from ..data_processing.data_models import *
 class Session:
     """
     Represents a Formula 1 session, containing methods to retrieve live timing data and process it.
-    
-    Attributes:
-        season (Season): The season the session belongs to.
-        meeting (Meeting): The meeting the session is part of.
-        year (int): The year of the session.
-        key (int): Unique identifier for the session.
-        name (str): Name of the session.
-        type (str): Type of the session (e.g., practice, qualifying, race).
-        number (int): The session number (e.g., 1, 2, 3).
-        startdate (str): Start date and time of the session.
-        enddate (str): End date and time of the session.
-        gmtoffset (str): GMT offset for the session's timing.
-        path (Dict): Path information for accessing session data.
-        loaded (bool): Indicates whether the session data has been loaded.
-        full_path (str): The complete endpoint URL for accessing session data.
-        topic_names_info (dict): Information about available data topic_names for the session.
-        etl_parser (livef1SessionETL): An ETL parser instance for processing session data.
+
+    Attributes
+    ----------
+    season : :class:`~Season`
+        The season the session belongs to.
+    year : :class:`int`
+        The year of the session.
+    meeting : :class:`~Meeting`
+        The meeting the session is part of.
+    key : :class:`int`
+        Unique identifier for the session.
+    name : :class:`str`
+        Name of the session.
+    type : :class:`str`
+        Type of the session (e.g., practice, qualifying, race).
+    number : :class:`int`
+        The session number.
+    startdate : :class:`str`
+        Start date and time of the session.
+    enddate : :class:`str`
+        End date and time of the session.
+    gmtoffset : :class:`str`
+        GMT offset for the session's timing.
+    path : :class:`dict`
+        Path information for accessing session data.
+    loaded : :class:`bool`
+        Indicates whether the session data has been loaded.
     """
     
     def __init__(
@@ -50,23 +60,6 @@ class Session:
         loaded: bool = False,
         **kwargs
     ):
-        """
-        Initializes the Session object with the given parameters.
-
-        Args:
-            season (Season): The season the session belongs to.
-            year (int): The year of the session.
-            meeting (Meeting): The meeting the session is part of.
-            key (int): Unique identifier for the session.
-            name (str): Name of the session.
-            type (str): Type of the session.
-            number (int): The session number.
-            startdate (str): Start date and time of the session.
-            enddate (str): End date and time of the session.
-            gmtoffset (str): GMT offset for the session's timing.
-            path (Dict): Path information for accessing session data.
-            loaded (bool): Indicates whether the session data has been loaded.
-        """
         self.season = season
         self.loaded = loaded
         self.etl_parser = livef1SessionETL(session=self)  # Create an ETL parser for the session.
@@ -82,10 +75,12 @@ class Session:
 
     def get_topic_names(self):
         """
-        Retrieves information about available data topic_names for the session.
+        Retrieves information about available data topics for the session.
 
-        Returns:
-            dict: Information about the topic_names available for the session.
+        Returns
+        -------
+        dict
+            A dictionary containing information about available data topics for the session.
         """
         self.topic_names_info = livetimingF1_request(urljoin(self.full_path, "Index.json"))["Feeds"]
         return self.topic_names_info
@@ -94,14 +89,21 @@ class Session:
         """
         Retrieves data from a specific feed based on the provided data name and type.
 
-        Args:
-            dataName (str): The name of the data to retrieve.
-            dataType (str): The type of the data to retrieve.
-            stream (str): The stream to use for fetching the data.
+        Parameters
+        ----------
+        dataName : :class:`str`
+            The name of the data to retrieve.
+        dataType : :class:`str`
+            The type of the data to retrieve.
+        stream : :class:`str`
+            The stream to use for fetching the data.
 
-        Returns:
-            BasicResult: An object containing the parsed data.
+        Returns
+        -------
+        :class:`BasicResult`
+            An object containing the parsed data.
         """
+        
         data = livetimingF1_getdata(
             urljoin(self.full_path, self.topic_names_info[dataName][dataType]),
             stream=stream
