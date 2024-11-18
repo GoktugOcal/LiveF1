@@ -14,21 +14,34 @@ from ..utils.helper import json_parser_for_objects, build_session_endpoint
 
 class Meeting:
     """
-    Represents a meeting in a specific season with relevant details and sessions.
+    Represents a meeting in a specific season with relevant details and associated sessions.
 
-    Attributes:
-        season (Season): The season this meeting belongs to.
-        year (int): The year of the meeting.
-        code (int): The meeting code.
-        key (str): The unique key for the meeting.
-        number (int): The meeting number.
-        location (str): The location of the meeting.
-        officialname (str): The official name of the meeting.
-        name (str): The name of the meeting.
-        country (Dict): Country details for the meeting.
-        circuit (Dict): Circuit details for the meeting.
-        sessions (List): List of session objects related to the meeting.
-        loaded (bool): Indicates if the meeting data has been loaded.
+    Attributes
+    ----------
+    season : :class:`season`
+        The season this meeting belongs to.
+    year : int
+        The year of the meeting. :class:`season`
+    code : int
+        The unique code for the meeting.
+    key : str
+        The unique identifier for the meeting.
+    number : int
+        The sequential number of the meeting in the season.
+    location : str
+        The location (e.g., circuit name) of the meeting.
+    officialname : str
+        The official name of the meeting.
+    name : str
+        The name of the meeting.
+    country : Dict
+        Details about the country where the meeting takes place (e.g., key, code, name).
+    circuit : Dict
+        Details about the circuit where the meeting takes place (e.g., key, short name).
+    sessions : List
+        List of session objects associated with the meeting.
+    loaded : bool
+        Indicates whether the meeting data has been loaded.
     """
 
     def __init__(
@@ -64,11 +77,17 @@ class Meeting:
 
     def load(self, force=False):
         """
-        Load meeting data from the API. If the meeting has already been loaded,
-        use force=True to reload it.
+        Load or reload meeting data from the API.
 
-        Args:
-            force (bool): If True, forces the reload of meeting data.
+        .. note::
+            Reloading is useful when updated data is required.
+
+        Parameters
+        ----------
+        force : bool, optional
+            If True, forces the reload of meeting data even if already loaded. Defaults to False.
+        
+        
         """
         if (not self.loaded) | (force):
             if force:
@@ -92,7 +111,10 @@ class Meeting:
 
     def set_sessions(self):
         """
-        Set the session objects for the meeting based on the session JSON data.
+        Create session objects for the meeting using the session JSON data.
+
+        .. note::
+            This method populates the `sessions` attribute with `Session` objects derived from `sessions_json`.
         """
         for session_data in self.sessions_json:
             self.sessions.append(
@@ -105,7 +127,10 @@ class Meeting:
 
     def parse_sessions(self):
         """
-        Parse the sessions data and create a DataFrame for session details.
+        Parse session data to generate a detailed DataFrame of session metadata.
+
+        .. note::
+            The resulting DataFrame is stored in the `sessions_table` attribute and indexed by season year, meeting location, and session type.
         """
         session_all_data = []
 
@@ -136,9 +161,23 @@ class Meeting:
         self.sessions_table = pd.DataFrame(session_all_data).set_index(["season_year", "meeting_location", "session_type"])
 
     def __repr__(self):
-        """Return a string representation of the meeting."""
+        """
+        Return a detailed string representation of the meeting.
+
+        Returns
+        -------
+        str
+            The string representation of the meeting's session table.
+        """
         return self.sessions_table.__repr__()
 
     def __str__(self):
-        """Return a string representation of the meeting."""
+        """
+        Return a readable string representation of the meeting.
+
+        Returns
+        -------
+        str
+            The string representation of the meeting's session table.
+        """
         return self.sessions_table.__str__()

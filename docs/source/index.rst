@@ -25,6 +25,9 @@ How to Contribute
 LiveF1 is an open-source project! Contributions are welcome to enhance its functionality. Check the :doc:`developer_notes/index` to get started with contributing, reporting issues, or suggesting features.
 
 
+
+----
+
 .. toctree::
    :maxdepth: 1
    :caption: Power of F1 data
@@ -33,7 +36,6 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
    getting_started/index
    user_guide/index
    features/index
-   api_reference/index
    developer_notes/index
    additional_resources/index
 
@@ -43,6 +45,12 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
 
    working_with_data/historical_data
    working_with_data/realtime_data
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+
+   api_reference/index
 
 
 .. Indices and Tables

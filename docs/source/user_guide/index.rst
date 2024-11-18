@@ -17,6 +17,14 @@ This section will cover the general functions available in **LiveF1**, such as h
 
 (Topics to be filled later...)
 
+Data Topics
+-----------------
+
+This section shows the data topics in **F1 Livestreaming API**.
+
+(Topics to be filled later...)
+
+
 Working with Data
 -----------------
 
