@@ -7,18 +7,22 @@ import pandas as pd
 
 class BasicResult:
     """
-    A class to encapsulate a basic result dataset.
+    Encapsulates a basic result dataset, typically in JSON format.
 
-    Attributes:
-        value (json): The data associated with the result, typically in JSON format.
+    Parameters
+    ----------
+    data : :class:`dict`
+        The JSON-like data to be encapsulated within the result.
+
+    Attributes
+    ----------
+    value : :class:`dict`
+        The data associated with the result, stored as a dictionary (JSON-like structure).
     """
 
-    def __init__(self, data: json):
+    def __init__(self, data: dict):
         """
-        Initializes the BasicResult instance with provided data.
-
-        Args:
-            data (json): The JSON data to be stored in the result.
+        Initializes the BasicResult instance with the provided data.
         """
         self.value = data
 
@@ -26,8 +30,10 @@ class BasicResult:
         """
         Retrieves the stored value.
 
-        Returns:
-            The stored data.
+        Returns
+        -------
+        dict
+            The JSON-like data encapsulated within the instance.
         """
         return self.value
     
@@ -35,7 +41,9 @@ class BasicResult:
         """
         Returns a string representation of the stored data as a DataFrame.
 
-        Returns:
-            str: A string representation of the data in DataFrame format.
+        Returns
+        -------
+        str
+            A string representation of the data in tabular format (Pandas DataFrame).
         """
         return pd.DataFrame(self.value).__str__()

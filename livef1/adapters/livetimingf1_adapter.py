@@ -30,11 +30,15 @@ class LivetimingF1adapters:
         """
         Sends a GET request to the specified endpoint.
 
-        Parameters:
-        - endpoint (str): The specific API endpoint to append to the base URL.
-        - header (Dict, optional): HTTP headers to send with the request (default is None).
+        Parameters
+        ----------
+            endpoint : :class:`str`
+                The specific API endpoint to append to the base URL.
+            header : :class:`dict`
+                HTTP headers to send with the request (default is None).
         
-        Returns:
+        Returns
+        ----------
         - str: The response content decoded as a UTF-8 string.
         """
         req_url = urllib.parse.urljoin(self.url, endpoint)  # Build the full request URL
@@ -51,11 +55,15 @@ def livetimingF1_request(url):
     """
     Wrapper function to perform a GET request to the Livetiming F1 API.
 
-    Parameters:
-    - url (str): The full URL to request.
+    Parameters
+    ----------
+        url : :class:`str`
+            The full URL to request.
 
-    Returns:
-    - dict: Parsed JSON response from the API.
+    Returns
+    ----------
+        dict
+            Parsed JSON response from the API.
     """
     adapters = LivetimingF1adapters()  # Initialize the adapter class
     response = adapters.get(url)  # Perform the GET request
@@ -66,13 +74,18 @@ def livetimingF1_getdata(url, stream):
     """
     Retrieves data from the Livetiming F1 API, either as a stream of records or a static response.
 
-    Parameters:
-    - url (str): The full URL to request.
-    - stream (bool): If True, treats the response as a stream of newline-separated records.
-                     If False, treats it as a static JSON response.
+    Parameters
+    ----------
+        url : :class:`str`
+            The full URL to request.
+        stream : :class:`bool`
+            If True, treats the response as a stream of newline-separated records.
+            If False, treats it as a static JSON response.
 
-    Returns:
-    - dict: A dictionary containing parsed data. If streaming, each line is parsed and split.
+    Returns
+    ----------
+        dict
+            A dictionary containing parsed data. If streaming, each line is parsed and split.
     """
     adapters = LivetimingF1adapters()  # Initialize the adapter class
     res_text = adapters.get(endpoint=url)  # Perform the GET request

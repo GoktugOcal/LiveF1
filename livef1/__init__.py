@@ -14,6 +14,10 @@ from .api import (
     download_data
 )
 
+from .data_processing import (
+    BasicResult
+)
+
 from .utils.helper import *
 from .adapters.livetimingf1_adapter import LivetimingF1adapters
 

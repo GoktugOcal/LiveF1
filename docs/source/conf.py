@@ -30,6 +30,8 @@ extensions = [
     "sphinx_copybutton",
     'numpydoc',
 ]
+# autosummary_generate = True  # Automatically generate summaries for all modules
+
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

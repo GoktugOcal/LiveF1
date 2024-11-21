@@ -20,6 +20,39 @@ from ..utils.constants import (
 import random
 
 class RealF1Client:
+    """
+    A client for managing real-time Formula 1 data streaming.
+
+    Attributes
+    ----------
+    topics : list
+        List of topics to subscribe to for receiving live data.
+    headers : dict
+        HTTP headers used for the connection.
+    _connection_url : str
+        URL for the SignalR connection.
+    _log_file_name : str
+        Path to the log file.
+    _log_file_mode : str
+        Mode for opening the log file.
+    _test : bool
+        Indicates if the client is in test mode.
+    _log_file : file object
+        Log file object for writing messages (used in test mode).
+    _handlers : dict
+        Mapping of methods to their respective handlers.
+
+    Parameters
+    ----------
+    topics : str or list
+        Topic(s) to subscribe to for live updates.
+    log_file_name : str, optional
+        Name of the log file (default is "./realtime_client_logs.txt").
+    log_file_mode : str, optional
+        Mode for opening the log file (default is "w").
+    test : bool, optional
+        Whether the client is in test mode (default is False).
+    """
 
     def __init__(
         self, 
@@ -48,11 +81,27 @@ class RealF1Client:
         self._handlers = {}
 
     def _create_session(self):
+        """
+        Create an HTTP session with the required headers.
+
+        Returns
+        -------
+        requests.Session
+            A configured HTTP session.
+        """
         session = requests.Session()
         session.headers = self.headers
         return session
     
     async def _on_message(self, msg):
+        """
+        Handle incoming messages asynchronously.
+
+        Parameters
+        ----------
+        msg : dict
+            The incoming message to process.
+        """
         self._t_last_message = time.time()
         loop = asyncio.get_running_loop()
         try:
@@ -64,6 +113,14 @@ class RealF1Client:
             print("Exception while writing message")
     
     async def _test_on(self, msg):
+        """
+        Test handler for incoming messages.
+
+        Parameters
+        ----------
+        msg : dict
+            The incoming message to process.
+        """
         # await asyncio.sleep(self.C)
         self._t_last_message = time.time()
         loop = asyncio.get_running_loop()
@@ -76,18 +133,49 @@ class RealF1Client:
             print("Exception while writing message")
 
     async def _file_logger(self, msg):
+        """
+        Log incoming messages to a file.
+
+        Parameters
+        ----------
+        msg : dict
+            The incoming message to log.
+        """
         # if self._test and msg != {} and msg:
         if msg != {} and msg:
             self._log_file.write(str(msg) + '\n')
             self._log_file.flush()
         
     def on_message(self, method, handler):
+        """
+        Register a handler for a specific method.
+
+        Parameters
+        ----------
+        method : str
+            The method to handle.
+        handler : callable
+            The function to handle the method.
+        """
         if method not in self._handlers:
             func = MessageHandlerTemplate(handler).get
             self._handlers[method] = func
             # self._handlers[method] = handler
 
     def callback(self, method):
+        """
+        Decorator to register a callback function for a specific method.
+
+        Parameters
+        ----------
+        method : str
+            The method to register a callback for.
+
+        Returns
+        -------
+        callable
+            The decorator function.
+        """
         def inner(func):
             # Check if the provided function has the required arguments
             has_args = set(REALTIME_CALLBACK_DEFAULT_PARAMETERS) == set(inspect.signature(func).parameters.keys())
@@ -102,15 +190,24 @@ class RealF1Client:
         return inner
 
     def run(self):
+        """
+        Start the client in asynchronous mode.
+        """
         self._async_engine_run()
 
     def _async_engine_run(self):
+        """
+        Execute the asynchronous engine.
+        """
         try:
             asyncio.run(self._async_run())
         except KeyboardInterrupt:
             print("Keyboard interrupt - exiting...")
     
     async def _async_run(self):
+        """
+        Run the client asynchronously.
+        """
         print(f"Starting FastF1 live timing client")
         await asyncio.gather(
             asyncio.ensure_future(self._forever_check()),
@@ -119,6 +216,9 @@ class RealF1Client:
         print("Exiting...")
 
     async def _forever_check(self):
+        """
+        Keep the client running indefinitely.
+        """
         while True:
             # print("I am here...")
             await asyncio.sleep(1)
@@ -130,6 +230,9 @@ class RealF1Client:
         pass
     
     async def _run(self):
+        """
+        Set up the SignalR connection and register handlers.
+        """
         # Create connection
         self._connection = Connection(self._connection_url, session=self._create_session())
         # Register hub
@@ -148,6 +251,14 @@ class RealF1Client:
 
 
 class MessageHandlerTemplate:
+    """
+    A template for handling incoming SignalR messages.
+
+    Parameters
+    ----------
+    func : callable
+        Function to process the incoming messages.
+    """
     def __init__(
         self,
         func
@@ -155,6 +266,14 @@ class MessageHandlerTemplate:
         self._func = func
     
     async def get(self, msg):
+        """
+        Process incoming messages and invoke the handler function.
+
+        Parameters
+        ----------
+        msg : dict
+            The incoming message to process.
+        """
         batch = msg
 
         if ("R" in batch.keys()) or (batch.get("M") and batch.get("M") != []):

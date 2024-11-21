@@ -12,17 +12,22 @@ class livef1SessionETL:
     """
     A class that handles Extract-Transform-Load (ETL) operations for F1 session data.
 
-    Attributes:
-    - session: The session object containing session-related information.
-    - function_map: A dictionary mapping various session data titles to their corresponding parsing functions.
+    Parameters
+    ----------
+        session : :class:`~Session`
+            The session object.
+
+    Attributes
+    ----------
+        session : :class:`~Session`
+            The session object containing session-related information.
+        function_map :class:`dict`
+            A dictionary mapping various session data titles to their corresponding parsing functions.
     """
 
     def __init__(self, session):
         """
-        Initializes the livef1SessionETL class with a session object and function map.
-        
-        Args:
-        - session: The session object.
+        Initializes the livef1SessionETL class with a session object and function map.    
         """
         self.session = session
         self.function_map = {
@@ -59,12 +64,16 @@ class livef1SessionETL:
         """
         Unified parsing function that selects the appropriate parser function based on the title.
         
-        Args:
-        - title: The title of the data to be parsed.
-        - data: The session data to be parsed.
+        Parameters
+        ----------
+            title : :class:`str`
+                The title of the data to be parsed.
+            data : :class:`dict`
+                The session data to be parsed.
         
-        Returns:
-        - Parsed data from the respective function in the function map.
+        Returns
+        ----------
+            Parsed data from the respective function in the function map.
         """
         return self.function_map[title](data, self.session.key)
 
@@ -74,12 +83,17 @@ def parse_tyre_stint_series(data, sessionKey):
     """
     Parses the tyre stint series data, generating records for each stint.
 
-    Args:
-    - data: The tyre stint series data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The tyre stint series data.
+        sessionKey : :class:`int`
+            The key of the current session.
     
-    Yields:
-    - dict: A record containing the session key, timestamp, driver number, pit count, and other stint-related info.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, driver number, pit count, and other stint-related info.
     """
     for key, value in data.items():
         for driver_no, stint in value["Stints"].items():
@@ -98,12 +112,17 @@ def parse_driver_race_info(data, sessionKey):
     """
     Parses driver race info data.
 
-    Args:
-    - data: The driver race info data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The driver race info data.
+        sessionKey : :class:`int`
+            The key of the current session.
     
-    Yields:
-    - dict: A record containing the session key, timestamp, driver number, and other race-related info.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, driver number, and other race-related info.
     """
     for key, value in data.items():
         for driver_no, info in value.items():
@@ -119,12 +138,17 @@ def parse_current_tyres(data, sessionKey):
     """
     Parses current tyre data for each driver.
 
-    Args:
-    - data: The current tyre data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The current tyre data.
+        sessionKey : :class:`int`
+            The key of the current session.
     
-    Yields:
-    - dict: A record containing the session key, timestamp, driver number, and tyre-related info.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, driver number, and tyre-related info.
     """
     for key, value in data.items():
         for driver_no, info in value["Tyres"].items():
@@ -140,12 +164,17 @@ def parse_driver_list(data, sessionKey):
     """
     Parses the driver list data.
 
-    Args:
-    - data: The driver list data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The driver list data.
+        sessionKey : :class:`int`
+            The key of the current session.
     
-    Yields:
-    - dict: A record containing the session key, driver number, and driver-related info.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, driver number, and driver-related info.
     """
     for driver_no, info in data.items():
         record = {
@@ -159,12 +188,17 @@ def parse_session_data(data, sessionKey):
     """
     Parses session data for each driver.
 
-    Args:
-    - data: The session data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The session data.
+        sessionKey : :class:`int`
+            The key of the current session.
     
-    Yields:
-    - dict: A record containing the session key and session-related info.
+    Yields
+    ----------
+        dict :
+            A record containing the session key and session-related info.
     """
     for key, value in data.items():
         for driver_no, info in value.items():
@@ -181,12 +215,17 @@ def parse_extrapolated_clock(data, sessionKey):
     """
     Parses extrapolated clock data.
 
-    Args:
-    - data: The extrapolated clock data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The extrapolated clock data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and other clock-related info.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and other clock-related info.
     """
     for key, info in data.items():
         record = {
@@ -200,12 +239,17 @@ def parse_timing_data(data, sessionKey):
     """
     Parses timing data for each driver.
 
-    Args:
-    - data: The timing data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The timing data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, driver number, and various timing metrics.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, driver number, and various timing metrics.
     """
     def parse_helper(info, record, prefix=""):
         """
@@ -239,12 +283,17 @@ def parse_lap_series(data, sessionKey):
     """
     Parses lap series data for each driver.
 
-    Args:
-    - data: The lap series data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The lap series data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, driver number, lap number, and lap position.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, driver number, lap number, and lap position.
     """
     for ts, ts_value in data.items():
         for driver_no, driver_data in ts_value.items():
@@ -273,12 +322,17 @@ def parse_top_three(data, sessionKey):
     """
     Parses the top three drivers' data.
 
-    Args:
-    - data: The top three data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The top three data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, driver position, and related info.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, driver position, and related info.
     """
     for ts, ts_value in data.items():
         if "Withheld" in ts_value.keys():
@@ -297,12 +351,17 @@ def parse_session_status(data, sessionKey):
     """
     Parses the session status data.
 
-    Args:
-    - data: The session status data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The session status data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and session status.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and session status.
     """
     for ts, ts_value in data.items():
         record = {
@@ -316,12 +375,17 @@ def parse_hearthbeat(data, sessionKey):
     """
     Parses the heartbeat data.
 
-    Args:
-    - data: The heartbeat data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The heartbeat data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and UTC time.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and UTC time.
     """
     for ts, ts_value in data.items():
         record = {
@@ -335,12 +399,17 @@ def parse_weather_data(data, sessionKey):
     """
     Parses weather data for the session.
 
-    Args:
-    - data: The weather data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The weather data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and weather-related information.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and weather-related information.
     """
     for ts, ts_value in data.items():
         record = {
@@ -354,12 +423,17 @@ def parse_team_radio(data, sessionKey):
     """
     Parses team radio data.
 
-    Args:
-    - data: The team radio data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The team radio data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and captured radio messages.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and captured radio messages.
     """
     for ts, ts_value in data.items():
         record = {
@@ -386,12 +460,17 @@ def parse_tlarcm(data, sessionKey):
     """
     Parses TLA RCM (Track Location Allocation Race Control Messages) data.
 
-    Args:
-    - data: The TLA RCM data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The TLA RCM data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and the message content.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and the message content.
     """
     for ts, ts_value in data.items():
         record = {
@@ -405,12 +484,17 @@ def parse_race_control_messages(data, sessionKey):
     """
     Parses race control messages.
 
-    Args:
-    - data: The race control messages data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The race control messages data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and message details.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and message details.
     """
     for ts, ts_value in data.items():
         record = {
@@ -437,12 +521,17 @@ def parse_session_info(data, sessionKey):
     """
     Parses general session information.
 
-    Args:
-    - data: The session information data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The session information data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, and session-related information.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, and session-related information.
     """
     for ts, value in data.items():
         if "Withheld" in value.keys():
@@ -462,12 +551,17 @@ def parse_position_z(data, sessionKey):
     """
     Parses driver position (z-axis) data.
 
-    Args:
-    - data: The driver position data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The driver position data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, UTC time, driver number, and z-axis position data.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, UTC time, driver number, and z-axis position data.
     """
     for ts, v in data.items():
         parsed_entry = parse(v, zipped=True)
@@ -487,12 +581,17 @@ def parse_car_data_z(data, sessionKey):
     """
     Parses car data (z-axis) for each driver.
 
-    Args:
-    - data: The car data.
-    - sessionKey: The key of the current session.
+    Parameters
+    ----------
+        data : :class:`dict`
+            The car data.
+        sessionKey : :class:`int`
+            The key of the current session.
 
-    Yields:
-    - dict: A record containing the session key, timestamp, UTC time, driver number, and channel data.
+    Yields
+    ----------
+        dict :
+            A record containing the session key, timestamp, UTC time, driver number, and channel data.
     """
     
     if isinstance(data, dict):
