@@ -1,13 +1,13 @@
-Real-Time Client - :mod:`livef1.adapters.realtime_client`
-=================================
+livef1.adapters.realtime\_client
+================================
 
 .. automodule:: livef1.adapters.realtime_client
-   :undoc-members:
-   :inherited-members:
 
+   
    .. rubric:: Classes
+
    .. autosummary::
+   
       MessageHandlerTemplate
       RealF1Client
-
-      
+   

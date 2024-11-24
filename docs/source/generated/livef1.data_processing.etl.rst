@@ -1,32 +1,13 @@
-Data Processing - :mod:`livef1.data_processing`
-=================================
+﻿livef1.data\_processing.etl
+===========================
 
-Data Models
--------------------
-.. automodule:: livef1.data_processing.data_models
-   :members: BasicResult
-
-    .. rubric:: Classes
-    .. autosummary::
-        BasicResult
-
-
-
-
-
-
-Data Preprocessing
---------------------
 .. automodule:: livef1.data_processing.etl
-   :undoc-members:
-   :inherited-members:
-   
-   .. rubric:: Classes
-   .. autosummary::
-      livef1SessionETL
+
    
    .. rubric:: Functions
+
    .. autosummary::
+   
       parse_car_data_z
       parse_current_tyres
       parse_driver_list
@@ -45,5 +26,10 @@ Data Preprocessing
       parse_top_three
       parse_tyre_stint_series
       parse_weather_data
+   
+   .. rubric:: Classes
 
-  
+   .. autosummary::
+   
+      livef1SessionETL
+   

@@ -10,4 +10,4 @@ Functions
 Exceptions
 ----------
 
-.. autoclass:: SessionNotAvailableError
+.. .. autoclass:: SessionNotAvailableError

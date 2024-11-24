@@ -29,8 +29,13 @@ extensions = [
     # 'sphinx.ext.napoleon',
     "sphinx_copybutton",
     'numpydoc',
+    "sphinx.ext.autosummary",
 ]
-# autosummary_generate = True  # Automatically generate summaries for all modules
+# Automatically generate summary tables
+autosummary_generate = True  # Enable autosummary generation
+autosummary_imported_members = False  # Skip imported members
+autodoc_inherit_docstrings = True
+autodoc_class_signature = "mixed"
 
 
 templates_path = ['_templates']

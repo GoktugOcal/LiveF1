@@ -38,6 +38,7 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
    features/index
    developer_notes/index
    additional_resources/index
+   test
 
 .. toctree::
    :maxdepth: 1
