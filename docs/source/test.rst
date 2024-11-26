@@ -3,4 +3,9 @@ Test
 
 .. currentmodule:: livef1
 
-.. autosum
+.. autosummary::
+    :toctree: generated/
+    :recursive:
+
+    models
+    api_reference
