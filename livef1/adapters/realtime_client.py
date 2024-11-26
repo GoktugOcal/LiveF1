@@ -9,7 +9,7 @@ import time
 import json
 from urllib.parse import urljoin
 
-from ..adapters.signalr_aio._connection import Connection
+from .signalr_aio._connection import Connection
 from ..utils.constants import (
     DEFAULT_METHOD,
     BASE_URL,
