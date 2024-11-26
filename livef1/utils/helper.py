@@ -15,11 +15,15 @@ def build_session_endpoint(session_path):
     """
     Constructs a full endpoint URL for accessing session data.
 
-    Args:
-        session_path (str): The path for the specific session data.
+    Parameters
+    ----------
+    session_path : str
+        The path for the specific session data.
 
-    Returns:
-        str: The complete URL for the session endpoint.
+    Returns
+    -------
+    str
+        The complete URL for the session endpoint.
     """
     return urljoin(urljoin(BASE_URL, STATIC_ENDPOINT), session_path)
 
@@ -28,11 +32,15 @@ def json_parser_for_objects(data: Dict) -> Dict:
     """
     Converts the keys of a dictionary to lowercase.
 
-    Args:
-        data (Dict): The original dictionary with keys.
+    Parameters
+    ----------
+    data : Dict
+        The original dictionary with keys.
 
-    Returns:
-        Dict: A new dictionary with all keys converted to lowercase.
+    Returns
+    -------
+    Dict
+        A new dictionary with all keys converted to lowercase.
     """
     return {key.lower(): value for key, value in data.items()}
 
@@ -41,12 +49,17 @@ def get_data(path, stream):
     """
     Fetches data from a specified endpoint.
 
-    Args:
-        path (str): The endpoint to retrieve data from.
-        stream (bool): Indicates whether to return a stream of records or a single response.
+    Parameters
+    ----------
+    path : str
+        The endpoint to retrieve data from.
+    stream : bool
+        Indicates whether to return a stream of records or a single response.
 
-    Returns:
-        dict or str: A dictionary of records if stream is True, else a string response.
+    Returns
+    -------
+    Union[dict, str]
+        A dictionary of records if `stream` is True, else a string response.
     """
     adapters = LivetimingF1adapters()
     endpoint = path
@@ -64,11 +77,15 @@ def get_car_data_stream(path):
     """
     Fetches car data from a specified endpoint and returns it as a dictionary.
 
-    Args:
-        path (str): The endpoint to retrieve car data from.
+    Parameters
+    ----------
+    path : str
+        The endpoint to retrieve car data from.
 
-    Returns:
-        dict: A dictionary where keys are the first 12 characters of each record and values are the remaining data.
+    Returns
+    -------
+    dict
+        A dictionary where keys are the first 12 characters of each record and values are the remaining data.
     """
     adapters = LivetimingF1adapters()
     endpoint = path
@@ -83,12 +100,17 @@ def parse(text: str, zipped: bool = False) -> Union[str, dict]:
     """
     Parses a given text input and decompresses it if necessary.
 
-    Args:
-        text (str): The input text to be parsed.
-        zipped (bool): Indicates if the input is a zipped string.
+    Parameters
+    ----------
+    text : str
+        The input text to be parsed.
+    zipped : bool, optional
+        Indicates if the input is a zipped string, by default False.
 
-    Returns:
-        Union[str, dict]: The parsed output as a dictionary if input is JSON, otherwise as a string.
+    Returns
+    -------
+    Union[str, dict]
+        The parsed output as a dictionary if input is JSON, otherwise as a string.
     """
     if text[0] == '{':  # Check if the text is in JSON format.
         return json.loads(text)  # Return parsed JSON as a dictionary.
@@ -105,11 +127,15 @@ def parse_hash(hash_code):
     """
     Parses a hashed string and decompresses it.
 
-    Args:
-        hash_code (str): The hash string to be parsed.
+    Parameters
+    ----------
+    hash_code : str
+        The hash string to be parsed.
 
-    Returns:
-        dict: The decompressed and parsed data as a dictionary.
+    Returns
+    -------
+    dict
+        The decompressed and parsed data as a dictionary.
     """
     tl = 12  # Length of the key in the response.
     return parse(hash_code, zipped=True)
@@ -117,15 +143,21 @@ def parse_hash(hash_code):
 
 def parse_helper_for_nested_dict(info, record, prefix=""):
     """
-    Recursively parses a nested dictionary and flattens it into a single level dictionary.
+    Recursively parses a nested dictionary and flattens it into a single-level dictionary.
 
-    Args:
-        info (dict): The nested dictionary to parse.
-        record (dict): The record to which parsed information will be added.
-        prefix (str): A prefix for keys in the flattened dictionary.
+    Parameters
+    ----------
+    info : dict
+        The nested dictionary to parse.
+    record : dict
+        The record to which parsed information will be added.
+    prefix : str, optional
+        A prefix for keys in the flattened dictionary, by default "".
 
-    Returns:
-        dict: The updated record with flattened keys from the nested dictionary.
+    Returns
+    -------
+    dict
+        The updated record with flattened keys from the nested dictionary.
     """
     for info_k, info_v in info.items():
         if isinstance(info_v, list):

@@ -13,3 +13,4 @@ hello hello
    data_processing
    livetimingf1_adapter
    realtime_client
+   utils
