@@ -32,7 +32,13 @@ def download_data(
     ----------
     livef1Exception
         Raised if any of the required parameters are missing or if no matching data is found.
+
+    Examples
+    -------------
+    .. code-block:: python
     
+       print("Hello World")
+
     """
     
     # Initialize a variable to store the final filtered data

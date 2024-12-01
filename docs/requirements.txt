@@ -1,3 +1,4 @@
 sphinx-copybutton
 sphinx-rtd-theme
 numpydoc
+websockets

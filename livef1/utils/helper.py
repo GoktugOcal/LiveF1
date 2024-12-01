@@ -6,6 +6,7 @@ import json
 import zlib
 from urllib.parse import urljoin
 from typing import List, Dict, Union
+from jellyfish import jaro_similarity
 
 # Internal Project Imports
 from .constants import *
@@ -171,3 +172,39 @@ def parse_helper_for_nested_dict(info, record, prefix=""):
         else:
             record = {**record, **{prefix + info_k: info_v}}  # Add scalar values to the record.
     return record
+
+
+
+def find_most_similar_vectorized(df, target):
+    """
+    Find the most similar string in a Pandas DataFrame using SequenceMatcher.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The DataFrame to search in.
+    target : str
+        The string to search for.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the most similar value, its similarity ratio,
+        and its location (row and column).
+    """
+    def similarity_score(cell):
+        # return SequenceMatcher(None, target, str(cell)).ratio()
+
+        return jaro_similarity(target.casefold(), str(cell).casefold())
+
+    similarity_df = df.applymap(similarity_score)
+    max_similarity = similarity_df.max().max()
+    row, col = divmod(similarity_df.values.argmax(), similarity_df.shape[1])
+    most_similar = df.iloc[row, col]
+
+    return {
+        "value": most_similar,
+        "similarity": max_similarity,
+        "row": row,
+        "column": df.columns[col]
+    }
