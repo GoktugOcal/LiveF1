@@ -18,6 +18,27 @@ QUERY_STOPWORDS = [
     "prix"
 ]
 
+SESSIONS_COLUMN_MAP = {
+    'season_year': 'Season Year',
+    'meeting_code': 'Meeting Code',
+    'meeting_number': 'Meeting Number',
+    'meeting_location': 'Meeting Location',
+    'meeting_offname': 'Meeting Offname',
+    'meeting_name': 'Meeting Name',
+    'meeting_country_key': 'Meeting Country Key',
+    'meeting_country_code': 'Meeting Country Code',
+    'meeting_country_name': 'Meeting Country Name',
+    'meeting_circuit_key': 'Meeting Circuit Key',
+    'meeting_circuit_shortname': 'Meeting Circuit Shortname',
+    'session_key': 'Session Key',
+    'session_type': 'Session Type',
+    'session_name': 'Session Name',
+    'session_startDate': 'Session Startdate',
+    'session_endDate': 'Session Enddate',
+    'gmtoffset': 'Gmtoffset',
+    'path': 'Path'
+}
+
 session_index = {
   "Feeds": {
     "SessionInfo": {

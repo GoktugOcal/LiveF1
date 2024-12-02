@@ -9,5 +9,3 @@ Real-Time Client - :mod:`livef1.adapters.realtime_client`
    .. autosummary::
       MessageHandlerTemplate
       RealF1Client
-
-      

@@ -5,6 +5,10 @@ from urllib.parse import urljoin
 from .adapters import livetimingF1_request
 from .utils.exceptions import livef1Exception
 
+# class LiveF1:
+#     def __init__(self):
+
+
 def download_data(
     season_identifier: int = None, 
     location_identifier: str = None, 

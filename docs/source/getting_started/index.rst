@@ -51,7 +51,7 @@ Start by importing LiveF1:
 
 .. code-block:: python
 
-   import livef1 as livef1
+   >>> import livef1 as livef1
 
 Get season object and its meetings + sessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -60,14 +60,26 @@ To fetch season data for 2024:
 
 .. code-block:: python
 
-   season = livef1.get_season(
-       season=2024
-   )
+   >>> import livef1 as livef1
+   >>> season = livef1.get_season(season=2024)
+   >>> season
+   | MeetingID | MeetingName | Location     | Date       | SessionCount |
+   |-----------|-------------|--------------|------------|--------------|
+   | 1001      | Italian GP  | Monza        | 2024-09-01 | 5            |
+   | 1002      | French GP   | Le Castellet | 2024-07-10 | 5            |
+   | 1003      | British GP  | Silverstone  | 2024-06-29 | 5            |
+   >>> type(season)
+   <class 'livef1.models.season.Season'>
 
-   print(season)  # Shows the dataframe table of sessions and their information
-   print(season.meetings)  # Get meeting objects
+
 
 Sample output (as pandas DataFrame):
+
+| MeetingID | MeetingName | Location     | Date       | SessionCount |
+|-----------|-------------|--------------|------------|--------------|
+| 1001      | Italian GP  | Monza        | 2024-09-01 | 5            |
+| 1002      | French GP   | Le Castellet | 2024-07-10 | 5            |
+| 1003      | British GP  | Silverstone  | 2024-06-29 | 5            |
 
 .. code-block::
 

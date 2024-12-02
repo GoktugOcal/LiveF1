@@ -2,6 +2,7 @@
 import urllib
 import json
 import dateutil
+import sys
 
 # Third-Party Library Imports
 import pandas as pd
@@ -108,13 +109,20 @@ class Season:
                 session_all_data.append(session_data)  # Add the session data to the list.
 
         # Create a DataFrame to organize the sessions data.
-        self.meetings_table = pd.DataFrame(session_all_data).set_index(["season_year", "meeting_location", "session_type"])
+        self.meetings_table = pd.DataFrame(session_all_data).set_index(["meeting_key"])
+        self.meetings_table["session_startDate"] = pd.to_datetime(self.meetings_table["session_startDate"])
+        self.meetings_table["session_endDate"] = pd.to_datetime(self.meetings_table["session_endDate"])
+
 
     def __repr__(self):
         """
         Returns a string representation of the `meetings_table` for display.
         """
-        display(self.meetings_table)  # Display the meetings table.
+        if "IPython" not in sys.modules:
+            # definitely not in IPython
+            return self.__str__() # Print the meetings table.
+        else:
+            return self.meetings_table # Display the meetings table.
 
     def __str__(self):
         """
