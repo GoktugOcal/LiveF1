@@ -11,6 +11,13 @@ REALTIME_CALLBACK_DEFAULT_PARAMETERS = [
   "timestamp"
 ]
 
+QUERY_STOPWORDS = [
+    "formula",
+    "1",
+    "grand",
+    "prix"
+]
+
 session_index = {
   "Feeds": {
     "SessionInfo": {

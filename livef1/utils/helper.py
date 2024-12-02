@@ -6,10 +6,14 @@ import json
 import zlib
 from urllib.parse import urljoin
 from typing import List, Dict, Union
-from jellyfish import jaro_similarity
+from jellyfish import jaro_similarity, jaro_winkler_similarity
+import re
+from string import punctuation
+import numpy as np
 
 # Internal Project Imports
 from .constants import *
+from .exceptions import livef1Exception
 from ..adapters import LivetimingF1adapters
 
 def build_session_endpoint(session_path):
@@ -173,11 +177,26 @@ def parse_helper_for_nested_dict(info, record, prefix=""):
             record = {**record, **{prefix + info_k: info_v}}  # Add scalar values to the record.
     return record
 
+def identifer_text_format(text):
+    """
+    Formats text for comparison by splitting into words and removing stopwords.
 
+    Parameters
+    ----------
+    text : str
+        The input text to format.
+
+    Returns
+    -------
+    list
+        A list of words from the input text with stopwords removed.
+    """
+    querywords = re.split(rf'[\s{punctuation}]+', text.casefold())
+    return [word for word in querywords if word not in QUERY_STOPWORDS]
 
 def find_most_similar_vectorized(df, target):
     """
-    Find the most similar string in a Pandas DataFrame using SequenceMatcher.
+    Find the most similar string in a Pandas DataFrame using Jaccard and Jaro-Winkler similarity.
 
     Parameters
     ----------
@@ -189,22 +208,152 @@ def find_most_similar_vectorized(df, target):
     Returns
     -------
     dict
-        A dictionary containing the most similar value, its similarity ratio,
-        and its location (row and column).
+        A dictionary containing:
+            - "isFound" (int): 1 if a match is found, 0 otherwise.
+            - "how" (str): The method used for matching ("jaccard" or "jaro").
+            - "value" (str): The most similar value found.
+            - "similarity" (float): The similarity score of the match.
+            - "row" (int): The row index of the match.
+            - "column" (str): The column name of the match.
+
+    Raises
+    ------
+    livef1Exception
+        If no match is found and suggestions are provided.
     """
-    def similarity_score(cell):
-        # return SequenceMatcher(None, target, str(cell)).ratio()
 
-        return jaro_similarity(target.casefold(), str(cell).casefold())
+    def jaccard_similarity(cell):
+        """
+        Calculates the Jaccard similarity between two sets of words.
 
-    similarity_df = df.applymap(similarity_score)
-    max_similarity = similarity_df.max().max()
+        Parameters
+        ----------
+        cell : str
+            The text to compare against the target.
+
+        Returns
+        -------
+        float
+            The Jaccard similarity score.
+        """
+        intersection_cardinality = len(
+            set.intersection(
+                *[
+                    set(identifer_text_format(target)),
+                    set(identifer_text_format(cell))
+                ]
+            )
+        )
+        union_cardinality = len(
+            set.union(
+                *[
+                    set(identifer_text_format(target)),
+                    set(identifer_text_format(cell))
+                ]
+            )
+        )
+        return intersection_cardinality/float(union_cardinality)
+
+    def jarow_similarity(cell):
+        """
+        Calculates the Jaro-Winkler similarity between two strings.
+
+        Parameters
+        ----------
+        cell : str
+            The text to compare against the target.
+
+        Returns
+        -------
+        float
+            The Jaro-Winkler similarity score.
+        """
+        return jaro_winkler_similarity(
+            " ".join(identifer_text_format(target)),
+            " ".join(identifer_text_format(cell))
+            )
+
+    def argmax_n(arr: np.array, n: int, axis=None):
+        """
+        Finds the indices of the top-n maximum values in an array.
+
+        Parameters
+        ----------
+        arr : np.array
+            The array to search in.
+        n : int
+            The number of maximum values to find.
+        axis : int, optional
+            The axis to search along, by default None.
+
+        Returns
+        -------
+        list
+            A list of indices corresponding to the top-n maximum values.
+        """
+        argmaxes = []
+        for _ in range(n):
+            row, col = divmod(arr.argmax(), arr.shape[1])
+            argmaxes.append(row)
+            # arr = np.delete(arr, row, axis=0)
+            arr[row,:] = 0
+            # print(row, col)
+        return argmaxes
+
+    print("..:: Search started.")
+    similarity_df = df.map(jaccard_similarity)
+    jaccard_score = similarity_df.max().max()
     row, col = divmod(similarity_df.values.argmax(), similarity_df.shape[1])
     most_similar = df.iloc[row, col]
 
-    return {
-        "value": most_similar,
-        "similarity": max_similarity,
-        "row": row,
-        "column": df.columns[col]
-    }
+
+    if jaccard_score:
+        print("..:: Found.")
+        print("..:: Most similar:", most_similar)
+        print("..:: Row:", row)
+        print("..:: Column:", df.columns[col])
+
+        return {
+            "isFound": 1,
+            "how" : "jaccard",
+            "value": most_similar,
+            "similarity": jaccard_score,
+            "row": row,
+            "column": df.columns[col]
+        }
+    else:
+        print("..:: Couldn't find.")
+        jaro_df = df.map(jarow_similarity)
+        jaro_score = jaro_df.max().max()
+
+        if jaro_score >= 0.9:
+            row, col = divmod(jaro_df.values.argmax(), jaro_df.shape[1])
+            most_similar = df.iloc[row, col]
+
+            return {
+                "isFound": 1,
+                "how" : "jaro",
+                "value": most_similar,
+                "similarity": jaro_score,
+                "row": row,
+                "column": df.columns[col]
+            }
+
+        else:
+            possible_df = df.iloc[argmax_n(jaro_df.values, 3, axis=1)]
+            err_text = f"\nThe searched query '{target}' not found in the meetings table. Did you mean one of these :\n\n"
+            for idx, prow in possible_df.iterrows():
+                err_text += f"\tMeeting Official Name : {prow.meeting_offname}\n"
+                err_text += f"\tMeeting Name : {prow.meeting_name}\n"
+                err_text += f"\tMeeting Circuit Shortname : {prow.meeting_circuit_shortname}\n"
+                err_text += f"\t> Suggested search queries : {identifer_text_format(prow.meeting_name) + identifer_text_format(prow.meeting_circuit_shortname)}\n\n"
+
+            raise livef1Exception(err_text) 
+            return {
+                "isFound": 0,
+                "how": None,
+                "value": None,
+                "similarity": None,
+                "row": None,
+                "column": None
+            }

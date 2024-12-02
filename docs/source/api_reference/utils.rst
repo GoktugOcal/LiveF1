@@ -28,6 +28,7 @@ Helper
         parse
         parse_hash
         parse_helper_for_nested_dict
+        find_most_similar_vectorized
 
 Exceptions
 ---------
