@@ -61,7 +61,7 @@ def get_meeting(
     # session_name = session
     season_obj = get_season(season=season)
 
-    search_df_season = season_obj.meetings_table[["meeting_offname","meeting_name","meeting_circuit_shortname"]]
+    search_df_season = season_obj.meetings_table[["meeting_offname","meeting_name","meeting_circuit_shortname"]].drop_duplicates()
     result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
 
     if result_meeting["isFound"]:

@@ -11,6 +11,7 @@ import pandas as pd
 from ..api import download_data
 from ..models.meeting import Meeting
 from ..utils.helper import json_parser_for_objects, build_session_endpoint
+from ..utils.constants import SESSIONS_COLUMN_MAP
 
 
 class Season:
@@ -113,6 +114,31 @@ class Season:
         self.meetings_table["session_startDate"] = pd.to_datetime(self.meetings_table["session_startDate"])
         self.meetings_table["session_endDate"] = pd.to_datetime(self.meetings_table["session_endDate"])
 
+        self.season_table = self.meetings_table \
+            .groupby("meeting_key") \
+            .agg(
+                {
+                    "meeting_code": "first",
+                    "meeting_name": "first",
+                    "meeting_circuit_shortname": "first",
+                    "session_name": "count"
+                }
+            ) \
+            .join(
+                self.meetings_table[self.meetings_table["session_type"] == "Race"]["session_startDate"]
+            ) \
+            .sort_values("session_startDate") \
+            .reset_index() \
+            .rename(
+                columns = {
+                    **SESSIONS_COLUMN_MAP,
+                    **{
+                        "session_startDate" : "Race Startdate",
+                        "session_name" : "No. Sessions"
+                    }
+                }
+            )
+
 
     def __repr__(self):
         """
@@ -122,10 +148,10 @@ class Season:
             # definitely not in IPython
             return self.__str__() # Print the meetings table.
         else:
-            return self.meetings_table # Display the meetings table.
+            display(self.season_table)# Display the meetings table.
 
     def __str__(self):
         """
         Returns a string representation of the `meetings_table` for easy reading.
         """
-        return self.meetings_table.__str__()  # Return the string representation of the meetings table.
+        return self.season_table.__str__()  # Return the string representation of the meetings table.

@@ -21,6 +21,7 @@ QUERY_STOPWORDS = [
 SESSIONS_COLUMN_MAP = {
     'season_year': 'Season Year',
     'meeting_code': 'Meeting Code',
+    'meeting_key': 'Meeting Key',
     'meeting_number': 'Meeting Number',
     'meeting_location': 'Meeting Location',
     'meeting_offname': 'Meeting Offname',
@@ -38,6 +39,8 @@ SESSIONS_COLUMN_MAP = {
     'gmtoffset': 'Gmtoffset',
     'path': 'Path'
 }
+
+EXCLUDED_COLUMNS_FOR_SEARCH_SUGGESTION = ["meeting_offname"]
 
 session_index = {
   "Feeds": {

@@ -56,38 +56,22 @@ Start by importing LiveF1:
 Get season object and its meetings + sessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To fetch season data for 2024:
+To fetch season data for 2021:
 
 .. code-block:: python
 
    >>> import livef1 as livef1
-   >>> season = livef1.get_season(season=2024)
-   >>> season
-   | MeetingID | MeetingName | Location     | Date       | SessionCount |
-   |-----------|-------------|--------------|------------|--------------|
-   | 1001      | Italian GP  | Monza        | 2024-09-01 | 5            |
-   | 1002      | French GP   | Le Castellet | 2024-07-10 | 5            |
-   | 1003      | British GP  | Silverstone  | 2024-06-29 | 5            |
+   >>> season = livef1.get_season(season=2021)
    >>> type(season)
    <class 'livef1.models.season.Season'>
-
-
-
-Sample output (as pandas DataFrame):
-
-| MeetingID | MeetingName | Location     | Date       | SessionCount |
-|-----------|-------------|--------------|------------|--------------|
-| 1001      | Italian GP  | Monza        | 2024-09-01 | 5            |
-| 1002      | French GP   | Le Castellet | 2024-07-10 | 5            |
-| 1003      | British GP  | Silverstone  | 2024-06-29 | 5            |
-
-.. code-block::
-
-   | MeetingID | MeetingName | Location | Date       | SessionCount |
-   |-----------|-------------|----------|------------|--------------|
-   | 1001      | Italian GP  | Monza    | 2024-09-01 | 5            |
-   | 1002      | French GP   | Le Castellet | 2024-07-10 | 5        |
-   | 1003      | British GP  | Silverstone | 2024-06-29 | 5         |
+   >>> season
+   |    |   Meeting Key | Meeting Code   | Meeting Name              | Meeting Circuit Shortname     |   No. Sessions | Race Startdate      |
+   |---:|--------------:|:---------------|:--------------------------|:------------------------------|---------------:|:--------------------|
+   |  0 |          1064 | BRN0104        | Bahrain Grand Prix        | Sakhir                        |              5 | 2021-03-28 18:00:00 |
+   |  1 |          1065 | ITA0110        | Emilia Romagna Grand Prix | Imola                         |              5 | 2021-04-18 15:00:00 |
+   |  2 |          1066 | POR0401        | Portuguese Grand Prix     | Algarve International Circuit |              5 | 2021-05-02 15:00:00 |
+   |  3 |          1086 | ESP0111        | Spanish Grand Prix        | Catalunya                     |              5 | 2021-05-09 15:00:00 |
+   |  4 |          1067 | MON0112        | Monaco Grand Prix         | Monte Carlo                   |              5 | 2021-05-23 15:00:00 |
 
 Get meeting object and its sessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -96,10 +80,9 @@ To fetch meeting data for the Italian Grand Prix:
 
 .. code-block:: python
 
-   meeting = livef1.get_meeting(
-       season=2024,
-       location="Monza"
-   )
+   >>> meeting = livef1.get_meeting(season=2024, meeting_identifier="Monza")
+   >>> type(meeting)
+   >>> meeting
 
    print(meeting)  # Shows the dataframe table of sessions and their information
    print(meeting.sessions)  # Get session objects

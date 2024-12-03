@@ -10,9 +10,11 @@ from jellyfish import jaro_similarity, jaro_winkler_similarity
 import re
 from string import punctuation
 import numpy as np
+import logging
 
 # Internal Project Imports
 from .constants import *
+from .logger import logger
 from .exceptions import livef1Exception
 from ..adapters import LivetimingF1adapters
 
@@ -300,7 +302,8 @@ def find_most_similar_vectorized(df, target):
             # print(row, col)
         return argmaxes
 
-    print("..:: Search started.")
+    logger.info(f"Searching of identifier '{target}' has started.")
+
     similarity_df = df.map(jaccard_similarity)
     jaccard_score = similarity_df.max().max()
     row, col = divmod(similarity_df.values.argmax(), similarity_df.shape[1])
@@ -308,10 +311,9 @@ def find_most_similar_vectorized(df, target):
 
 
     if jaccard_score:
-        print("..:: Found.")
-        print("..:: Most similar:", most_similar)
-        print("..:: Row:", row)
-        print("..:: Column:", df.columns[col])
+        found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index().columns])
+        logger.info(f"Found at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}' as '{most_similar}'.")
+        logger.info(f"""Selected meeting/session is:\n{found_info}""")
 
         return {
             "isFound": 1,
@@ -322,13 +324,17 @@ def find_most_similar_vectorized(df, target):
             "column": df.columns[col]
         }
     else:
-        print("..:: Couldn't find.")
+        logger.info("The identifier couldn't be found.")
         jaro_df = df.map(jarow_similarity)
         jaro_score = jaro_df.max().max()
 
         if jaro_score >= 0.9:
             row, col = divmod(jaro_df.values.argmax(), jaro_df.shape[1])
             most_similar = df.iloc[row, col]
+            logger.info(f"The identifier is very close to '{most_similar}' at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}'")
+            found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index().columns])
+            logger.info(f"""Selected meeting/session is:\n{found_info}""")
+
 
             return {
                 "isFound": 1,
@@ -340,15 +346,18 @@ def find_most_similar_vectorized(df, target):
             }
 
         else:
-            possible_df = df.iloc[argmax_n(jaro_df.values, 3, axis=1)]
-            err_text = f"\nThe searched query '{target}' not found in the meetings table. Did you mean one of these :\n\n"
-            for idx, prow in possible_df.iterrows():
-                err_text += f"\tMeeting Official Name : {prow.meeting_offname}\n"
-                err_text += f"\tMeeting Name : {prow.meeting_name}\n"
-                err_text += f"\tMeeting Circuit Shortname : {prow.meeting_circuit_shortname}\n"
-                err_text += f"\t> Suggested search queries : {identifer_text_format(prow.meeting_name) + identifer_text_format(prow.meeting_circuit_shortname)}\n\n"
+            poss_args = argmax_n(jaro_df.values, 3, axis=1)
+            possible_df = df.iloc[poss_args]
 
-            raise livef1Exception(err_text) 
+            err_text = f"\nThe searched query '{target}' not found in the table. Did you mean one of these :\n\n"
+            for idx, prow in possible_df.iterrows():
+                for col in possible_df.columns:
+                    err_text += f"\t{SESSIONS_COLUMN_MAP[col]} : {prow[col]}\n"
+                # err_text += f"\t> Suggested search queries : {identifer_text_format(prow.meeting_name) + identifer_text_format(prow.meeting_circuit_shortname)}\n\n"
+                err_text += f"\t> Suggested search queries : {[identifer_text_format(prow[col])for col in possible_df.columns if not col in EXCLUDED_COLUMNS_FOR_SEARCH_SUGGESTION]}\n\n"
+            logging.info(err_text)
+            raise livef1Exception(err_text)
+
             return {
                 "isFound": 0,
                 "how": None,
