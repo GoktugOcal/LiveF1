@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 
 # Internal Project Imports
-from ..api import download_data
+from ..adapters import download_data
 from ..models.meeting import Meeting
 from ..utils.helper import json_parser_for_objects, build_session_endpoint
 from ..utils.constants import SESSIONS_COLUMN_MAP
@@ -148,7 +148,7 @@ class Season:
             # definitely not in IPython
             return self.__str__() # Print the meetings table.
         else:
-            display(self.season_table)# Display the meetings table.
+            display(self.season_table) # Display the meetings table.
 
     def __str__(self):
         """

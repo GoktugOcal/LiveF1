@@ -1,98 +1,133 @@
-# Standard Library Imports
-from urllib.parse import urljoin
+from .adapters import LivetimingF1adapters, livetimingF1_request
+from .models import (
+    Session,
+    Season,
+    Meeting
+)
+from .adapters import download_data
+from .utils.helper import json_parser_for_objects, find_most_similar_vectorized
+from .utils.logger import logger
 
-# Internal Project Imports
-from .adapters import livetimingF1_request
-from .utils.exceptions import livef1Exception
 
-# class LiveF1:
-#     def __init__(self):
-
-
-def download_data(
-    season_identifier: int = None, 
-    location_identifier: str = None, 
-    session_identifier: str | int = None
-):
+def get_season(season: int) -> Season:
     """
-    Downloads and filters F1 data based on the provided season, location, and session identifiers.
+    Retrieve data for a specified Formula 1 season.
 
     Parameters
     ----------
-    
-    season_identifier : :class:`int`
-        The unique identifier for the F1 season. This is a required parameter.
-    location_identifier : :class:`str`
-        The location (circuit or country name) for filtering meetings (races).
-    session_identifier : :class:`str`
-        The session name (e.g., 'FP1', 'Qualifying') or key (integer) to filter a specific session within a meeting.
-    
+    season : :class:`int`
+        The year of the season to retrieve.
+
     Returns
-    ----------
-    dict
-        The filtered dataset containing the requested season, meeting, or session data.
-    
+    -------
+    Season
+        A `Season` object containing all meetings and sessions for the specified year.
+
     Raises
-    ----------
+    ------
     livef1Exception
-        Raised if any of the required parameters are missing or if no matching data is found.
-
-    Examples
-    -------------
-    .. code-block:: python
-    
-       print("Hello World")
-
+        If no data is available for the specified season.
     """
-    
-    # Initialize a variable to store the final filtered data
-    last_data = None
+    logger.debug(f"Trying to get season {season}.")
+    season_data = download_data(season_identifier=season)
+    season = Season(**json_parser_for_objects(season_data))
+    logger.debug("The season was received successfully.")
+    return season
 
-    # Ensure a season identifier is provided (mandatory)
-    if season_identifier is None:
-        raise livef1Exception("Please provide at least a `season_identifier`.")
+def get_meeting(
+    season: int,
+    meeting_identifier: str) -> Meeting:
+    """
+    Retrieve data for a specific meeting in a given season.
 
-    try:
-        # Download full season data using the F1 API
-        season_data = livetimingF1_request(urljoin(str(season_identifier) + "/", "Index.json"))
-        last_data = season_data  # Default to entire season data initially
+    Parameters
+    ----------
+    season : :class:`int`
+        The year of the season to retrieve the meeting from.
+    meeting_identifier : :class:`str`
+        The identifier (e.g., circuit name, grand prix name) of the meeting.
+        The identifier is going to be searched in the season's meeting table columns:
+            - "Meeting Official Name"
+            - "Meeting Name"
+            - "Circuit Short Name"
+        Therefore, it is suggested to use keywords that is distinguishable among meetings.
+        Another suggestion is using circuit names for querying.
 
-        # If a location (race circuit) is provided, filter the season data to find the specific meeting (race)
-        if location_identifier:
-            meeting_data = next(
-                (meeting for meeting in season_data["Meetings"] if meeting["Location"] == location_identifier), 
-                None
-            )
-            if meeting_data:
-                last_data = meeting_data  # Update with filtered meeting data
-            else:
-                raise livef1Exception(f"Meeting at location '{location_identifier}' not found.")
-        else:
-            meeting_data = season_data["Meetings"]
+    Returns
+    -------
+    Meeting
+        A `Meeting` object containing sessions and metadata for the specified meeting.
 
-        # If a session (e.g., FP1, Qualifying) is provided, further filter the meeting data
-        if session_identifier:
-            if isinstance(session_identifier, str):
-                # Filter by session name (string match)
-                session_data = next(
-                    (session for session in meeting_data['Sessions'] if session['Name'] == session_identifier), 
-                    None
-                )
-            elif isinstance(session_identifier, int):
-                # Filter by session key (integer match)
-                session_data = next(
-                    (session for session in meeting_data['Sessions'] if session['Key'] == session_identifier), 
-                    None
-                )
-            
-            if session_data:
-                last_data = session_data  # Update with filtered session data
-            else:
-                raise livef1Exception(f"Session with identifier '{session_identifier}' not found.")
+    Raises
+    ------
+    livef1Exception
+        If the meeting cannot be found based on the provided parameters.
+    """
+    # session_name = session
+    season_obj = get_season(season=season)
 
-    except Exception as e:
-        # Catch any exception and wrap it in a custom livef1Exception
-        raise livef1Exception(e) from e
+    logger.debug("Trying to get meeting.")
+    search_df_season = season_obj.meetings_table.reset_index()[["meeting_offname","meeting_name","meeting_circuit_shortname"]].drop_duplicates()
+    result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
 
-    # Return the final filtered data (season, meeting, or session)
-    return last_data
+    if result_meeting["isFound"]:
+        meeting_code = season_obj.meetings_table.iloc[result_meeting["row"]].meeting_code
+        meeting_obj = [meeting for meeting in season_obj.meetings if meeting.code == meeting_code][0]
+        logger.debug("The meeting was received successfully.")
+        return meeting_obj
+    else:
+        return None
+
+    # meeting_data = download_data(season_identifier=season, location_identifier=location)
+    # return Meeting(**json_parser_for_objects(meeting_data))
+
+def get_session(
+    season: int, 
+    meeting_identifier: str,
+    session_identifier: str
+) -> Session:
+    """
+    Retrieve data for a specific session within a meeting and season.
+
+    Parameters
+    ----------
+    season : :class:`int`
+        The year of the season.
+    meeting_identifier : :class:`str`
+        The identifier (e.g., circuit name, grand prix name) of the meeting.
+        The identifier is going to be searched in the season's meeting table columns:
+            - "Meeting Official Name"
+            - "Meeting Name"
+            - "Circuit Short Name"
+        Therefore, it is suggested to use keywords that is distinguishable among meetings.
+        Another suggestion is using circuit names for querying.
+    session_identifier : :class:`str`
+        The identifier of the session (e.g., "Practice 1", "Qualifying").
+
+    Returns
+    -------
+    Session
+        A `Session` object containing data about the specified session.
+
+    Raises
+    ------
+    livef1Exception
+        If the session cannot be found based on the provided parameters.
+    """
+
+    meeting_obj = get_meeting(
+        season,
+        meeting_identifier
+    )
+
+    logger.debug("Trying to get session.")
+    search_df_season = meeting_obj.sessions_table.reset_index()[["session_name"]].drop_duplicates()
+    result_session = find_most_similar_vectorized(search_df_season, session_identifier)
+
+    if result_session["isFound"]:
+        session_name = meeting_obj.sessions_table.iloc[result_session["row"]].session_name
+        session_obj = [session for session in meeting_obj.sessions if session.name == session_name][0]
+        logger.debug("The session was received successfully.")
+        return session_obj
+    else:
+        return None

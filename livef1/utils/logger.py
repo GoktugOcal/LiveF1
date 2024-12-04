@@ -4,7 +4,7 @@ import os
 # Logger setup
 # LOG_LEVEL = logging.DEBUG if os.getenv("DEBUG", "False").lower() == "true" else logging.INFO
 LOG_LEVEL = logging.DEBUG
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_FORMAT = "%(asctime)s : %(name)s : %(levelname)s :: %(message)s"
 
 # Configure logger
 logger = logging.getLogger("livef1")

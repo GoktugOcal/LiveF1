@@ -302,7 +302,7 @@ def find_most_similar_vectorized(df, target):
             # print(row, col)
         return argmaxes
 
-    logger.info(f"Searching of identifier '{target}' has started.")
+    logger.debug(f"Searching of identifier '{target}' has started.")
 
     similarity_df = df.map(jaccard_similarity)
     jaccard_score = similarity_df.max().max()
@@ -311,20 +311,23 @@ def find_most_similar_vectorized(df, target):
 
 
     if jaccard_score:
-        found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index().columns])
+        found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index(drop=True).columns])
         logger.info(f"Found at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}' as '{most_similar}'.")
         logger.info(f"""Selected meeting/session is:\n{found_info}""")
+
+        print(df.iloc[row])
 
         return {
             "isFound": 1,
             "how" : "jaccard",
             "value": most_similar,
             "similarity": jaccard_score,
-            "row": row,
+            "row": df.iloc[row].name,
             "column": df.columns[col]
         }
     else:
         logger.info("The identifier couldn't be found.")
+
         jaro_df = df.map(jarow_similarity)
         jaro_score = jaro_df.max().max()
 
@@ -334,7 +337,6 @@ def find_most_similar_vectorized(df, target):
             logger.info(f"The identifier is very close to '{most_similar}' at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}'")
             found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index().columns])
             logger.info(f"""Selected meeting/session is:\n{found_info}""")
-
 
             return {
                 "isFound": 1,

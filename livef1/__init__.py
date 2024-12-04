@@ -4,15 +4,11 @@ from .models import (
     Meeting
     )
 
-from .functions import (
+from .api import (
     get_season,
     get_meeting,
     get_session
     )
-
-from .api import (
-    download_data
-)
 
 from .data_processing import (
     BasicResult
@@ -20,9 +16,3 @@ from .data_processing import (
 
 from .utils.helper import *
 from .adapters.livetimingf1_adapter import LivetimingF1adapters
-
-# class livef1():
-#     def __init__(
-#         self
-#         ):
-#         pass

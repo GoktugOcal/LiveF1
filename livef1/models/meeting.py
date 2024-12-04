@@ -1,5 +1,6 @@
 # Standard Library Imports
 import dateutil
+import sys
 import json
 
 # Third-Party Library Imports
@@ -7,9 +8,10 @@ import pandas as pd
 from typing import List, Dict
 
 # Internal Project Imports
-from ..api import download_data
+from ..adapters import download_data
 from ..models.session import Session
 from ..utils.helper import json_parser_for_objects, build_session_endpoint
+from ..utils.constants import SESSIONS_COLUMN_MAP
 
 
 class Meeting:
@@ -159,6 +161,9 @@ class Meeting:
             session_all_data.append(session_data)
 
         self.sessions_table = pd.DataFrame(session_all_data).set_index(["season_year", "meeting_location", "session_type"])
+        self.sessions_table["session_startDate"] = pd.to_datetime(self.sessions_table["session_startDate"])
+        self.sessions_table["session_endDate"] = pd.to_datetime(self.sessions_table["session_endDate"])
+        self.sessions_table = self.sessions_table.reset_index().rename(columns = SESSIONS_COLUMN_MAP)
 
     def __repr__(self):
         """
@@ -169,7 +174,12 @@ class Meeting:
         str
             The string representation of the meeting's session table.
         """
-        return self.sessions_table.__repr__()
+        if "IPython" not in sys.modules:
+            # definitely not in IPython
+            return self.sessions_table.__str__() # Print the meetings table.
+        else:
+            display(self.sessions_table) # Display the meetings table.
+            return ""
 
     def __str__(self):
         """
