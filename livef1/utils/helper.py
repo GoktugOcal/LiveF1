@@ -315,8 +315,6 @@ def find_most_similar_vectorized(df, target):
         logger.info(f"Found at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}' as '{most_similar}'.")
         logger.info(f"""Selected meeting/session is:\n{found_info}""")
 
-        print(df.iloc[row])
-
         return {
             "isFound": 1,
             "how" : "jaccard",
@@ -335,8 +333,8 @@ def find_most_similar_vectorized(df, target):
             row, col = divmod(jaro_df.values.argmax(), jaro_df.shape[1])
             most_similar = df.iloc[row, col]
             logger.info(f"The identifier is very close to '{most_similar}' at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}'")
-            found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index().columns])
-            logger.info(f"""Selected meeting/session is:\n{found_info}""")
+            # found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index(drop=True).columns])
+            # logger.info(f"""Selected meeting/session is:\n{found_info}""")
 
             return {
                 "isFound": 1,

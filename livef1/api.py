@@ -7,6 +7,8 @@ from .models import (
 from .adapters import download_data
 from .utils.helper import json_parser_for_objects, find_most_similar_vectorized
 from .utils.logger import logger
+from .utils.exceptions import *
+from .utils.constants import SESSIONS_COLUMN_MAP
 
 
 def get_season(season: int) -> Season:
@@ -36,7 +38,9 @@ def get_season(season: int) -> Season:
 
 def get_meeting(
     season: int,
-    meeting_identifier: str) -> Meeting:
+    meeting_identifier: str = None,
+    meeting_key: int = None
+    ) -> Meeting:
     """
     Retrieve data for a specific meeting in a given season.
 
@@ -63,28 +67,47 @@ def get_meeting(
     livef1Exception
         If the meeting cannot be found based on the provided parameters.
     """
-    # session_name = session
+
+    # Check if sufficient arguments have been provided
+    if (meeting_identifier == None) and (meeting_key == None):
+        try:
+            raise ArgumentError(f"One of the following arguments needs to be defined: 'meeting_identifier', 'meeting_key'.")
+        except ArgumentError as e:
+            logger.error(f"An error occured {e}")
+            raise
+
     season_obj = get_season(season=season)
+    required_cols = ["meeting_offname","meeting_name","meeting_circuit_shortname"]
+    search_df_season = season_obj.meetings_table.reset_index()[required_cols].drop_duplicates()
 
-    logger.debug("Trying to get meeting.")
-    search_df_season = season_obj.meetings_table.reset_index()[["meeting_offname","meeting_name","meeting_circuit_shortname"]].drop_duplicates()
-    result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
+    if meeting_identifier:
+        logger.debug("Trying to get meeting by meeting identifier.")
+        result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
+        meeting_key = season_obj.meetings_table.iloc[result_meeting["row"]].name
+    
+    elif meeting_key:
+        logger.debug("Trying to get meeting by meeting key.")
+        pass
 
-    if result_meeting["isFound"]:
-        meeting_code = season_obj.meetings_table.iloc[result_meeting["row"]].meeting_code
-        meeting_obj = [meeting for meeting in season_obj.meetings if meeting.code == meeting_code][0]
-        logger.debug("The meeting was received successfully.")
-        return meeting_obj
-    else:
-        return None
+    meeting_obj = [meeting for meeting in season_obj.meetings if meeting.key == meeting_key][0]
+
+    found_meeting_info = season_obj.meetings_table.loc[meeting_key, required_cols].drop_duplicates().iloc[0]
+    found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in required_cols])
+    logger.info(f"""Selected meeting/session is:\n{found_info}""")
+    logger.debug("The meeting was received successfully.")
+
+    return meeting_obj
+
 
     # meeting_data = download_data(season_identifier=season, location_identifier=location)
     # return Meeting(**json_parser_for_objects(meeting_data))
 
 def get_session(
     season: int, 
-    meeting_identifier: str,
-    session_identifier: str
+    meeting_identifier: str = None,
+    meeting_key: int = None,
+    session_identifier: str = None,
+    session_key: int = None
 ) -> Session:
     """
     Retrieve data for a specific session within a meeting and season.
@@ -115,19 +138,32 @@ def get_session(
         If the session cannot be found based on the provided parameters.
     """
 
+    # Check if sufficient arguments have been provided
+    if (session_identifier == None) and (session_key == None):
+        try:
+            raise ArgumentError(f"One of the following arguments needs to be defined: 'session_identifier', 'session_key'.")
+        except ArgumentError as e:
+            logger.error(f"An error occured {e}")
+            raise
+
     meeting_obj = get_meeting(
-        season,
-        meeting_identifier
+        season=season,
+        meeting_identifier=meeting_identifier,
+        meeting_key=meeting_key
     )
+    print(meeting_obj.sessions_table)
+    exit()
+    required_cols = ["session_name"]
+    search_df_season = meeting_obj.sessions_table.reset_index()[required_cols].drop_duplicates()
 
-    logger.debug("Trying to get session.")
-    search_df_season = meeting_obj.sessions_table.reset_index()[["session_name"]].drop_duplicates()
-    result_session = find_most_similar_vectorized(search_df_season, session_identifier)
+    if session_identifier:
+        logger.debug("Trying to get session by identifier.")
+        result_session = find_most_similar_vectorized(search_df_season, session_identifier)
+        session_key = meeting_obj.sessions_table.iloc[result_session["row"]].name
 
-    if result_session["isFound"]:
-        session_name = meeting_obj.sessions_table.iloc[result_session["row"]].session_name
-        session_obj = [session for session in meeting_obj.sessions if session.name == session_name][0]
-        logger.debug("The session was received successfully.")
-        return session_obj
-    else:
-        return None
+    elif session_key:
+        logger.debug("Trying to get session by key.")
+
+    session_obj = [session for session in meeting_obj.sessions if session.name == session_name][0]
+    logger.debug("The session was received successfully.")
+    return session_obj
