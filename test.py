@@ -14,10 +14,16 @@
 
 import livef1
 
-# session = livef1.get_meeting(season=2024, meeting_identifier="spas")
-# session = livef1.get_meeting(season=2024, meeting_key=1242)
-# session = livef1.get_meeting(season=2024)
+session = livef1.get_meeting(season=2024, meeting_identifier="Spa")
 
-session = livef1.get_session(season=2024, meeting_identifier="Monza", session_identifier="Race")
+# print(session.meeting_table)
 
-print(session.name)
+# session = livef1.get_session(season=2024, meeting_identifier="Monza", session_identifier="Race")
+
+# print(session.name)
+
+
+# season = livef1.get_season(season=2021)
+
+# print(season.meetings_table)
+# print(season.season_table)

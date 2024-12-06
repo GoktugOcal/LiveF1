@@ -80,7 +80,7 @@ Once you retrieve a season, you can inspect its contents by printing the object.
 Get a meeting object and its sessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To fetch meeting data for the Belgian Grand Prix:
+**Get a Meeting by Identifier.** The `get_meeting` function can retrieve a meeting by its identifier (e.g., a `location name`). Here’s how to use it:
 
 .. code-block:: python
 
@@ -96,6 +96,26 @@ To fetch meeting data for the Belgian Grand Prix:
    |  2 |          2024 | Spa-Francorchamps  | Practice 3     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9569 | Practice 3     | 2024-07-27 12:30:00 | 2024-07-27 13:30:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-27_Practice_3/ |
    |  3 |          2024 | Spa-Francorchamps  | Qualifying     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9570 | Qualifying     | 2024-07-27 16:00:00 | 2024-07-27 17:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-27_Qualifying/ |
    |  4 |          2024 | Spa-Francorchamps  | Race           | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9574 | Race           | 2024-07-28 15:00:00 | 2024-07-28 17:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/       |
+
+
+**Get a Meeting by Key.** Alternatively, you can retrieve a meeting using its unique meeting key.
+
+.. code-block:: python
+
+   >>> import livef1 as livef1
+   >>> meeting = livef1.get_meeting(season=2024, meeting_key=1242)
+   >>> type(meeting)
+   <class livef1.models.meeting.Meeting>
+   >>> meeting
+   |    |   Season Year | Meeting Location   | Session Type   | Meeting Code   |   Meeting Key |   Meeting Number | Meeting Offname                         | Meeting Name       |   Meeting Country Key | Meeting Country Code   | Meeting Country Name   |   Meeting Circuit Key | Meeting Circuit Shortname   |   Session Key | Session Name   | Session Startdate   | Session Enddate     | Gmtoffset   | Path                                                      |
+   |---:|--------------:|:-------------------|:---------------|:---------------|--------------:|-----------------:|:----------------------------------------|:-------------------|----------------------:|:-----------------------|:-----------------------|----------------------:|:----------------------------|--------------:|:---------------|:--------------------|:--------------------|:------------|:----------------------------------------------------------|
+   |  0 |          2024 | Spa-Francorchamps  | Practice 1     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9567 | Practice 1     | 2024-07-26 13:30:00 | 2024-07-26 14:30:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-26_Practice_1/ |
+   |  1 |          2024 | Spa-Francorchamps  | Practice 2     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9568 | Practice 2     | 2024-07-26 17:00:00 | 2024-07-26 18:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-26_Practice_2/ |
+   |  2 |          2024 | Spa-Francorchamps  | Practice 3     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9569 | Practice 3     | 2024-07-27 12:30:00 | 2024-07-27 13:30:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-27_Practice_3/ |
+   |  3 |          2024 | Spa-Francorchamps  | Qualifying     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9570 | Qualifying     | 2024-07-27 16:00:00 | 2024-07-27 17:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-27_Qualifying/ |
+   |  4 |          2024 | Spa-Francorchamps  | Race           | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9574 | Race           | 2024-07-28 15:00:00 | 2024-07-28 17:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/       |
+
+The output provides a detailed table of the meeting’s sessions, with relevant details for each session.
 
 
 Get session object and load data

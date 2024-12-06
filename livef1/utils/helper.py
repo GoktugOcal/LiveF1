@@ -311,9 +311,9 @@ def find_most_similar_vectorized(df, target):
 
 
     if jaccard_score:
-        found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index(drop=True).columns])
-        logger.info(f"Found at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}' as '{most_similar}'.")
-        logger.info(f"""Selected meeting/session is:\n{found_info}""")
+        # found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index(drop=True).columns])
+        # logger.info(f"Found at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}' as '{most_similar}'.")
+        # logger.info(f"""Selected meeting/session is:\n{found_info}""")
 
         return {
             "isFound": 1,
@@ -366,3 +366,8 @@ def find_most_similar_vectorized(df, target):
                 "row": None,
                 "column": None
             }
+
+def print_found_model(df, key, cols):
+    found_meeting_info = df.loc[[key], cols].drop_duplicates().iloc[0]
+    found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in cols])
+    logger.info(f"""Selected meeting/session is:\n{found_info}""")

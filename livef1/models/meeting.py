@@ -160,10 +160,16 @@ class Meeting:
             }
             session_all_data.append(session_data)
 
-        self.sessions_table = pd.DataFrame(session_all_data).set_index(["season_year", "meeting_location", "session_type"])
-        self.sessions_table["session_startDate"] = pd.to_datetime(self.sessions_table["session_startDate"])
-        self.sessions_table["session_endDate"] = pd.to_datetime(self.sessions_table["session_endDate"])
-        self.sessions_table = self.sessions_table.reset_index().rename(columns = SESSIONS_COLUMN_MAP)
+        self.meeting_table = pd.DataFrame(session_all_data).set_index(["season_year", "meeting_location", "session_type"])
+        self.meeting_table["session_startDate"] = pd.to_datetime(self.meeting_table["session_startDate"])
+        self.meeting_table["session_endDate"] = pd.to_datetime(self.meeting_table["session_endDate"])
+
+        self.sessions_table = self.meeting_table[["meeting_key","session_key","session_name","session_startDate","session_endDate","gmtoffset","path"]].set_index("session_key")
+        # self.meeting_table = self.meeting_table.reset_index().rename(columns = SESSIONS_COLUMN_MAP)
+
+
+
+        # self.meeting_table = 
 
     def __repr__(self):
         """
@@ -176,9 +182,9 @@ class Meeting:
         """
         if "IPython" not in sys.modules:
             # definitely not in IPython
-            return self.sessions_table.__str__() # Print the meetings table.
+            return self.meeting_table.__str__() # Print the meetings table.
         else:
-            display(self.sessions_table) # Display the meetings table.
+            display(self.meeting_table) # Display the meetings table.
             return ""
 
     def __str__(self):
@@ -190,4 +196,4 @@ class Meeting:
         str
             The string representation of the meeting's session table.
         """
-        return self.sessions_table.__str__()
+        return self.meeting_table.__str__()

@@ -5,11 +5,12 @@ from .models import (
     Meeting
 )
 from .adapters import download_data
-from .utils.helper import json_parser_for_objects, find_most_similar_vectorized
+from .utils.helper import json_parser_for_objects, find_most_similar_vectorized, print_found_model
 from .utils.logger import logger
 from .utils.exceptions import *
 from .utils.constants import SESSIONS_COLUMN_MAP
 
+from datetime import datetime
 
 def get_season(season: int) -> Season:
     """
@@ -56,6 +57,8 @@ def get_meeting(
             - "Circuit Short Name"
         Therefore, it is suggested to use keywords that is distinguishable among meetings.
         Another suggestion is using circuit names for querying.
+    meeting_key : :class:`int`
+        The key of the meeting to get the desired meeting whose key is matching.
 
     Returns
     -------
@@ -78,12 +81,12 @@ def get_meeting(
 
     season_obj = get_season(season=season)
     required_cols = ["meeting_offname","meeting_name","meeting_circuit_shortname"]
-    search_df_season = season_obj.meetings_table.reset_index()[required_cols].drop_duplicates()
+    search_df_season = season_obj.season_table.reset_index()[required_cols].drop_duplicates()
 
     if meeting_identifier:
         logger.debug("Trying to get meeting by meeting identifier.")
         result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
-        meeting_key = season_obj.meetings_table.iloc[result_meeting["row"]].name
+        meeting_key = season_obj.season_table.iloc[result_meeting["row"]].name
     
     elif meeting_key:
         logger.debug("Trying to get meeting by meeting key.")
@@ -91,16 +94,18 @@ def get_meeting(
 
     meeting_obj = [meeting for meeting in season_obj.meetings if meeting.key == meeting_key][0]
 
-    found_meeting_info = season_obj.meetings_table.loc[meeting_key, required_cols].drop_duplicates().iloc[0]
-    found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in required_cols])
-    logger.info(f"""Selected meeting/session is:\n{found_info}""")
-    logger.debug("The meeting was received successfully.")
+    # found_meeting_info = season_obj.season_table.loc[[meeting_key], required_cols].drop_duplicates().iloc[0]
+    # found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in required_cols])
+    # logger.info(f"""Selected meeting/session is:\n{found_info}""")
+
+    print_found_model(
+        df = season_obj.season_table,
+        key = meeting_key,
+        cols = required_cols
+    )
+    logger.info("The meeting was received successfully.")
 
     return meeting_obj
-
-
-    # meeting_data = download_data(season_identifier=season, location_identifier=location)
-    # return Meeting(**json_parser_for_objects(meeting_data))
 
 def get_session(
     season: int, 
@@ -124,8 +129,13 @@ def get_session(
             - "Circuit Short Name"
         Therefore, it is suggested to use keywords that is distinguishable among meetings.
         Another suggestion is using circuit names for querying.
+    meeting_key : :class:`int`
+        The key of the meeting to get the desired meeting whose key is matching.
     session_identifier : :class:`str`
         The identifier of the session (e.g., "Practice 1", "Qualifying").
+        The identifier is going to be searched in the meeting's sessions table.
+    session_key : :class:`int`
+        The key of the session to get the desired session whose key is matching.
 
     Returns
     -------
@@ -151,8 +161,6 @@ def get_session(
         meeting_identifier=meeting_identifier,
         meeting_key=meeting_key
     )
-    print(meeting_obj.sessions_table)
-    exit()
     required_cols = ["session_name"]
     search_df_season = meeting_obj.sessions_table.reset_index()[required_cols].drop_duplicates()
 
@@ -163,7 +171,14 @@ def get_session(
 
     elif session_key:
         logger.debug("Trying to get session by key.")
+        pass
 
-    session_obj = [session for session in meeting_obj.sessions if session.name == session_name][0]
-    logger.debug("The session was received successfully.")
+    session_obj = [session for session in meeting_obj.sessions if session.key == session_key][0]
+    print_found_model(
+        df = meeting_obj.sessions_table,
+        key = session_key,
+        cols = required_cols
+    )
+    logger.info("The session was received successfully.")
+
     return session_obj

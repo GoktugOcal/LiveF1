@@ -110,11 +110,11 @@ class Season:
                 session_all_data.append(session_data)  # Add the session data to the list.
 
         # Create a DataFrame to organize the sessions data.
-        self.meetings_table = pd.DataFrame(session_all_data).set_index(["meeting_key"])
-        self.meetings_table["session_startDate"] = pd.to_datetime(self.meetings_table["session_startDate"])
-        self.meetings_table["session_endDate"] = pd.to_datetime(self.meetings_table["session_endDate"])
+        self.season_table = pd.DataFrame(session_all_data).set_index(["meeting_key"])
+        self.season_table["session_startDate"] = pd.to_datetime(self.season_table["session_startDate"])
+        self.season_table["session_endDate"] = pd.to_datetime(self.season_table["session_endDate"])
 
-        self.season_table = self.meetings_table \
+        self.meetings_table = self.season_table \
             .groupby("meeting_key") \
             .agg(
                 {
@@ -125,7 +125,7 @@ class Season:
                 }
             ) \
             .join(
-                self.meetings_table[self.meetings_table["session_type"] == "Race"]["session_startDate"]
+                self.season_table[self.season_table["session_type"] == "Race"]["session_startDate"]
             ) \
             .sort_values("session_startDate") \
             .reset_index() \
