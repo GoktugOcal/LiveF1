@@ -1,13 +1,14 @@
+*******************
 Getting Started
-===========
+*******************
 
 Welcome to LiveF1! This guide will walk you through the installation process and help you get up and running with the toolkit.
 
 Installation
-------------
+================
 
 Install via pip
-^^^^^^^^^^^^^^^
+-------------------
 
 The easiest way to install LiveF1 is through pip. Run the following command in your terminal:
 
@@ -16,7 +17,7 @@ The easiest way to install LiveF1 is through pip. Run the following command in y
    pip install livef1
 
 Install from source
-^^^^^^^^^^^^^^^^^^^^
+-------------------
 
 If you want to install the latest development version or contribute to LiveF1, follow these steps:
 
@@ -40,12 +41,12 @@ If you want to install the latest development version or contribute to LiveF1, f
       pip install .
 
 Quick Start
------------
+================
 
 Once LiveF1 is installed, you can start using it to fetch real-time or historical F1 data.
 
 Import the library
-^^^^^^^^^^^^^^^^^^
+-------------------
 
 Start by importing LiveF1:
 
@@ -54,7 +55,7 @@ Start by importing LiveF1:
    >>> import livef1 as livef1
 
 Get a season object with its meetings and sessions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------
 
 The get_season function in the livef1 package is used to retrieve detailed information about a Formula 1 season. This includes an overview of the meetings (Grand Prix events) and their respective sessions.
 
@@ -78,7 +79,7 @@ The `season` object is an instance of the `Season` class, providing access to st
 Once you retrieve a season, you can inspect its contents by printing the object. The output provides an overview of the meetings within the season, formatted as a table. Each row corresponds to a Grand Prix event, and the columns provide key details.
 
 Get a meeting object and its sessions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------
 
 **Get a Meeting by Identifier.** The `get_meeting` function can retrieve a meeting by its identifier (e.g., a `location name`). Here’s how to use it:
 
@@ -119,71 +120,78 @@ The output provides a detailed table of the meeting’s sessions, with relevant 
 
 
 Get session object and load data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------
 
-To load session data, such as telemetry or other statistics:
+The `livef1` package provides an intuitive way to load session-specific data, such as telemetry, track conditions, and other statistical information. Follow the steps below to get started.
+
+To begin, retrieve a session object for the desired Formula 1 event by specifying the season, meeting (e.g., Grand Prix location), and session type (e.g., Practice, Qualifying, Race):
 
 .. code-block:: python
 
-   session = livef1.get_session(
-       season=2024,
-       location="Monza",
-       session="Race"
-   )
+   >>> import livef1
+   >>> session = livef1.get_session(season=2024, meeting_identifier="Monza", session_identifier="Race")
+   >>> type(session)
+   <class livef1.models.meeting.Session>
 
-   session.get_topic_names()  # load /Info.json
-   print(session.topic_names_info)
+The :class:`~Session` object acts as the gateway to all available data feeds for the specified session.
 
-Sample JSON output:
+Use the `print_topic_names` method to explore the available data feeds for the session. Each feed provides specific information, such as live telemetry, session details, or track conditions:
 
-.. code-block::
+.. code-block:: python
 
-   {
-     "SessionInfo": {
-       "KeyFramePath": "SessionInfo.json",
-       "StreamPath": "SessionInfo.jsonStream"
-     },
-     "ArchiveStatus": {
-       "KeyFramePath": "ArchiveStatus.json",
-       "StreamPath": "ArchiveStatus.jsonStream"
-     },
-     "Position.z": {
-       "KeyFramePath": "Position.z.json",
-       "StreamPath": "Position.z.jsonStream"
-     },
-     ...
-   }
+   >>> session.print_topic_names()
+   Session_Info : 
+         Details about the current session.
+   Archive_Status : 
+            Status of archived session data.
+   Track_Status : 
+            Current conditions and status of the track.
+   Session_Data : 
+            Raw data for the ongoing session.
+   .
+   .
+   .
+
+Each feed is identified by a unique name (e.g., Session_Info, Track_Status) and comes with a description to help you understand its purpose. This helps you identify the data most relevant to your analysis.
+
+.. note::
+   The data feeds is further explained in :ref:`data_topics` section.
 
 Load specific data by name of data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To load specific data, use the following code:
+Once you’ve identified the desired data feed, you can load its contents using the `get_data` method. For example, to load car telemetry data:
 
 .. code-block:: python
 
-   data = session.get_data(
-       dataName="Position.z",
-       dataType="StreamPath",
-       stream=True
-   )
-
-   print(type(data))
+   >>> data = session.get_data(dataName="Car_Data")
+   >>> type(data)
    # <class 'livef1.data_processing.data_models.BasicResult'>
+   >>> data
+   |    |   SessionKey | timestamp    | Utc                          |   DriverNo | Status   |   X |   Y |   Z |
+   |---:|-------------:|:-------------|:-----------------------------|-----------:|:---------|----:|----:|----:|
+   |  0 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |          1 | OnTrack  |   0 |   0 |   0 |
+   |  1 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |          3 | OnTrack  |   0 |   0 |   0 |
+   |  2 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |          4 | OnTrack  |   0 |   0 |   0 |
+   |  3 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |         10 | OnTrack  |   0 |   0 |   0 |
+   |  4 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |         11 | OnTrack  |   0 |   0 |   0 |
 
-   print(data)
-   #     SessionKey     timestamp                           Utc DriverNo   Status     X      Y     Z
-   # 0         9590  00:00:30.209  2024-09-01T12:08:13.7879709Z        1  OnTrack     0      0     0
-   # 1         9590  00:00:30.209  2024-09-01T12:08:13.7879709Z        3  OnTrack     0      0     0
-   # 2         9590  00:00:30.209  2024-09-01T12:08:13.7879709Z        4  OnTrack     0      0     0
-   # 3         9590  00:00:30.209  2024-09-01T12:08:13.7879709Z       10  OnTrack     0      0     0
 
-   print(data.value)
-   # [
-   #   {'SessionKey': 9590, 'timestamp': '00:00:30.209', 'Utc': '2024-09-01T12:08:13.7879709Z', 'DriverNo': '1', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-   #   {'SessionKey': 9590, 'timestamp': '00:00:30.209', 'Utc': '2024-09-01T12:08:13.7879709Z', 'DriverNo': '3', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-   #   {'SessionKey': 9590, 'timestamp': '00:00:30.209', 'Utc': '2024-09-01T12:08:13.7879709Z', 'DriverNo': '4', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-   #   ...
-   # ]
+The `get_data` method returns an object of type :class:`~BasicResult`. This object encapsulates the parsed data in an easily accessible format. To retrieve the underlying data in a structured format, access the value attribute of the :class:`~BasicResult` object:
+
+.. code-block:: python
+   
+   >>> data.value
+   [
+      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '1', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '3', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '4', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '10', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '11', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+      .
+      ..
+      ...
+   ]
 
 Troubleshooting
 ---------------

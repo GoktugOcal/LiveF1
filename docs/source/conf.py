@@ -31,6 +31,7 @@ extensions = [
     "sphinx_copybutton",
     'numpydoc',
     "sphinx.ext.autosummary",
+    'sphinx.ext.autosectionlabel'
 ]
 # Automatically generate summary tables
 autosummary_generate = True  # Enable autosummary generation
@@ -50,6 +51,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'sphinx_rtd_theme'
 # html_theme = 'furo'
 # html_theme = "sphinxawesome_theme"
+# html_theme = "sphinx_book_theme"
 
 html_static_path = ['_static']
 html_logo = "_static/logo.png"
@@ -68,10 +70,12 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/your-repo",  # Replace with your GitHub repo URL
+            "url": "https://github.com/goktugocal/LiveF1",  # Replace with your GitHub repo URL
             "icon": "fab fa-github",
         },
     ],
     "show_nav_level": 2,  # Adjust depth of sidebar navigation (optional)
+    "rightsidebar": "true",
+    "relbarbgcolor": "black"
 }
 

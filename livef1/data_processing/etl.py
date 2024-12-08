@@ -57,7 +57,14 @@ class livef1SessionETL:
             'RaceControlMessages': parse_race_control_messages,
             'PitLaneTimeCollection': None,
             'CurrentTyres': parse_current_tyres,
-            'DriverRaceInfo': parse_driver_race_info
+            'DriverRaceInfo': parse_driver_race_info,
+            'ChampionshipPrediction': None,
+            'OvertakeSeries': None,
+            'DriverScore': None,
+            'SPFeed': None,
+            'PitStopSeries': None,
+            'PitStop': None,
+            'LapCount': None
         }
 
     def unified_parse(self, title, data):

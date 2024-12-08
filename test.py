@@ -36,21 +36,51 @@ import livef1
 # print(list(session_index["Feeds"].keys()))
 
 import json
-from livef1.adapters.livetimingf1_adapter import livetimingF1_request
+# from livef1.adapters.livetimingf1_adapter import livetimingF1_request
 
-seasons = [
-    2018,
-    2019,
-    2020,
-    2021,
-    2022,
-    2023,
-    2024
-]
+# seasons = [
+#     2018,
+#     2019,
+#     2020,
+#     2021,
+#     2022,
+#     2023,
+#     2024
+# ]
+
+# feeds = {}
+
+# for season in seasons:
+#     print(season)
+#     try:
+#         for meeting in livef1.get_season(season).meetings:
+#             for sess in meeting.sessions:
+#                 print("\t", meeting.name, sess.name)
+#                 try:
+#                     sess.get_topic_names()
+#                     for item in sess.topic_names_info.items():
+#                         if not (item[0] in list(feeds.keys())):
+#                             # feeds[item[0]] = (season, meeting.name, sess.name)
+#                             feeds[item[0]] = 1
+#                         else:
+#                             feeds[item[0]] += 1
+#                 except Exception as e:
+#                     print(e)
+#                     pass
+#     except:
+#         pass
+
+# # json.dump(feeds, open("feeds.json", "w"), indent=4)
+# json.dump(feeds, open("feeds_count.json", "w"), indent=4)
 
 
-sess = livef1.get_season(2021).meetings[0].sessions[0]
 
-print(sess)
-# sess.get_topic_names()
-# print(sess.topic_names_info)
+import livef1
+import pandas as pd
+
+session = livef1.get_session(season=2024, meeting_identifier="Monza", session_identifier="Race")
+
+res = session.get_data(dataName="Position")
+# print(pd.DataFrame(res.value).head().to_markdown())
+
+print(res.value[0:5])
