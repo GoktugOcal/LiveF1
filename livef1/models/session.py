@@ -1,6 +1,7 @@
 # Standard Library Imports
 from urllib.parse import urljoin
 from typing import List, Dict
+from time import time
 
 # Third-Party Library Imports
 # (No third-party libraries imported in this file)
@@ -8,6 +9,7 @@ from typing import List, Dict
 # Internal Project Imports
 from ..adapters import livetimingF1_request, livetimingF1_getdata
 from ..utils import helper
+from ..utils.logger import logger
 from ..data_processing.etl import *
 from ..data_processing.data_models import *
 from ..utils.constants import TOPICS_MAP
@@ -121,6 +123,7 @@ class Session:
             }
 
         """
+        logger.debug(f"Getting topic names for the session: {self.meeting.name}: {self.name}")
         self.topic_names_info = livetimingF1_request(urljoin(self.full_path, "Index.json"))["Feeds"]
         for topic in self.topic_names_info:
             self.topic_names_info[topic]["description"] = TOPICS_MAP[topic]["description"]
@@ -158,7 +161,9 @@ class Session:
         """
         if not hasattr(self,"topic_names_info"):
             self.get_topic_names()
+
         
+        logger.debug(f"Printing topic names and descriptions for the session: {self.meeting.name}: {self.name}")
         for topic in self.topic_names_info:
             print(self.topic_names_info[topic]["key"], ": \n\t", self.topic_names_info[topic]["description"])
 
@@ -229,17 +234,27 @@ class Session:
         if not hasattr(self,"topic_names_info"):
             self.get_topic_names()
 
+
         for topic in self.topic_names_info:
             if self.topic_names_info[topic]["key"] == dataName:
                 dataName = topic
                 break
+        
+        logger.info(f"Getting requested data.\nSelected session : {self.season.year} {self.meeting.name} {self.name}\nTopic : {dataName}")
 
+        start = time()
         data = livetimingF1_getdata(
             urljoin(self.full_path, self.topic_names_info[dataName][dataType]),
             stream=stream
         )
-        
+        logger.debug(f"Data has been get in {round(time() - start,3)} seconds")
+        logger.info("Data is successfully received.")
+
         # Parse the retrieved data using the ETL parser and return the result.
-        return BasicResult(
+        start = time()
+        res = BasicResult(
             data=list(self.etl_parser.unified_parse(dataName, data))
         )
+        logger.debug(f"Data has been parsed in {round(time() - start,3)} seconds")
+        logger.info("Data is successfully parsed.")
+        return res

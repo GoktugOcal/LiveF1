@@ -31,7 +31,8 @@ extensions = [
     "sphinx_copybutton",
     'numpydoc',
     "sphinx.ext.autosummary",
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'sphinx_design'
 ]
 # Automatically generate summary tables
 autosummary_generate = True  # Enable autosummary generation

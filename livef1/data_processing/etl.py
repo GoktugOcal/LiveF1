@@ -7,6 +7,9 @@ from typing import Optional, Union
 
 # Internal Project Imports
 from ..utils.helper import *
+from ..utils.exceptions import (
+    MissingFunctionError
+)
 
 class livef1SessionETL:
     """
@@ -82,7 +85,20 @@ class livef1SessionETL:
         ----------
             Parsed data from the respective function in the function map.
         """
-        return self.function_map[title](data, self.session.key)
+        if title not in self.function_map:
+            logger.error(f"No parser function found for title: {title}")
+            raise MissingFunctionError(f"No parser function available for title: {title}")
+        
+        try:
+            # Perform the parsing
+            logger.debug(f"Using parser function for title: {title}")
+            parsed_data = self.function_map[title](data, self.session.key)
+            logger.debug(f"Parsing successful for title: {title}")
+            return parsed_data
+        except Exception as e:
+            logger.error("Parsing failed.")
+            raise ETLError(f"Parser of {title} failed.")
+
 
 # Parsing functions
 
