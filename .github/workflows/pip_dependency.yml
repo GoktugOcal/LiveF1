@@ -1,0 +1,14 @@
+name: Create requirements.txt
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Check requirements.txt
+        uses: ekvanox/pipreqs-action@master
+
+        with:
+          PROJECT_PATH: {{project_folder}}
+          REQUIREMENT_PATH: {{project_folder}}/requirements.txt
+          COMMIT_MESSAGE: "auto reqs txt"
