@@ -10,6 +10,11 @@ In this section, we'll introduce the core concepts of Formula 1 data available i
 
 (Topics to be filled later...)
 
+.. toctree::
+   :maxdepth: 1
+
+   f1_data
+
 General Functions
 -----------------
 

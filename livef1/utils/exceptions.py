@@ -1,8 +1,25 @@
+from .logger import logger
+
 class livef1Exception(Exception):
     pass
 
 class LiveF1Error(Exception):
     """Base class for all LiveF1 module exceptions."""
+    def __init__(self, message):
+        """
+        Initializes the exception and logs the message.
+        
+        Parameters
+        ----------
+        message : str
+            The error message for the exception.
+        """
+        super().__init__(message)
+        logger.error(str(self.__class__.__name__) + " - " + message)
+    pass
+
+class RealF1Error(LiveF1Error):
+    """Exception for RealF1Client related errors"""
     pass
 
 class ArgumentError(LiveF1Error):

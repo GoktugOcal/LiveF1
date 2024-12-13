@@ -6,9 +6,10 @@ SIGNALR_ENDPOINT = "/signalr/"
 DEFAULT_METHOD = "livef1"
 
 REALTIME_CALLBACK_DEFAULT_PARAMETERS = [
-  "topic_name",
-  "data",
-  "timestamp"
+  # "topic_name",
+  # "data",
+  # "timestamp"
+  "records"
 ]
 
 QUERY_STOPWORDS = [

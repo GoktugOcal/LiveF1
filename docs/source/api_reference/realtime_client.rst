@@ -7,5 +7,5 @@ Real-Time Client - :mod:`livef1.adapters.realtime_client`
 
    .. rubric:: Classes
    .. autosummary::
-      MessageHandlerTemplate
       RealF1Client
+      MessageHandlerTemplate

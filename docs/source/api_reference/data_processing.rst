@@ -11,10 +11,6 @@ Data Models
         BasicResult
 
 
-
-
-
-
 Data Preprocessing
 --------------------
 .. automodule:: livef1.data_processing.etl
@@ -24,6 +20,11 @@ Data Preprocessing
    .. rubric:: Classes
    .. autosummary::
       livef1SessionETL
+
+
+.. automodule:: livef1.data_processing.parse_functions
+   :undoc-members:
+   :inherited-members:
    
    .. rubric:: Functions
    .. autosummary::

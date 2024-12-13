@@ -10,12 +10,11 @@ from jellyfish import jaro_similarity, jaro_winkler_similarity
 import re
 from string import punctuation
 import numpy as np
-import logging
 
 # Internal Project Imports
 from .constants import *
 from .logger import logger
-from .exceptions import livef1Exception
+from .exceptions import LiveF1Error
 from ..adapters import LivetimingF1adapters
 
 def build_session_endpoint(session_path):
@@ -355,8 +354,7 @@ def find_most_similar_vectorized(df, target):
                     err_text += f"\t{SESSIONS_COLUMN_MAP[col]} : {prow[col]}\n"
                 # err_text += f"\t> Suggested search queries : {identifer_text_format(prow.meeting_name) + identifer_text_format(prow.meeting_circuit_shortname)}\n\n"
                 err_text += f"\t> Suggested search queries : {[identifer_text_format(prow[col])for col in possible_df.columns if not col in EXCLUDED_COLUMNS_FOR_SEARCH_SUGGESTION]}\n\n"
-            logging.info(err_text)
-            raise livef1Exception(err_text)
+            raise LiveF1Error(err_text)
 
             return {
                 "isFound": 0,
