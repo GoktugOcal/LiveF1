@@ -6,11 +6,17 @@ Formula 1 Live Timing Data
 Formula 1 live timing data provides comprehensive insights into the performance of drivers, teams, and cars during races. This data is critical for real-time analytics, historical analysis, and developing strategies for races.
 
 Source of Data
---------------------------------------------
+======================================
 Formula 1 live timing data delivers real-time and historical telemetry, timing, and contextual data. This data is critical for real-time analytics, historical analysis, and developing strategies for races.
 
 API Structure
-======================================
+--------------------------------------------
+
+.. Document Subsubsection
+.. ^^^^^^^^^^^^^^^^^^^^^^
+
+.. Document Paragraph
+.. """"""""""""""""""
 
 The live timing API follows a structured format to ensure efficient data access. Each API address corresponds to a specific endpoint, which streams or delivers data for various aspects of Formula 1 sessions. These endpoints can be accessed via HTTP requests.
 
@@ -27,7 +33,7 @@ The live timing API follows a structured format to ensure efficient data access.
 3. Process the JSON responses for your use case.
 
 API Addresses and Endpoints
-======================================
+--------------------------------------------
 
 Here is a list of key API addresses and their respective endpoints:
 
@@ -203,30 +209,124 @@ Here is a list of key API addresses and their respective endpoints:
     You can download session's data by using LiveF1 ``get_data`` function.
 
 
-Downloading Data
---------------------------------------------
-To access the live timing data:
+.. Downloading Data
+.. --------------------------------------------
+.. To access the live timing data:
 
-- Use an appropriate API client or toolkit such as `LiveF1`.
-- Subscribe to the desired topics based on your analysis requirements.
-- Ensure robust handling for real-time streaming or archival for offline analysis.
+.. - Use an appropriate API client or toolkit such as `LiveF1`.
+.. - Subscribe to the desired topics based on your analysis requirements.
+.. - Ensure robust handling for real-time streaming or archival for offline analysis.
+
 
 Data Topics
---------------------------------------------
+======================================
 
 Below is a detailed explanation of each data topic, its purpose, and key features.
 
-Session Information
-======================================
-**Topic:** SessionInfo
+Session Information - :mod:`SessionInfo`
+--------------------------------------
 
 Provides essential details about the current session, including:
 - Session type (e.g., practice, qualifying, race).
 - Circuit information (name, location, and layout).
 - Session duration and progress.
 
+.. list-table::
+   :header-rows: 1
+
+   * - Key
+     - Type
+     - Description
+   * - Meeting
+     - Object
+     - Details about the meeting
+   * - Meeting.Key
+     - Integer
+     - Unique identifier for the meeting
+   * - Meeting.Name
+     - String
+     - Name of the meeting
+   * - Meeting.OfficialName
+     - String
+     - Official name of the meeting
+   * - Meeting.Location
+     - String
+     - Location of the meeting
+   * - Meeting.Country
+     - Object
+     - Details about the country
+   * - Meeting.Country.Key
+     - Integer
+     - Unique identifier for the country
+   * - Meeting.Country.Code
+     - String
+     - ISO code of the country
+   * - Meeting.Country.Name
+     - String
+     - Name of the country
+   * - Meeting.Circuit
+     - Object
+     - Details about the circuit
+   * - Meeting.Circuit.Key
+     - Integer
+     - Unique identifier for the circuit
+   * - Meeting.Circuit.ShortName
+     - String
+     - Short name of the circuit
+   * - ArchiveStatus
+     - Object
+     - Status of the archive
+   * - ArchiveStatus.Status
+     - String
+     - Status of the archive (e.g., "Complete")
+   * - Key
+     - Integer
+     - Unique identifier for the session
+   * - Type
+     - String
+     - Type of the session (e.g., "Race")
+   * - Name
+     - String
+     - Name of the session
+   * - StartDate
+     - String
+     - Start date and time of the session (ISO format)
+   * - EndDate
+     - String
+     - End date and time of the session (ISO format)
+   * - GmtOffset
+     - String
+     - Offset from GMT (e.g., "+02:00")
+   * - Path
+     - String
+     - Path to access the session data
+
+
+- **Meeting** (Object): Details about the meeting.
+    - **Key** (Integer): Unique identifier for the meeting.
+    - **Name** (String): Name of the meeting.
+    - **OfficialName** (String): Official name of the meeting.
+    - **Location** (String): Location of the meeting.
+    - **Country** (Object): Details about the country.
+        - **Key** (Integer): Unique identifier for the country.
+        - **Code** (String): ISO code of the country.
+        - **Name** (String): Name of the country.
+    - **Circuit** (Object): Details about the circuit.
+        - **Key** (Integer): Unique identifier for the circuit.
+        - **ShortName** (String): Short name of the circuit.
+- **ArchiveStatus** (Object): Status of the archive.
+    - **Status** (String): Status of the archive (e.g., "Complete").
+- **Key** (Integer): Unique identifier for the session.
+- **Type** (String): Type of the session (e.g., "Race").
+- **Name** (String): Name of the session.
+- **StartDate** (String): Start date and time of the session (ISO format).
+- **EndDate** (String): End date and time of the session (ISO format).
+- **GmtOffset** (String): Offset from GMT (e.g., "+02:00").
+- **Path** (String): Path to access the session data.
+
+
 Archive Status
-======================================
+--------------------------------------
 **Topic:** ArchiveStatus
 
 Tracks the status of archived session data, indicating:
@@ -234,7 +334,7 @@ Tracks the status of archived session data, indicating:
 - Updates on archived datasets.
 
 Track Status
-======================================
+--------------------------------------
 **Topic:** TrackStatus
 
 Describes current track conditions and statuses:
@@ -243,7 +343,7 @@ Describes current track conditions and statuses:
 - Wetness levels and safety car presence.
 
 Session Data
-======================================
+--------------------------------------
 **Topic:** SessionData
 
 Provides raw data for the session, including:
@@ -252,7 +352,7 @@ Provides raw data for the session, including:
 - Key session milestones.
 
 Content Streams
-======================================
+--------------------------------------
 **Topic:** ContentStreams
 
 Streams multimedia content related to the session:
@@ -260,7 +360,7 @@ Streams multimedia content related to the session:
 - Image captures of key moments.
 
 Audio Streams
-======================================
+--------------------------------------
 **Topic:** AudioStreams
 
 Delivers live audio commentary and team radio communications:
@@ -268,7 +368,7 @@ Delivers live audio commentary and team radio communications:
 - Select driver-to-team audio snippets.
 
 Extrapolated Clock
-======================================
+--------------------------------------
 **Topic:** ExtrapolatedClock
 
 Predicts session time data:
@@ -276,7 +376,7 @@ Predicts session time data:
 - Calculations based on historical and current pace.
 
 Tyre Stint Series
-======================================
+--------------------------------------
 **Topic:** TyreStintSeries
 
 Analyzes tyre usage over stints:
@@ -284,7 +384,7 @@ Analyzes tyre usage over stints:
 - Strategy evaluation for tyre selection.
 
 Session Status
-======================================
+--------------------------------------
 **Topic:** SessionStatus
 
 Displays the live session status:
@@ -292,7 +392,7 @@ Displays the live session status:
 - Notifications for major events.
 
 Timing Data (F1 Specific)
-======================================
+--------------------------------------
 **Topic:** TimingDataF1
 
 Specialized timing information for Formula 1:
@@ -300,7 +400,7 @@ Specialized timing information for Formula 1:
 - Driver deltas and gaps.
 
 Timing Data (General)
-======================================
+--------------------------------------
 **Topic:** TimingData
 
 Generic timing data for the session:
@@ -308,7 +408,7 @@ Generic timing data for the session:
 - Laps and intervals.
 
 Driver List
-======================================
+--------------------------------------
 **Topic:** DriverList
 
 Provides a list of active drivers:
@@ -316,7 +416,7 @@ Provides a list of active drivers:
 - Driver names and abbreviations.
 
 Lap Series
-======================================
+--------------------------------------
 **Topic:** LapSeries
 
 Tracks laps completed:
@@ -324,7 +424,7 @@ Tracks laps completed:
 - Fastest lap indicators.
 
 Top Three
-======================================
+--------------------------------------
 **Topic:** TopThree
 
 Highlights the top three drivers:
@@ -332,7 +432,7 @@ Highlights the top three drivers:
 - Time differences.
 
 Timing Application Data
-======================================
+--------------------------------------
 **Topic:** TimingAppData
 
 Provides timing data from the Formula 1 application:
@@ -340,7 +440,7 @@ Provides timing data from the Formula 1 application:
 - Driver gaps and intervals.
 
 Timing Statistics
-======================================
+--------------------------------------
 **Topic:** TimingStats
 
 Analyzes timing data statistically:
@@ -348,7 +448,7 @@ Analyzes timing data statistically:
 - Comparisons across sessions.
 
 Heartbeat
-======================================
+--------------------------------------
 **Topic:** Heartbeat
 
 Regularly sends a system status signal:
@@ -356,7 +456,7 @@ Regularly sends a system status signal:
 - Monitors data stream health.
 
 Weather Data
-======================================
+--------------------------------------
 **Topic:** WeatherData
 
 Displays current weather conditions:
@@ -364,7 +464,7 @@ Displays current weather conditions:
 - Rain predictions.
 
 Weather Data Series
-======================================
+--------------------------------------
 **Topic:** WeatherDataSeries
 
 Offers historical weather data:
@@ -372,7 +472,7 @@ Offers historical weather data:
 - Rainfall patterns.
 
 Position Data (Z Coordinate)
-======================================
+--------------------------------------
 **Topic:** Position.z
 
 Tracks vertical position data:
@@ -380,14 +480,14 @@ Tracks vertical position data:
 - Vertical motion analysis.
 
 Car Data (Z Coordinate)
-======================================
+--------------------------------------
 **Topic:** CarData.z
 
 Analyzes car data along the Z axis:
 - Suspension and vertical acceleration.
 
 Team Audio and Race Control Messages
-======================================
+--------------------------------------
 **Topic:** TlaRcm
 
 Provides team audio and race control messages:
@@ -395,7 +495,7 @@ Provides team audio and race control messages:
 - Official instructions and penalties.
 
 Race Control Messages
-======================================
+--------------------------------------
 **Topic:** RaceControlMessages
 
 Broadcasts race control instructions:
@@ -403,7 +503,7 @@ Broadcasts race control instructions:
 - Decisions affecting race outcomes.
 
 Pit Lane Time Collection
-======================================
+--------------------------------------
 **Topic:** PitLaneTimeCollection
 
 Records pit lane timing data:
@@ -411,7 +511,7 @@ Records pit lane timing data:
 - Time spent in the pit lane.
 
 Current Tyres
-======================================
+--------------------------------------
 **Topic:** CurrentTyres
 
 Details tyres currently in use:
@@ -419,7 +519,7 @@ Details tyres currently in use:
 - Wear levels and performance.
 
 Driver Race Information
-======================================
+--------------------------------------
 **Topic:** DriverRaceInfo
 
 Provides individual driver performance metrics:
@@ -427,7 +527,7 @@ Provides individual driver performance metrics:
 - Driver-specific telemetry.
 
 Team Radio
-======================================
+--------------------------------------
 **Topic:** TeamRadio
 
 Streams team radio communications:
@@ -435,7 +535,7 @@ Streams team radio communications:
 - Issue reporting and updates.
 
 Championship Predictions
-======================================
+--------------------------------------
 **Topic:** ChampionshipPrediction
 
 Predicts championship outcomes:
@@ -443,7 +543,7 @@ Predicts championship outcomes:
 - Statistical modeling and machine learning predictions.
 
 Overtake Series
-======================================
+--------------------------------------
 **Topic:** OvertakeSeries
 
 Tracks overtakes during the session:
@@ -451,21 +551,21 @@ Tracks overtakes during the session:
 - Key moments impacting race positions.
 
 Driver Score
-======================================
+--------------------------------------
 **Topic:** DriverScore
 
 Calculates driver performance scores:
 - Based on statistical and telemetry analysis.
 
 Special Feed
-======================================
+--------------------------------------
 **Topic:** SPFeed
 
 Delivers a special data feed:
 - Auxiliary metrics and session-specific insights.
 
 Pit Stop Series
-======================================
+--------------------------------------
 **Topic:** PitStopSeries
 
 Tracks multiple pit stops:
@@ -473,7 +573,7 @@ Tracks multiple pit stops:
 - Total pit stop durations.
 
 Pit Stop
-======================================
+--------------------------------------
 **Topic:** PitStop
 
 Details individual pit stops:
@@ -481,7 +581,7 @@ Details individual pit stops:
 - Errors and delays.
 
 Lap Count
-======================================
+--------------------------------------
 **Topic:** LapCount
 
 Monitors laps completed:

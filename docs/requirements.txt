@@ -3,3 +3,4 @@ sphinx-rtd-theme
 numpydoc
 websockets
 jellyfish
+shibuya

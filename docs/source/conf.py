@@ -47,14 +47,21 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# html_theme = 'pydata_sphinx_theme'
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
+# html_theme = 'sphinx_rtd_theme'
 # html_theme = 'furo'
 # html_theme = "sphinxawesome_theme"
 # html_theme = "sphinx_book_theme"
+# html_theme = "sphinx_tudelft_theme"
+html_theme = "shibuya"
 
 html_static_path = ['_static']
 html_logo = "_static/logo.png"
+
+# Select a color scheme for light mode
+pygments_style = "xcode"
+# Select a different color scheme for dark mode
+pygments_style_dark = "monokai"
 
 html_theme_options = {
     'logo_only': True,
@@ -76,6 +83,7 @@ html_theme_options = {
     ],
     "show_nav_level": 2,  # Adjust depth of sidebar navigation (optional)
     "rightsidebar": "true",
-    "relbarbgcolor": "black"
+    "relbarbgcolor": "black",
+    "accent_color": "red",
 }
 
