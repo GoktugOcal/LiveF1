@@ -56,7 +56,6 @@ html_theme = 'sphinx_rtd_theme'
 # html_theme = "sphinx_tudelft_theme"
 html_theme = "shibuya"
 
-html_static_path = ['_static']
 html_logo = "_static/logo.png"
 
 # Select a color scheme for light mode
@@ -64,17 +63,14 @@ pygments_style = "xcode"
 # Select a different color scheme for dark mode
 pygments_style_dark = "monokai"
 
+html_favicon = "_static/favicon.png"
+html_static_path = ['_static']
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
-    "logo": {"image_dark": "_static/logo.png"},
-    # "logo": {
-    #     # "text": "LiveF1",  # Optional: Adds text next to the logo
-    #     "image_dark": "_static/logo.png"  # Optional: Use a different logo for dark mode
-    # },
-    # "navbar_start": ["logo"],
-    # "navbar_center": ["navbar-nav"],
-    # "navbar_end": ["navbar-icon-links"],
+    # "logo": {"image_dark": "_static/logo.png"},
+    "light_logo": "_static/LiveF1_red.png",
+    "dark_logo": "_static/LiveF1_white.png",
     "icon_links": [
         {
             "name": "GitHub",
