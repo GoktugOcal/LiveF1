@@ -56,7 +56,8 @@ html_theme = 'sphinx_rtd_theme'
 # html_theme = "sphinx_tudelft_theme"
 html_theme = "shibuya"
 
-html_logo = "_static/logo.png"
+# html_logo = "_static/logo.png"
+html_favicon = "_static/favicon.png"
 
 # Select a color scheme for light mode
 pygments_style = "xcode"
@@ -68,7 +69,10 @@ html_static_path = ['_static']
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
-    # "logo": {"image_dark": "_static/logo.png"},
+    # "logo": {
+    #     "image_dark": "_static/LiveF1_white.png",
+    #     "image_light": "_static/LiveF1_red.png",
+    #     },
     "light_logo": "_static/LiveF1_red.png",
     "dark_logo": "_static/LiveF1_white.png",
     "icon_links": [
