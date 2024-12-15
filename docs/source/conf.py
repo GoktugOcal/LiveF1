@@ -31,7 +31,8 @@ extensions = [
     "sphinx_copybutton",
     'numpydoc',
     "sphinx.ext.autosummary",
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'sphinx_tabs.tabs'
 ]
 # Automatically generate summary tables
 autosummary_generate = True  # Enable autosummary generation
@@ -47,8 +48,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'pydata_sphinx_theme'
-# html_theme = 'sphinx_rtd_theme'
+# html_theme = 'pydata_sphinx_theme'
+html_theme = 'sphinx_rtd_theme'
 # html_theme = 'furo'
 # html_theme = "sphinxawesome_theme"
 # html_theme = "sphinx_book_theme"
@@ -85,5 +86,6 @@ html_theme_options = {
     "rightsidebar": "true",
     "relbarbgcolor": "black",
     "accent_color": "red",
+    "github_url": "https://github.com/goktugocal/livef1",
 }
 
