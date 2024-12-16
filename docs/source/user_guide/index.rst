@@ -22,7 +22,7 @@ This section will cover the general functions available in **LiveF1**, such as h
 
 (Topics to be filled later...)
 
-.. _data_topics:
+
 Data Topics
 -----------------
 

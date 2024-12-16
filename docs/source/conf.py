@@ -32,7 +32,8 @@ extensions = [
     'numpydoc',
     "sphinx.ext.autosummary",
     'sphinx.ext.autosectionlabel',
-    'sphinx_tabs.tabs'
+    'sphinx_tabs.tabs',
+    'sphinx_design'
 ]
 # Automatically generate summary tables
 autosummary_generate = True  # Enable autosummary generation
@@ -67,25 +68,34 @@ pygments_style_dark = "monokai"
 html_favicon = "_static/favicon.png"
 html_static_path = ['_static']
 html_theme_options = {
-    'logo_only': True,
-    'display_version': False,
-    # "logo": {
-    #     "image_dark": "_static/LiveF1_white.png",
-    #     "image_light": "_static/LiveF1_red.png",
-    #     },
-    "light_logo": "_static/LiveF1_red.png",
-    "dark_logo": "_static/LiveF1_white.png",
-    "icon_links": [
-        {
-            "name": "GitHub",
-            "url": "https://github.com/goktugocal/LiveF1",  # Replace with your GitHub repo URL
-            "icon": "fab fa-github",
-        },
-    ],
     "show_nav_level": 2,  # Adjust depth of sidebar navigation (optional)
     "rightsidebar": "true",
     "relbarbgcolor": "black",
+    # Theming
     "accent_color": "red",
+    "light_logo": "_static/LiveF1_red.png",
+    "dark_logo": "_static/LiveF1_white.png",
+    'logo_only': True,
+    'display_version': False,  
+    # Navbar things
     "github_url": "https://github.com/goktugocal/livef1",
+    "nav_links": [
+        {
+            "title": "Getting Started",
+            "url": "getting_started/index"
+        },
+        {
+            "title": "User Guide",
+            "url": "user_guide/index"
+        },
+        {
+            "title": "API Reference",
+            "url": "api_reference/index"
+        },
+        # {
+        #     "title": "Sponsor me",
+        #     "url": "https://github.com/sponsors/goktugocal"
+        # },
+    ]
 }
 
