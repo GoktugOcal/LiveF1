@@ -5,3 +5,4 @@ websockets
 jellyfish
 shibuya
 sphinx-tabs
+sphinx_design
