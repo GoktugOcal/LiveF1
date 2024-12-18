@@ -543,3 +543,36 @@ def parse_car_data_z(data, sessionKey):
                     **driver_entry[1]
                 }
                 yield record
+
+def parse_pit_lane_time(data, sessionKey):
+
+    for key, value in data.items():
+        if "_deleted" in value["PitTimes"].keys():
+            for deleted_driver in value["PitTimes"]["_deleted"]:
+                record = {
+                    "session_key": 0,
+                    "timestamp": key,
+                    "_deleted": deleted_driver
+                }
+                yield record
+                
+        else:
+            for driver_no, info in value["PitTimes"].items():
+                print(info)
+                record = {
+                    "session_key": 0,
+                    "timestamp": key,
+                    **info
+                }
+                yield record
+
+
+
+def parse_basic(data, sessionKey):
+    for key, info in data.items():
+        record = {
+            "session_key": 0,
+            "timestamp": key,
+            **info
+        }
+        yield record

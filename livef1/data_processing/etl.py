@@ -8,7 +8,8 @@ from typing import Optional, Union
 # Internal Project Imports
 from ..utils.helper import *
 from ..utils.exceptions import (
-    MissingFunctionError
+    MissingFunctionError,
+    ETLError
 )
 from .parse_functions import *
 
@@ -93,7 +94,7 @@ function_map = {
     'TeamRadio': parse_team_radio,
     'TlaRcm': parse_tlarcm,
     'RaceControlMessages': parse_race_control_messages,
-    'PitLaneTimeCollection': None,
+    'PitLaneTimeCollection': parse_pit_lane_time,
     'CurrentTyres': parse_current_tyres,
     'DriverRaceInfo': parse_driver_race_info,
     'ChampionshipPrediction': None,
@@ -102,5 +103,5 @@ function_map = {
     'SPFeed': None,
     'PitStopSeries': None,
     'PitStop': None,
-    'LapCount': None
+    'LapCount': parse_basic
 }
