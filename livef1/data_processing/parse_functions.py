@@ -558,7 +558,6 @@ def parse_pit_lane_time(data, sessionKey):
                 
         else:
             for driver_no, info in value["PitTimes"].items():
-                print(info)
                 record = {
                     "session_key": 0,
                     "timestamp": key,
