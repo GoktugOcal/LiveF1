@@ -290,3 +290,15 @@ TOPICS_MAP = {
         "description": "Number of laps completed in the session."
     },
 }
+
+channel_name_map = {
+  '0': 'rpm',
+  '2': 'speed',
+  '3': 'n_gear',
+  '4': 'throttle',
+  '5': 'brake',
+  '45': 'drs'
+  }
+
+
+

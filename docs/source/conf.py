@@ -79,6 +79,7 @@ html_theme_options = {
     'display_version': False,  
     # Navbar things
     "github_url": "https://github.com/goktugocal/livef1",
+    # "discussion_url": "https://www.reddit.com/r/formula1/",
     "nav_links": [
         {
             "title": "Getting Started",
@@ -99,3 +100,17 @@ html_theme_options = {
     ]
 }
 
+html_sidebars = {
+  "**": [
+    "sidebars/localtoc.html",
+    "sidebars/repo-stats.html",
+    "sidebars/edit-this-page.html"
+  ]
+}
+
+html_context = {
+    "source_type": "github",
+    "source_user": "goktugocal",
+    "source_repo": "livef1",
+    "source_docs_path": "/docs/source/"
+}

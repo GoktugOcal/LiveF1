@@ -1,4 +1,5 @@
 from ..utils.helper import *
+from ..utils.constants import channel_name_map
 
 def parse_tyre_stint_series(data, sessionKey):
     """
@@ -521,12 +522,13 @@ def parse_car_data_z(data, sessionKey):
             for entry in parsed_entry["Entries"]:
                 utc = entry["Utc"]
                 for driver_entry in entry["Cars"].items():
+                    ch = driver_entry[1]["Channels"]
                     record = {
                         "SessionKey": sessionKey,
                         "timestamp": ts,
                         "Utc": utc,
                         "DriverNo": driver_entry[0],
-                        **driver_entry[1]
+                        **{channel_name_map[k]:v for k,v in ch.items()}
                     }
                     yield record
 
@@ -540,7 +542,7 @@ def parse_car_data_z(data, sessionKey):
                     "timestamp": None,
                     "Utc": utc,
                     "DriverNo": driver_entry[0],
-                    **driver_entry[1]
+                    **{channel_name_map[k]:v for k,v in ch.items()}
                 }
                 yield record
 
