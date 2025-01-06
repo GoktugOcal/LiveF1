@@ -301,4 +301,13 @@ channel_name_map = {
   }
 
 
-
+interpolation_map = {
+  "AirTemp" : "linear",
+  "Humidity" : "linear",
+  "Pressure" : "linear",
+  "Rainfall" : "linear",
+  "TrackTemp" : "linear",
+  "WindDirection" : "linear",
+  "WindDirection" : "linear",
+  "WindSpeed" : "polynomial",
+  }
