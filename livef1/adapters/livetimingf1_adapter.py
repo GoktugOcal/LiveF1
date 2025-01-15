@@ -138,7 +138,7 @@ def livetimingF1_getdata(url, stream):
             records = res_text.split('\r\n')[:-1]  # Remove the last empty line
             tl = 12  # Record key length (first 12 characters are the key)
             # Return a dictionary of keys and their parsed JSON values
-            parsed_data = dict((r[:tl], json.loads(r[tl:])) for r in records)
+            parsed_data = list((r[:tl], json.loads(r[tl:])) for r in records)
             logger.debug("Successfully parsed streamed data.")
             return parsed_data
         except (json.JSONDecodeError, IndexError) as parse_err:

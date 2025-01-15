@@ -17,7 +17,8 @@ def parse_tyre_stint_series(data, sessionKey):
         dict :
             A record containing the session key, timestamp, driver number, pit count, and other stint-related info.
     """
-    for key, value in data.items():
+    for key, value in data:
+    #data.items()::
         for driver_no, stint in value["Stints"].items():
             if stint:
                 for pit_count, current_info in stint.items():
@@ -46,7 +47,8 @@ def parse_driver_race_info(data, sessionKey):
         dict :
             A record containing the session key, timestamp, driver number, and other race-related info.
     """
-    for key, value in data.items():
+    for key, value in data:
+    #data.items()::
         for driver_no, info in value.items():
             record = {
                 "session_key": sessionKey,
@@ -72,7 +74,8 @@ def parse_current_tyres(data, sessionKey):
         dict :
             A record containing the session key, timestamp, driver number, and tyre-related info.
     """
-    for key, value in data.items():
+    for key, value in data:
+    #data.items()::
         for driver_no, info in value["Tyres"].items():
             record = {
                 "session_key": sessionKey,
@@ -98,7 +101,8 @@ def parse_driver_list(data, sessionKey):
         dict :
             A record containing the session key, driver number, and driver-related info.
     """
-    for driver_no, info in data.items():
+    for driver_no, info in data:
+    #data.items()::
         record = {
             "session_key": sessionKey,
             "DriverNo": driver_no,
@@ -122,7 +126,8 @@ def parse_session_data(data, sessionKey):
         dict :
             A record containing the session key and session-related info.
     """
-    for key, value in data.items():
+    for key, value in data:
+    #data.items()::
         for driver_no, info in value.items():
             try:
                 record = {
@@ -149,7 +154,8 @@ def parse_extrapolated_clock(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and other clock-related info.
     """
-    for key, info in data.items():
+    for key, info in data:
+    #data.items()::
         record = {
             "session_key": sessionKey,
             "timestamp": key,
@@ -186,7 +192,8 @@ def parse_timing_data(data, sessionKey):
                 record = {**record, **{prefix + info_k: info_v}}
         return record
 
-    for ts, value in data.items():
+    for ts, value in data:
+    #data.items()::
         if "Withheld" in value.keys():
             withTheId = value["Withheld"]
         else:
@@ -217,7 +224,8 @@ def parse_lap_series(data, sessionKey):
         dict :
             A record containing the session key, timestamp, driver number, lap number, and lap position.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         for driver_no, driver_data in ts_value.items():
             if isinstance(driver_data["LapPosition"], list):
                 for position in driver_data["LapPosition"]:
@@ -256,7 +264,8 @@ def parse_top_three(data, sessionKey):
         dict :
             A record containing the session key, timestamp, driver position, and related info.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         if "Withheld" in ts_value.keys():
             continue
 
@@ -285,7 +294,8 @@ def parse_session_status(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and session status.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         record = {
             "SessionKey": sessionKey,
             "timestamp": ts,
@@ -309,7 +319,8 @@ def parse_hearthbeat(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and UTC time.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         record = {
             "SessionKey": sessionKey,
             "timestamp": ts,
@@ -333,7 +344,8 @@ def parse_weather_data(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and weather-related information.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         record = {
             "SessionKey": sessionKey,
             "timestamp": ts,
@@ -357,7 +369,8 @@ def parse_team_radio(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and captured radio messages.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         record = {
             "SessionKey": sessionKey,
             "timestamp": ts
@@ -394,7 +407,8 @@ def parse_tlarcm(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and the message content.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         record = {
             "SessionKey": sessionKey,
             "timestamp": ts,
@@ -418,7 +432,8 @@ def parse_race_control_messages(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and message details.
     """
-    for ts, ts_value in data.items():
+    for ts, ts_value in data:
+    #data.items()::
         record = {
             "SessionKey": sessionKey,
             "timestamp": ts
@@ -455,7 +470,8 @@ def parse_session_info(data, sessionKey):
         dict :
             A record containing the session key, timestamp, and session-related information.
     """
-    for ts, value in data.items():
+    for ts, value in data:
+    #data.items()::
         if "Withheld" in value.keys():
             withTheId = value["Withheld"]
         else:
@@ -485,7 +501,8 @@ def parse_position_z(data, sessionKey):
         dict :
             A record containing the session key, timestamp, UTC time, driver number, and z-axis position data.
     """
-    for ts, v in data.items():
+    for ts, v in data:
+    #data.items()::
         parsed_entry = parse(v, zipped=True)
         for position_entry in parsed_entry["Position"]:
             utc = position_entry["Timestamp"]
@@ -517,7 +534,8 @@ def parse_car_data_z(data, sessionKey):
     """
     
     if isinstance(data, dict):
-        for ts, v in data.items():
+        for ts, v in data:
+    #data.items()::
             parsed_entry = parse(v, zipped=True)
             for entry in parsed_entry["Entries"]:
                 utc = entry["Utc"]
@@ -548,7 +566,8 @@ def parse_car_data_z(data, sessionKey):
 
 def parse_pit_lane_time(data, sessionKey):
 
-    for key, value in data.items():
+    for key, value in data:
+    #data.items()::
         if "_deleted" in value["PitTimes"].keys():
             for deleted_driver in value["PitTimes"]["_deleted"]:
                 record = {
@@ -570,7 +589,8 @@ def parse_pit_lane_time(data, sessionKey):
 
 
 def parse_basic(data, sessionKey):
-    for key, info in data.items():
+    for key, info in data:
+    #data.items()::
         record = {
             "session_key": 0,
             "timestamp": key,
