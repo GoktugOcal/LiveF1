@@ -533,7 +533,7 @@ def parse_car_data_z(data, sessionKey):
             A record containing the session key, timestamp, UTC time, driver number, and channel data.
     """
     
-    if isinstance(data, dict):
+    if isinstance(data, list):
         for ts, v in data:
     #data.items()::
             parsed_entry = parse(v, zipped=True)
