@@ -68,6 +68,89 @@ class livef1SessionETL:
             logger.error("Parsing failed.")
             raise ETLError(f"Parser of {title} failed.")
 
+    def process_bronze_level(self):
+        """
+        Process raw data to produce bronze level data.
+
+        Returns
+        -------
+        :class:`~BronzeResult`
+            An object containing the bronze level data.
+        """
+        raw_data = self.session.get_data(dataName="Raw_Data")
+        # Perform any additional processing if needed
+        return BronzeResult(data=raw_data.value)
+
+    def process_silver_level(self):
+        """
+        Process bronze level data to produce silver level data.
+
+        Returns
+        -------
+        :class:`~SilverResult`
+            An object containing the silver level data.
+        """
+        bronze_data = self.process_bronze_level()
+        silver_data = self.clean_data(bronze_data.value)
+        return SilverResult(data=silver_data)
+
+    def process_gold_level(self):
+        """
+        Process silver level data to produce gold level data.
+
+        Returns
+        -------
+        :class:`~GoldResult`
+            An object containing the gold level data.
+        """
+        silver_data = self.process_silver_level()
+        gold_data = self.aggregate_data(silver_data.value)
+        return GoldResult(data=gold_data)
+
+    def clean_data(self, data):
+        """
+        Clean the raw data to produce silver level data.
+
+        Parameters
+        ----------
+        data : :class:`list`
+            The raw data to be cleaned.
+
+        Returns
+        -------
+        :class:`list`
+            The cleaned data.
+        """
+        # Implement the cleaning logic here
+        cleaned_data = []
+        for record in data:
+            # Perform cleaning operations
+            cleaned_record = record  # Placeholder for actual cleaning logic
+            cleaned_data.append(cleaned_record)
+        return cleaned_data
+
+    def aggregate_data(self, data):
+        """
+        Aggregate the cleaned data to produce gold level data.
+
+        Parameters
+        ----------
+        data : :class:`list`
+            The cleaned data to be aggregated.
+
+        Returns
+        -------
+        :class:`list`
+            The aggregated data.
+        """
+        # Implement the aggregation logic here
+        aggregated_data = []
+        for record in data:
+            # Perform aggregation operations
+            aggregated_record = record  # Placeholder for actual aggregation logic
+            aggregated_data.append(aggregated_record)
+        return aggregated_data
+
 # Parsing functions
 function_map = {
     'SessionInfo': parse_session_info,

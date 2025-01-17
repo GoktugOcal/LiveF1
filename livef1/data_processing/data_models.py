@@ -47,3 +47,54 @@ class BasicResult:
             A string representation of the data in tabular format (Pandas DataFrame).
         """
         return pd.DataFrame(self.value).__str__()
+
+
+class BronzeResult(BasicResult):
+    """
+    Encapsulates bronze level data, typically raw data.
+
+    Parameters
+    ----------
+    data : :class:`dict`
+        The raw data to be encapsulated within the result.
+    """
+
+    def __init__(self, data: dict):
+        """
+        Initializes the BronzeResult instance with the provided data.
+        """
+        super().__init__(data)
+
+
+class SilverResult(BasicResult):
+    """
+    Encapsulates silver level data, typically cleaned data.
+
+    Parameters
+    ----------
+    data : :class:`dict`
+        The cleaned data to be encapsulated within the result.
+    """
+
+    def __init__(self, data: dict):
+        """
+        Initializes the SilverResult instance with the provided data.
+        """
+        super().__init__(data)
+
+
+class GoldResult(BasicResult):
+    """
+    Encapsulates gold level data, typically aggregated data.
+
+    Parameters
+    ----------
+    data : :class:`dict`
+        The aggregated data to be encapsulated within the result.
+    """
+
+    def __init__(self, data: dict):
+        """
+        Initializes the GoldResult instance with the provided data.
+        """
+        super().__init__(data)

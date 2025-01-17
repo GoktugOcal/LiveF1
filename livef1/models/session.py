@@ -258,3 +258,34 @@ class Session:
         logger.debug(f"Data has been parsed in {round(time() - start,3)} seconds")
         logger.info("Data is successfully parsed.")
         return res
+
+    def load_data(self, level: str):
+        """
+        Load data for the session based on the specified medallion architecture level.
+
+        Parameters
+        ----------
+        level : :class:`str`
+            The level of data processing to perform. Can be 'bronze', 'silver', or 'gold'.
+
+        Returns
+        -------
+        :class:`~BasicResult`
+            An object containing the processed data as a list of results.
+
+        Raises
+        ------
+        ValueError
+            If the specified level is not one of 'bronze', 'silver', or 'gold'.
+        """
+        if level not in ['bronze', 'silver', 'gold']:
+            raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")
+
+        logger.info(f"Loading {level} level data for session: {self.season.year} {self.meeting.name} {self.name}")
+
+        if level == 'bronze':
+            return self.etl_parser.process_bronze_level()
+        elif level == 'silver':
+            return self.etl_parser.process_silver_level()
+        elif level == 'gold':
+            return self.etl_parser.process_gold_level()
