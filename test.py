@@ -1,11 +1,10 @@
 import livef1
+from livef1.utils.constants import interpolation_map
+
 import pandas as pd
+import numpy as np
 
-session = livef1.get_session(season=2024, meeting_identifier="Monza", session_identifier="Race")
-res = session.get_data(dataName="Car_Data")
-# print(pd.DataFrame(res.value).head().to_markdown())
+import matplotlib.pyplot as plt
 
-print(res.value[0:5])
-
-# adapter = livef1.adapters.livetimingf1_adapter.LivetimingF1adapters()
-# adapter.get("deneme.json")
+session = livef1.get_session(season=2024, meeting_identifier="Spa", session_identifier="Race")
+session.data_lake.silver_lake.generate_table("Laps")

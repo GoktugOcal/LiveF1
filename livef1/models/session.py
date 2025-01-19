@@ -13,7 +13,7 @@ from ..utils.logger import logger
 from ..data_processing.etl import *
 from ..data_processing.data_models import *
 from ..utils.constants import TOPICS_MAP
-from ..data_processing.data_medallion import DataLake
+from ..data_processing.lakes import DataLake
 
 
 class Session:
@@ -241,7 +241,7 @@ class Session:
                 dataName = topic
                 break
         
-        logger.info(f"Getting requested data.\nSelected session : {self.season.year} {self.meeting.name} {self.name}\nTopic : {dataName}")
+        logger.info(f"Getting requested data : '{dataName}'.\n\tSelected session : {self.season.year} {self.meeting.name} {self.name}\n\tTopic : {dataName}")
 
         start = time()
         data = livetimingF1_getdata(
@@ -265,31 +265,16 @@ class Session:
 
         return res
 
-    # def load_data(self, dataName: str):
-    #     """
-    #     Internal method to load data using the DataLake class.
-
-    #     Parameters
-    #     ----------
-    #     level : str
-    #         The level of data to load ('bronze', 'silver', or 'gold').
-    #     data_name : str
-    #         The name of the data to load.
-    #     """
-    #     dataName = self.check_data_name(dataName)
-        
-    #     res = self.get_data(dataName)
-    #     self.data_lake.put(
-    #         data_name=dataName, data=res)
-
     def get_data(self, dataName: str):
+        s = time()
         dataName = self.check_data_name(dataName)
-        print(self.data_lake.raw)
+        print(time() - s)
+
         if dataName in self.data_lake.raw:
-            logger.info(f"Data has been found in lake.")
+            logger.info(f"'{dataName}' has been found in lake.")
             return BasicResult(data=self.data_lake.raw)
         else:
-            logger.info(f"Data has not been found in lake, loading it...")
+            logger.info(f"'{dataName}' has not been found in lake, loading it.")
             return self.load_data(dataName)
 
     

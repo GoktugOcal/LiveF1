@@ -311,3 +311,11 @@ interpolation_map = {
   "WindDirection" : "linear",
   "WindSpeed" : "polynomial",
   }
+
+TABLE_GENERATION_FUNCTIONS = {
+    "Laps": "generate_laps_table"
+}
+
+TABLE_REQUIREMENTS = {
+    "Laps": ["TimingData"]
+}

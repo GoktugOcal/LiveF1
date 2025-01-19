@@ -367,5 +367,5 @@ def find_most_similar_vectorized(df, target):
 
 def print_found_model(df, key, cols):
     found_meeting_info = df.loc[[key], cols].drop_duplicates().iloc[0]
-    found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in cols])
+    found_info = "\n".join([f"\t{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in cols])
     logger.info(f"""Selected meeting/session is:\n{found_info}""")
