@@ -12,7 +12,7 @@ from ..utils import helper
 from ..utils.logger import logger
 from ..data_processing.etl import *
 from ..data_processing.data_models import *
-from ..utils.constants import TOPICS_MAP
+from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES
 from ..data_processing.lakes import DataLake
 
 
@@ -68,6 +68,9 @@ class Session:
         self.loaded = loaded
         self.data_lake = DataLake(self)
         self.etl_parser = livef1SessionETL(session=self)  # Create an ETL parser for the session.
+        # Silver Data
+        for attr in SILVER_SESSION_TABLES:
+            setattr(self, attr, None)
 
         # Iterate over the kwargs and set them as attributes of the instance
         for key, value in locals().items():
@@ -266,6 +269,27 @@ class Session:
         return res
 
     def get_data(self, dataName: str):
+        """
+        Retrieve data from the data lake or load it if not present.
+
+        This method checks if the specified data is available in the data lake. If it is, 
+        it returns the data from the lake. Otherwise, it loads the data using the `load_data` method.
+
+        Parameters
+        ----------
+        dataName : :class:`str`
+            The name of the data topic to retrieve.
+
+        Returns
+        -------
+        :class:`~BasicResult`
+            An object containing the requested data.
+
+        Notes
+        -----
+        - The method first checks if the data is available in the data lake.
+        - If the data is not found in the lake, it calls the `load_data` method to fetch and parse the data.
+        """
         s = time()
         dataName = self.check_data_name(dataName)
         print(time() - s)
@@ -279,6 +303,27 @@ class Session:
 
     
     def check_data_name(self, dataName: str):
+        """
+        Validate and return the correct data name.
+
+        This method checks if the provided data name exists in the `topic_names_info` attribute. 
+        If it does, it returns the corresponding topic name.
+
+        Parameters
+        ----------
+        dataName : :class:`str`
+            The name of the data topic to validate.
+
+        Returns
+        -------
+        :class:`str`
+            The validated data name.
+
+        Notes
+        -----
+        - The method ensures that the provided data name exists in the `topic_names_info` attribute.
+        - If the data name is found, it returns the corresponding topic name.
+        """
         if not hasattr(self,"topic_names_info"):
             self.get_topic_names()
 
@@ -289,7 +334,95 @@ class Session:
 
         return dataName
 
+    def get_laps(self):
+        """
+        Retrieve the laps data.
 
+        This method returns the laps data if it has been generated. If not, it logs an 
+        informational message indicating that the laps table is not generated yet.
+
+        Returns
+        -------
+        :class:`~Laps` or None
+            The laps data if available, otherwise None.
+
+        Notes
+        -----
+        - The method checks if the `laps` attribute is populated.
+        - If the `laps` attribute is not populated, it logs an informational message.
+        """
+        if self.laps:
+            return self.laps
+        else:
+            logger.info("Laps table is not generated yet. Use .generate() to load required data and generate silver tables.")
+            return None
+    def get_car_telemetry(self):
+        """
+        Retrieve the car telemetry data.
+
+        This method returns the car telemetry data if it has been generated. If not, it logs an 
+        informational message indicating that the car telemetry table is not generated yet.
+
+        Returns
+        -------
+        :class:`~CarTelemetry` or None
+            The car telemetry data if available, otherwise None.
+
+        Notes
+        -----
+        - The method checks if the `carTelemetry` attribute is populated.
+        - If the `carTelemetry` attribute is not populated, it logs an informational message.
+        """
+        if self.carTelemetry: return self.carTelemetry
+        else:
+            logger.info("Car Telemetry table is not generated yet. Use .generate() to load required data and generate silver tables.")
+            return None
+    def get_weather(self):
+        """
+        Retrieve the weather data.
+
+        This method returns the weather data if it has been generated. If not, it logs an 
+        informational message indicating that the weather table is not generated yet.
+
+        Returns
+        -------
+        :class:`~Weather` or None
+            The weather data if available, otherwise None.
+
+        Notes
+        -----
+        - The method checks if the `weather` attribute is populated.
+        - If the `weather` attribute is not populated, it logs an informational message.
+        """
+        if self.weather: return self.weather
+        else:
+            logger.info("Weather table is not generated yet. Use .generate() to load required data and generate silver tables.")
+            return None
+    
+    def get_timing(self):
+        """
+        Retrieve the timing data.
+
+        This method returns the timing data if it has been generated. If not, it logs an 
+        informational message indicating that the timing table is not generated yet.
+
+        Returns
+        -------
+        :class:`~Timing` or None
+            The timing data if available, otherwise None.
+
+        Notes
+        -----
+        - The method checks if the `timing` attribute is populated.
+        - If the `timing` attribute is not populated, it logs an informational message.
+        """
+        if self.timing: return self.timing
+        else:
+            logger.info("Timing table is not generated yet. Use .generate() to load required data and generate silver tables.")
+            return None
+
+session.load()
+session.generate(silver=True, gold=False)
 
 # session.load(
 #     bronze=True,
