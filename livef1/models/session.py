@@ -13,6 +13,7 @@ from ..utils.logger import logger
 from ..data_processing.etl import *
 from ..data_processing.data_models import *
 from ..utils.constants import TOPICS_MAP
+from ..data_processing.data_medallion import DataLake
 
 
 class Session:
@@ -65,6 +66,7 @@ class Session:
     ):
         self.season = season
         self.loaded = loaded
+        self.data_lake = DataLake(self)
         self.etl_parser = livef1SessionETL(session=self)  # Create an ETL parser for the session.
 
         # Iterate over the kwargs and set them as attributes of the instance
@@ -159,7 +161,7 @@ class Session:
                 Description for topic 2
 
         """
-        if not hasattr(self,"topic_names_info"):
+        if not hasattr(self, "topic_names_info"):
             self.get_topic_names()
 
         
@@ -167,7 +169,7 @@ class Session:
         for topic in self.topic_names_info:
             print(self.topic_names_info[topic]["key"], ": \n\t", self.topic_names_info[topic]["description"])
 
-    def get_data(
+    def load_data(
         self,
         dataName,
         dataType : str = "StreamPath",
@@ -234,7 +236,6 @@ class Session:
         if not hasattr(self,"topic_names_info"):
             self.get_topic_names()
 
-
         for topic in self.topic_names_info:
             if self.topic_names_info[topic]["key"] == dataName:
                 dataName = topic
@@ -257,35 +258,76 @@ class Session:
         )
         logger.debug(f"Data has been parsed in {round(time() - start,3)} seconds")
         logger.info("Data is successfully parsed.")
+
+        self.data_lake.put(
+            data_name=dataName, data=res
+            )
+
         return res
 
-    def load_data(self, level: str):
-        """
-        Load data for the session based on the specified medallion architecture level.
+    # def load_data(self, dataName: str):
+    #     """
+    #     Internal method to load data using the DataLake class.
 
-        Parameters
-        ----------
-        level : :class:`str`
-            The level of data processing to perform. Can be 'bronze', 'silver', or 'gold'.
+    #     Parameters
+    #     ----------
+    #     level : str
+    #         The level of data to load ('bronze', 'silver', or 'gold').
+    #     data_name : str
+    #         The name of the data to load.
+    #     """
+    #     dataName = self.check_data_name(dataName)
+        
+    #     res = self.get_data(dataName)
+    #     self.data_lake.put(
+    #         data_name=dataName, data=res)
 
-        Returns
-        -------
-        :class:`~BasicResult`
-            An object containing the processed data as a list of results.
+    def get_data(self, dataName: str):
+        dataName = self.check_data_name(dataName)
+        print(self.data_lake.raw)
+        if dataName in self.data_lake.raw:
+            logger.info(f"Data has been found in lake.")
+            return BasicResult(data=self.data_lake.raw)
+        else:
+            logger.info(f"Data has not been found in lake, loading it...")
+            return self.load_data(dataName)
 
-        Raises
-        ------
-        ValueError
-            If the specified level is not one of 'bronze', 'silver', or 'gold'.
-        """
-        if level not in ['bronze', 'silver', 'gold']:
-            raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")
+    
+    def check_data_name(self, dataName: str):
+        if not hasattr(self,"topic_names_info"):
+            self.get_topic_names()
 
-        logger.info(f"Loading {level} level data for session: {self.season.year} {self.meeting.name} {self.name}")
+        for topic in self.topic_names_info:
+            if self.topic_names_info[topic]["key"] == dataName:
+                dataName = topic
+                break
 
-        if level == 'bronze':
-            return self.etl_parser.process_bronze_level()
-        elif level == 'silver':
-            return self.etl_parser.process_silver_level()
-        elif level == 'gold':
-            return self.etl_parser.process_gold_level()
+        return dataName
+
+
+
+# session.load(
+#     bronze=True,
+#     silver=True,
+#     gold=True
+#     )
+
+# session.telemetry
+# session.timing
+# session.weather
+# session.position
+
+# telemetry
+# coordinates
+# tyre
+# stint
+# position
+
+# laps
+# pitduration
+# pitstops
+# timings
+
+# bronzeLake
+# silverLake
+# goldLake

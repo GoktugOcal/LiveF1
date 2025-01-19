@@ -1,0 +1,172 @@
+{
+    "SessionInfo": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "ArchiveStatus": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TrackStatus": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "ExtrapolatedClock": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "Position.z": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "CarData.z": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "AudioStreams": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "DriverList": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TimingDataF1": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "SPFeed": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TopThree": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TimingData": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TimingAppData": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "LapSeries": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TimingStats": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "SessionStatus": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TyreStintSeries": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "Heartbeat": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TlaRcm": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "RaceControlMessages": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "WeatherData": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "WeatherDataSeries": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "CurrentTyres": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "DriverScore": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "PitLaneTimeCollection": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "TeamRadio": [
+        2018,
+        "United States Grand Prix",
+        "Practice 1"
+    ],
+    "LapCount": [
+        2018,
+        "United States Grand Prix",
+        "Race"
+    ],
+    "DriverRaceInfo": [
+        2018,
+        "United States Grand Prix",
+        "Race"
+    ],
+    "ContentStreams": [
+        2019,
+        "Australian Grand Prix",
+        "Practice 2"
+    ],
+    "ChampionshipPrediction": [
+        2019,
+        "Canadian Grand Prix",
+        "Race"
+    ],
+    "SessionData": [
+        2020,
+        "Austrian Grand Prix",
+        "Practice 1"
+    ],
+    "OvertakeSeries": [
+        2024,
+        "United States Grand Prix",
+        "Sprint"
+    ],
+    "PitStop": [
+        2024,
+        "United States Grand Prix",
+        "Race"
+    ],
+    "PitStopSeries": [
+        2024,
+        "United States Grand Prix",
+        "Race"
+    ]
+}
