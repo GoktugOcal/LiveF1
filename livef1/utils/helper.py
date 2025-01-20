@@ -10,6 +10,7 @@ from jellyfish import jaro_similarity, jaro_winkler_similarity
 import re
 from string import punctuation
 import numpy as np
+import pandas as pd
 
 # Internal Project Imports
 from .constants import *
@@ -369,3 +370,10 @@ def print_found_model(df, key, cols):
     found_meeting_info = df.loc[[key], cols].drop_duplicates().iloc[0]
     found_info = "\n".join([f"\t{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in cols])
     logger.info(f"""Selected meeting/session is:\n{found_info}""")
+
+
+def to_datetime(var):
+    if isinstance(var, pd.Series):
+        return pd.to_datetime(var.values).tz_localize(None).round("ms")
+    elif isinstance(var, np.ndarray):
+        return pd.to_datetime(var).tz_localize(None).round("ms")

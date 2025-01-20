@@ -12,7 +12,7 @@ from ..utils import helper
 from ..utils.logger import logger
 from ..data_processing.etl import *
 from ..data_processing.data_models import *
-from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES
+from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES, TABLE_GENERATION_FUNCTIONS
 from ..data_processing.lakes import DataLake
 
 
@@ -290,13 +290,11 @@ class Session:
         - The method first checks if the data is available in the data lake.
         - If the data is not found in the lake, it calls the `load_data` method to fetch and parse the data.
         """
-        s = time()
         dataName = self.check_data_name(dataName)
-        print(time() - s)
 
         if dataName in self.data_lake.raw:
             logger.info(f"'{dataName}' has been found in lake.")
-            return BasicResult(data=self.data_lake.raw)
+            return BasicResult(data=self.data_lake.raw[dataName])
         else:
             logger.info(f"'{dataName}' has not been found in lake, loading it.")
             return self.load_data(dataName)
@@ -420,9 +418,22 @@ class Session:
         else:
             logger.info("Timing table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
+    
+    def generate(self, silver=True, gold=False):
+        if silver:
+            logger.info(f"Silver tables are being generated.")
+            for table_name in SILVER_SESSION_TABLES:
+                if table_name in TABLE_GENERATION_FUNCTIONS:
+                    setattr(self, table_name, self.data_lake.silver_lake.generate_table(table_name))
+                    logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
 
-session.load()
-session.generate(silver=True, gold=False)
+        if gold:
+            pass
+
+
+
+# session.load()
+# session.generate(silver=True, gold=False)
 
 # session.load(
 #     bronze=True,

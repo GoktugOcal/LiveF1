@@ -298,10 +298,22 @@ channel_name_map = {
   '4': 'throttle',
   '5': 'brake',
   '45': 'drs'
-  }
-
+}
 
 interpolation_map = {
+  #Position
+  'status': 'ffill',
+  'X': 'quadratic',
+  'Y': 'quadratic',
+  'Z': 'quadratic',
+  #Car
+  'speed': 'linear',
+  'rpm': 'linear',
+  'throttle': 'linear',
+  'brake': 'ffill',
+  'drs': 'ffill',
+  'n_gear': 'ffill',
+  #Weather
   "AirTemp" : "linear",
   "Humidity" : "linear",
   "Pressure" : "linear",
@@ -312,12 +324,14 @@ interpolation_map = {
   "WindSpeed" : "polynomial",
   }
 
-SILVER_SESSION_TABLES = ["laps", "carTelemetry", "weather", "timing"]
+SILVER_SESSION_TABLES = ["laps", "car_telemetry", "weather", "timing"]
 
 TABLE_GENERATION_FUNCTIONS = {
-    "laps": "generate_laps_table"
+    "laps": "generate_laps_table",
+    "car_telemetry": "generate_car_telemetry_table"
 }
 
 TABLE_REQUIREMENTS = {
-    "laps": ["TimingData"]
+    "laps": ["Timing_Data"],
+    "car_telemetry": ["Timing_Data", "Car_Data", "Position"]
 }

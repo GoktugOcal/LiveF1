@@ -146,3 +146,9 @@ def generate_laps_table(bronze_lake):
 
     all_laps_df[["lap_start_time"] + all_laps_df.columns.tolist()]
     return all_laps_df
+
+
+def generate_car_telemetry_table(bronze_lake):
+    print("Serrush's fonksiyon çalışıyor...")
+
+    return "Serrush's car table"
