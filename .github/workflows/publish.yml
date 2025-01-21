@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: hhttps://pypi.org/project/livef1/
+      url: https://pypi.org/p/livef1/
     permissions:
       id-token: write
     steps:
