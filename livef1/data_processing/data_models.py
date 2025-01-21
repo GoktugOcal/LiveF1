@@ -47,7 +47,7 @@ class BasicResult:
         str
             A string representation of the data in tabular format (Pandas DataFrame).
         """
-        return df.__str__()
+        return self.df.__str__()
 
 
 class BronzeResult(BasicResult):

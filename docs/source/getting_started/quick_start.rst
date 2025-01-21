@@ -124,8 +124,6 @@ Once you’ve identified the desired data feed, you can load its contents using 
 .. code-block:: python
 
    >>> data = session.get_data(dataName="Car_Data")
-   >>> type(data)
-   # <class 'livef1.data_processing.data_models.BasicResult'>
    >>> data
    |    |   SessionKey | timestamp    | Utc                          |   DriverNo | Status   |   X |   Y |   Z |
    |---:|-------------:|:-------------|:-----------------------------|-----------:|:---------|----:|----:|----:|
@@ -136,18 +134,18 @@ Once you’ve identified the desired data feed, you can load its contents using 
    |  4 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |         11 | OnTrack  |   0 |   0 |   0 |
 
 
-The `get_data` method returns an object of type :class:`~BasicResult`. This object encapsulates the parsed data in an easily accessible format. To retrieve the underlying data in a structured format, access the value attribute of the :class:`~BasicResult` object:
+.. The `get_data` method returns an object of type :class:`~BasicResult`. This object encapsulates the parsed data in an easily accessible format. To retrieve the underlying data in a structured format, access the value attribute of the :class:`~BasicResult` object:
 
-.. code-block:: python
+.. .. code-block:: python
    
-   >>> data.value
-   [
-      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '1', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '3', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '4', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '10', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-      {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '11', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-      .
-      ..
-      ...
-   ]
+..    >>> data.value
+..    [
+..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '1', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '3', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '4', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '10', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '11', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
+..       .
+..       ..
+..       ...
+..    ]

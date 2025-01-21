@@ -9,5 +9,6 @@ API Reference
    models
    data_processing
    livetimingf1_adapter
+   medallion_arch
    realtime_client
    utils

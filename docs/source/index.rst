@@ -63,12 +63,13 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
    user_guide/index
    user_guide/f1_data
    user_guide/data_topics
+   user_guide/medallion_architecture
    user_guide/data_objects
    user_guide/accessing_data
-   user_guide/informative_data
-   user_guide/telemetry_data
-   user_guide/working_with_realtime_client
-   user_guide/visualization
+   .. user_guide/informative_data
+   .. user_guide/telemetry_data
+   .. user_guide/working_with_realtime_client
+   .. user_guide/visualization
 
 
    .. ./index

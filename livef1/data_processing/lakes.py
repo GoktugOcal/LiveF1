@@ -9,10 +9,6 @@ class BronzeLake:
         self.great_lake = great_lake
         self.lake = {}
 
-    def load_data(self, data_name):
-        self.data = self.great_lake.session.get_data(dataName=data_name)
-        return BronzeResult(data=self.data.value)
-
     def put(self, data_name, data):
         """
         Store the data in the BronzeLake.
@@ -68,17 +64,27 @@ class SilverLake:
     def __init__(self, great_lake, bronze_lake):
         self.great_lake = great_lake
         self.bronze_lake = bronze_lake
-        self.data = None
+        self.lake = {}
 
-    def load_data(self, data_name):
-        if data_name in TABLE_GENERATION_FUNCTIONS:
-            function_name = TABLE_GENERATION_FUNCTIONS[data_name]
-            self.data = globals()[function_name](self.bronze_lake)
+    def get(self, data_name):
+        """
+        Retrieve the data from the SilverLake.
+
+        Parameters
+        ----------
+        data_name : str
+            The name of the data to retrieve.
+
+        Returns
+        -------
+        object
+            The requested data or None if it does not exist.
+        """
+        if self.has_data(data_name):
+            return self.lake[data_name]
         else:
-            if not self.bronze_lake.data:
-                self.bronze_lake.load_data(data_name)
-            self.data = self.clean_data(self.bronze_lake.data.value)
-        return SilverResult(data=self.data)
+            logger.info(f"Data '{data_name}' is not present in SilverLake.")
+            return None
 
     def clean_data(self, data):
         cleaned_data = []
@@ -105,7 +111,7 @@ class SilverLake:
             required_data = TABLE_REQUIREMENTS.get(table_name, [])
             for data_name in required_data:
                 if not self.bronze_lake.has_data(data_name):
-                    self.bronze_lake.load_data(data_name)
+                    self.great_lake.session.load_data(data_name)
             function_name = TABLE_GENERATION_FUNCTIONS[table_name]
             return globals()[function_name](self.bronze_lake)
         else:
@@ -116,13 +122,27 @@ class GoldLake:
     def __init__(self, great_lake, silver_lake):
         self.great_lake = great_lake
         self.silver_lake = silver_lake
-        self.data = None
+        self.lake = {}
 
-    def load_data(self, data_name):
-        if not self.silver_lake.data:
-            self.silver_lake.load_data(data_name)
-        self.data = self.aggregate_data(self.silver_lake.data)
-        return GoldResult(data=self.data)
+    def get(self, data_name):
+        """
+        Retrieve the data from the GoldLake.
+
+        Parameters
+        ----------
+        data_name : str
+            The name of the data to retrieve.
+
+        Returns
+        -------
+        object
+            The requested data or None if it does not exist.
+        """
+        if self.has_data(data_name):
+            return self.lake[data_name]
+        else:
+            logger.info(f"Data '{data_name}' is not present in GoldLake.")
+            return None
 
     def aggregate_data(self, data):
         aggregated_data = []
@@ -142,17 +162,15 @@ class DataLake:
 
     def load_data(self, level: str, data_name: str):
         if level == "bronze":
-            res = self.bronze_lake.load_data(data_name)
-
-            return 
+            return self.bronze_lake.get(data_name)
         elif level == "silver":
-            return self.silver_lake.load_data(data_name)
+            return self.silver_lake.get(data_name)
         elif level == "gold":
-            return self.gold_lake.load_data(data_name)
+            return self.gold_lake.get(data_name)
         else:
             raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")
 
-    def put(self, data_name, data):
+    def put(self, level, data_name, data):
         """
         Store the data in the DataLake.
 
@@ -163,5 +181,38 @@ class DataLake:
         data : object
             The data to store.
         """
-        self.raw[data_name] = data.value
-        self.bronze_lake.put(data_name, pd.DataFrame(data.value))
+
+        if level == "bronze":
+            self.raw[data_name] = data.value
+            self.bronze_lake.put(data_name, pd.DataFrame(data.value))
+        elif level == "silver":
+            pass
+        elif level == "gold":
+            pass
+        else:
+            raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")
+
+    def get(self, level: str, data_name: str):
+        """
+        Retrieve the data from the DataLake.
+
+        Parameters
+        ----------
+        level : str
+            The level of the lake ('bronze', 'silver', 'gold').
+        data_name : str
+            The name of the data to retrieve.
+
+        Returns
+        -------
+        object
+            The requested data or None if it does not exist.
+        """
+        if level == "bronze":
+            return self.bronze_lake.get(data_name)
+        elif level == "silver":
+            return self.silver_lake.get(data_name)
+        elif level == "gold":
+            return self.gold_lake.get(data_name)
+        else:
+            raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")

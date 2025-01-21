@@ -263,10 +263,10 @@ class Session:
         logger.info("Data is successfully parsed.")
 
         self.data_lake.put(
-            data_name=dataName, data=res
+            level="bronze", data_name=dataName, data=res
             )
 
-        return res
+        return self.data_lake.get(level="bronze", data_name=dataName)
 
     def get_data(self, dataName: str):
         """
@@ -420,19 +420,16 @@ class Session:
             return None
     
     def _get_first_datetime(self):
-
-        pos_df = self.get_data("Position").df
-        car_df = self.get_data("Car_Data").df
+        pos_df = self.get_data("Position")
+        car_df = self.get_data("Car_Data")
         first_date = np.amax([(helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(), (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()])
 
         return first_date
     
     def _get_session_start_time(self):
-
-        return pd.to_timedelta(self.get_data(dataName="SessionStatus").df.set_index("status").loc["Started"].timestamp)
+        return pd.to_timedelta(self.get_data(dataName="SessionStatus").set_index("status").loc["Started"].timestamp)
 
     def generate(self, silver=True, gold=False):
-
         self.first_datetime = self._get_first_datetime()
         self.session_start_time = self._get_session_start_time()
         self.session_start_datetime = self.first_datetime + self.session_start_time

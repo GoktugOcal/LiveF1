@@ -86,9 +86,6 @@ data = session.get_data(
     stream = True
 )
 
-print(type(data))
-# <class 'livef1.data_processing.data_models.BasicResult'>
-
 print(data)
 #     SessionKey     timestamp                           Utc DriverNo   Status     X      Y     Z
 # 0         9590  00:00:30.209  2024-09-01T12:08:13.7879709Z        1  OnTrack     0      0     0
@@ -96,13 +93,4 @@ print(data)
 # 2         9590  00:00:30.209  2024-09-01T12:08:13.7879709Z        4  OnTrack     0      0     0
 # 3         9590  00:00:30.209  2024-09-01T12:08:13.7879709Z       10  OnTrack     0      0     0
 
-print(data.value)
-# [
-#   {'SessionKey': 9590, 'timestamp': '00:00:30.209', 'Utc': '2024-09-01T12:08:13.7879709Z', 'DriverNo': '1', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-#   {'SessionKey': 9590, 'timestamp': '00:00:30.209', 'Utc': '2024-09-01T12:08:13.7879709Z', 'DriverNo': '3', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-#   {'SessionKey': 9590, 'timestamp': '00:00:30.209', 'Utc': '2024-09-01T12:08:13.7879709Z', 'DriverNo': '4', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-#   .
-#   .
-#   .
-# ]
 ```
