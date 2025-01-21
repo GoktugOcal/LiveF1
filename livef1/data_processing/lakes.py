@@ -44,7 +44,7 @@ class BronzeLake:
         if self.has_data(data_name):
             return self.lake[data_name]
         else:
-            logging.info(f"Data '{data_name}' is not present in BronzeLake.")
+            logger.info(f"Data '{data_name}' is not present in BronzeLake.")
             return None
 
     def has_data(self, data_name):

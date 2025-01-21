@@ -25,6 +25,7 @@ class BasicResult:
         Initializes the BasicResult instance with the provided data.
         """
         self.value = data
+        self.df = pd.DataFrame(data)
 
     def __get__(self):
         """
@@ -46,7 +47,7 @@ class BasicResult:
         str
             A string representation of the data in tabular format (Pandas DataFrame).
         """
-        return pd.DataFrame(self.value).__str__()
+        return df.__str__()
 
 
 class BronzeResult(BasicResult):

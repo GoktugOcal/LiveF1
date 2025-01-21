@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 
+
+
 def generate_laps_table(bronze_lake):
     df_exp = bronze_lake.get("TimingData")
 
@@ -143,12 +145,53 @@ def generate_laps_table(bronze_lake):
 
     new_ts = (all_laps_df["lap_start_time"] + all_laps_df["lap_time"]).shift(1)
     all_laps_df["lap_start_time"] = (new_ts.isnull() * all_laps_df["lap_start_time"]) + new_ts.fillna(timedelta(0))
+    all_laps_df["lap_start_date"] = (all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
 
     all_laps_df[["lap_start_time"] + all_laps_df.columns.tolist()]
     return all_laps_df
 
 
 def generate_car_telemetry_table(bronze_lake):
-    print("Serrush's fonksiyon çalışıyor...")
+    session = bronze_lake.great_lake.session
 
-    return "Serrush's car table"
+    res = bronze_lake.get("Position.z")
+    df_pos = pd.DataFrame(res.value)
+    df_pos["Utc"] = to_datetime(df_pos["Utc"])
+    df_pos["timestamp"] = pd.to_timedelta(df_pos["timestamp"])
+
+    res = bronze_lake.get("CarData.z")
+    df_car = pd.DataFrame(res.value)
+    df_car["Utc"] = to_datetime(df_car["Utc"])
+    df_car["timestamp"] = pd.to_timedelta(df_car["timestamp"])
+
+    df = df_car.set_index(["DriverNo", "Utc"]).join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer").reset_index().sort_values(["DriverNo", "Utc"])
+
+    all_drivers_data = []
+
+    for driver_no in df["DriverNo"].unique():
+        df_driver = df[df["DriverNo"] == driver_no].set_index("Utc")
+        laps = session.laps
+        laps_driver = laps[laps["DriverNo"] == driver_no]
+
+        for col in df_driver.columns:
+            if col in interpolation_map:
+                df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
+
+        laps_driver["lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"] - timedelta(milliseconds=1)
+        laps_driver = pd.concat([laps_driver[["lap_start_date", "lap_number"]].set_index("lap_start_date"), laps_driver[["lap_end_date", "lap_number"]].set_index("lap_end_date")]).reset_index().sort_values("index").dropna()
+
+        df_driver = df_driver.join(laps_driver.set_index("index"), how="outer")
+        df_driver["lap_number"] = df_driver["lap_number"].ffill()
+        df_driver.index.names = ['Utc']
+
+        df_driver = df_driver.reset_index()
+        df_driver = df_driver[df_driver.Utc.between(laps_driver["index"].min(), laps_driver["index"].max())]
+
+        df_driver["SessionKey"] = df_driver["SessionKey"].ffill().bfill()
+        df_driver["timestamp"] = df_driver["Utc"] - session.first_datetime
+
+        all_drivers_data.append(df_driver)
+
+    all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
+    
+    return all_drivers_df

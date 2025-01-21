@@ -377,3 +377,4 @@ def to_datetime(var):
         return pd.to_datetime(var.values).tz_localize(None).round("ms")
     elif isinstance(var, np.ndarray):
         return pd.to_datetime(var).tz_localize(None).round("ms")
+        

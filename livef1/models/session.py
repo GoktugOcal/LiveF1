@@ -419,7 +419,24 @@ class Session:
             logger.info("Timing table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
     
+    def _get_first_datetime(self):
+
+        pos_df = self.get_data("Position").df
+        car_df = self.get_data("Car_Data").df
+        first_date = np.amax([(helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(), (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()])
+
+        return first_date
+    
+    def _get_session_start_time(self):
+
+        return pd.to_timedelta(self.get_data(dataName="SessionStatus").df.set_index("status").loc["Started"].timestamp)
+
     def generate(self, silver=True, gold=False):
+
+        self.first_datetime = self._get_first_datetime()
+        self.session_start_time = self._get_session_start_time()
+        self.session_start_datetime = self.first_datetime + self.session_start_time
+        
         if silver:
             logger.info(f"Silver tables are being generated.")
             for table_name in SILVER_SESSION_TABLES:
