@@ -20,7 +20,7 @@ If you want to install the latest development version or contribute to LiveF1, f
 
    .. code-block:: bash
 
-      git clone https://github.com/yourusername/LiveF1.git
+      git clone https://github.com/goktugocal/LiveF1.git
 
 2. Navigate into the project directory:
 

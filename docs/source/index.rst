@@ -19,7 +19,7 @@ LiveF1
     :class-row: surface
 
     .. grid-item-card:: :octicon:`desktop-download` How to install?
-      :link: getting_started/index.html
+      :link: getting_started/installation.html
 
       Before starting analysis, follow our simple guide to install the library in Python.
 

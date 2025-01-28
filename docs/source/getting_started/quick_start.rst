@@ -11,7 +11,7 @@ Start by importing LiveF1:
 
 .. code-block:: python
 
-   >>> import livef1 as livef1
+   import livef1 as livef1
 
 Get a season object with its meetings and sessions
 -------------------
@@ -20,18 +20,21 @@ The get_season function in the livef1 package is used to retrieve detailed infor
 
 .. code-block:: python
 
-   >>> import livef1 as livef1
-   >>> season = livef1.get_season(season=2021)
-   >>> type(season)
-   <class 'livef1.models.season.Season'>
-   >>> season
-   |    |   Meeting Key | Meeting Code   | Meeting Name              | Meeting Circuit Shortname     |   No. Sessions | Race Startdate      |
-   |---:|--------------:|:---------------|:--------------------------|:------------------------------|---------------:|:--------------------|
-   |  0 |          1064 | BRN0104        | Bahrain Grand Prix        | Sakhir                        |              5 | 2021-03-28 18:00:00 |
-   |  1 |          1065 | ITA0110        | Emilia Romagna Grand Prix | Imola                         |              5 | 2021-04-18 15:00:00 |
-   |  2 |          1066 | POR0401        | Portuguese Grand Prix     | Algarve International Circuit |              5 | 2021-05-02 15:00:00 |
-   |  3 |          1086 | ESP0111        | Spanish Grand Prix        | Catalunya                     |              5 | 2021-05-09 15:00:00 |
-   |  4 |          1067 | MON0112        | Monaco Grand Prix         | Monte Carlo                   |              5 | 2021-05-23 15:00:00 |
+   import livef1 as livef1
+   season = livef1.get_season(season=2021)
+   print(season)
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+   |   meeting_key |   season_year | meeting_code   |   meeting_number | meeting_location   | meeting_offname                            | meeting_name       |   meeting_country_key | meeting_country_code   | meeting_country_name   |   meeting_circuit_key | meeting_circuit_shortname   |   session_key | session_type   | session_name   | session_startDate   | session_endDate     | gmtoffset   | path                                                      |
+   |--------------:|--------------:|:---------------|-----------------:|:-------------------|:-------------------------------------------|:-------------------|----------------------:|:-----------------------|:-----------------------|----------------------:|:----------------------------|--------------:|:---------------|:---------------|:--------------------|:--------------------|:------------|:----------------------------------------------------------|
+   |          1064 |          2021 | BRN0104        |                1 | Sakhir             | FORMULA 1 GULF AIR BAHRAIN GRAND PRIX 2021 | Bahrain Grand Prix |                    36 | BRN                    | Bahrain                |                    63 | Sakhir                      |          6210 | Practice 1     | Practice 1     | 2021-03-26 14:30:00 | 2021-03-26 15:30:00 | 03:00:00    | 2021/2021-03-28_Bahrain_Grand_Prix/2021-03-26_Practice_1/ |
+   |          1064 |          2021 | BRN0104        |                1 | Sakhir             | FORMULA 1 GULF AIR BAHRAIN GRAND PRIX 2021 | Bahrain Grand Prix |                    36 | BRN                    | Bahrain                |                    63 | Sakhir                      |          6211 | Practice 2     | Practice 2     | 2021-03-26 18:00:00 | 2021-03-26 19:00:00 | 03:00:00    | 2021/2021-03-28_Bahrain_Grand_Prix/2021-03-26_Practice_2/ |
+   |          1064 |          2021 | BRN0104        |                1 | Sakhir             | FORMULA 1 GULF AIR BAHRAIN GRAND PRIX 2021 | Bahrain Grand Prix |                    36 | BRN                    | Bahrain                |                    63 | Sakhir                      |          6212 | Practice 3     | Practice 3     | 2021-03-27 15:00:00 | 2021-03-27 16:00:00 | 03:00:00    | 2021/2021-03-28_Bahrain_Grand_Prix/2021-03-27_Practice_3/ |
+   |          1064 |          2021 | BRN0104        |                1 | Sakhir             | FORMULA 1 GULF AIR BAHRAIN GRAND PRIX 2021 | Bahrain Grand Prix |                    36 | BRN                    | Bahrain                |                    63 | Sakhir                      |          6213 | Qualifying     | Qualifying     | 2021-03-27 18:00:00 | 2021-03-27 19:00:00 | 03:00:00    | 2021/2021-03-28_Bahrain_Grand_Prix/2021-03-27_Qualifying/ |
+   |          1064 |          2021 | BRN0104        |                1 | Sakhir             | FORMULA 1 GULF AIR BAHRAIN GRAND PRIX 2021 | Bahrain Grand Prix |                    36 | BRN                    | Bahrain                |                    63 | Sakhir                      |          6214 | Race           | Race           | 2021-03-28 18:00:00 | 2021-03-28 20:00:00 | 03:00:00    | 2021/2021-03-28_Bahrain_Grand_Prix/2021-03-28_Race/       |
 
 The `season` object is an instance of the `Season` class, providing access to structured season data, including meetings and their corresponding sessions.
 

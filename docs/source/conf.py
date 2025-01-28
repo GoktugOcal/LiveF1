@@ -33,7 +33,8 @@ extensions = [
     "sphinx.ext.autosummary",
     'sphinx.ext.autosectionlabel',
     'sphinx_tabs.tabs',
-    'sphinx_design'
+    'sphinx_design',
+    'jupyter_sphinx'
 ]
 # Automatically generate summary tables
 autosummary_generate = True  # Enable autosummary generation

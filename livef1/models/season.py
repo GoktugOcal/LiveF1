@@ -149,6 +149,7 @@ class Season:
             return self.__str__() # Print the meetings table.
         else:
             display(self.season_table) # Display the meetings table.
+            return self.__str__()
 
     def __str__(self):
         """

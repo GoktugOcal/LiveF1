@@ -1,5 +1,5 @@
-:layout: 404
 :orphan:
+:layout: 404
 
 404
 ===
