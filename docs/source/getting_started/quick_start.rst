@@ -47,29 +47,28 @@ Get a meeting object and its sessions
 
 .. code-block:: python
 
-   >>> import livef1 as livef1
-   >>> meeting = livef1.get_meeting(season=2024, meeting_identifier="Spa")
-   >>> type(meeting)
-   <class livef1.models.meeting.Meeting>
-   >>> meeting
-   |    |   Season Year | Meeting Location   | Session Type   | Meeting Code   |   Meeting Key |   Meeting Number | Meeting Offname                         | Meeting Name       |   Meeting Country Key | Meeting Country Code   | Meeting Country Name   |   Meeting Circuit Key | Meeting Circuit Shortname   |   Session Key | Session Name   | Session Startdate   | Session Enddate     | Gmtoffset   | Path                                                      |
-   |---:|--------------:|:-------------------|:---------------|:---------------|--------------:|-----------------:|:----------------------------------------|:-------------------|----------------------:|:-----------------------|:-----------------------|----------------------:|:----------------------------|--------------:|:---------------|:--------------------|:--------------------|:------------|:----------------------------------------------------------|
-   |  0 |          2024 | Spa-Francorchamps  | Practice 1     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9567 | Practice 1     | 2024-07-26 13:30:00 | 2024-07-26 14:30:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-26_Practice_1/ |
-   |  1 |          2024 | Spa-Francorchamps  | Practice 2     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9568 | Practice 2     | 2024-07-26 17:00:00 | 2024-07-26 18:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-26_Practice_2/ |
-   |  2 |          2024 | Spa-Francorchamps  | Practice 3     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9569 | Practice 3     | 2024-07-27 12:30:00 | 2024-07-27 13:30:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-27_Practice_3/ |
-   |  3 |          2024 | Spa-Francorchamps  | Qualifying     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9570 | Qualifying     | 2024-07-27 16:00:00 | 2024-07-27 17:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-27_Qualifying/ |
-   |  4 |          2024 | Spa-Francorchamps  | Race           | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9574 | Race           | 2024-07-28 15:00:00 | 2024-07-28 17:00:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/       |
-
+   import livef1 as livef1
+   meeting = livef1.get_meeting(
+      season=2024,
+      meeting_key=1242
+      )
+   print(meeting)
 
 **Get a Meeting by Key.** Alternatively, you can retrieve a meeting using its unique meeting key.
 
 .. code-block:: python
 
-   >>> import livef1 as livef1
-   >>> meeting = livef1.get_meeting(season=2024, meeting_key=1242)
-   >>> type(meeting)
-   <class livef1.models.meeting.Meeting>
-   >>> meeting
+   import livef1 as livef1
+   meeting = livef1.get_meeting(
+      season=2024, 
+      meeting_identifier="Spa"
+      )
+   print(meeting)
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
    |    |   Season Year | Meeting Location   | Session Type   | Meeting Code   |   Meeting Key |   Meeting Number | Meeting Offname                         | Meeting Name       |   Meeting Country Key | Meeting Country Code   | Meeting Country Name   |   Meeting Circuit Key | Meeting Circuit Shortname   |   Session Key | Session Name   | Session Startdate   | Session Enddate     | Gmtoffset   | Path                                                      |
    |---:|--------------:|:-------------------|:---------------|:---------------|--------------:|-----------------:|:----------------------------------------|:-------------------|----------------------:|:-----------------------|:-----------------------|----------------------:|:----------------------------|--------------:|:---------------|:--------------------|:--------------------|:------------|:----------------------------------------------------------|
    |  0 |          2024 | Spa-Francorchamps  | Practice 1     | BEL02012       |          1242 |               14 | FORMULA 1 ROLEX BELGIAN GRAND PRIX 2024 | Belgian Grand Prix |                    16 | BEL                    | Belgium                |                     7 | Spa-Francorchamps           |          9567 | Practice 1     | 2024-07-26 13:30:00 | 2024-07-26 14:30:00 | 02:00:00    | 2024/2024-07-28_Belgian_Grand_Prix/2024-07-26_Practice_1/ |
@@ -90,10 +89,12 @@ To begin, retrieve a session object for the desired Formula 1 event by specifyin
 
 .. code-block:: python
 
-   >>> import livef1
-   >>> session = livef1.get_session(season=2024, meeting_identifier="Monza", session_identifier="Race")
-   >>> type(session)
-   <class livef1.models.meeting.Session>
+   import livef1
+   session = livef1.get_session(
+      season=2024,
+      meeting_identifier="Spa",
+      session_identifier="Race"
+      )
 
 The :class:`~Session` object acts as the gateway to all available data feeds for the specified session.
 
@@ -101,7 +102,13 @@ Use the `print_topic_names` method to explore the available data feeds for the s
 
 .. code-block:: python
 
-   >>> session.print_topic_names()
+   session.print_topic_names()
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+   :emphasize-lines: 11-12
+   
    Session_Info : 
          Details about the current session.
    Archive_Status : 
@@ -110,6 +117,10 @@ Use the `print_topic_names` method to explore the available data feeds for the s
             Current conditions and status of the track.
    Session_Data : 
             Raw data for the ongoing session.
+   Position : 
+            Position data of cars.
+   Car_Data : 
+            Car sensor data.
    .
    .
    .
@@ -126,8 +137,13 @@ Once you’ve identified the desired data feed, you can load its contents using 
 
 .. code-block:: python
 
-   >>> data = session.get_data(dataName="Car_Data")
-   >>> data
+   data = session.get_data(dataName="Car_Data")
+   print(data)
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
    |    |   SessionKey | timestamp    | Utc                          |   DriverNo | Status   |   X |   Y |   Z |
    |---:|-------------:|:-------------|:-----------------------------|-----------:|:---------|----:|----:|----:|
    |  0 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |          1 | OnTrack  |   0 |   0 |   0 |
@@ -136,19 +152,78 @@ Once you’ve identified the desired data feed, you can load its contents using 
    |  3 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |         10 | OnTrack  |   0 |   0 |   0 |
    |  4 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |         11 | OnTrack  |   0 |   0 |   0 |
 
+Load silver tables
+^^^^^^^^^^^^^^^^^^
 
-.. The `get_data` method returns an object of type :class:`~BasicResult`. This object encapsulates the parsed data in an easily accessible format. To retrieve the underlying data in a structured format, access the value attribute of the :class:`~BasicResult` object:
+The `livef1` package follows the Medallion Architecture, which organizes data into different layers based on their level of refinement: Bronze, Silver, and Gold. The `generate` method in the `Session` class is used to create Silver tables from the raw data.
+
+.. note::
+
+   For more details on the Medallion Architecture, refer to the :ref:`medallion_architecture`.
+
+To generate Silver tables, call the `generate` method:
+
+.. code-block:: python
+
+   session.generate(silver=True)
+
+This method processes the raw data in the Bronze layer and creates cleaned and enriched tables in the Silver layer. The generated tables can then be accessed as attributes of the `Session` object. For example, to access the laps data:
+
+.. code-block:: python
+
+   laps_data = session.get_laps()
+   print(laps_data)
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+   |    |   lap_number | lap_time               | in_pit                 | pit_out   | sector1_time           | sector2_time           | sector3_time           | None   |   speed_I1 |   speed_I2 |   speed_FL |   speed_ST |   no_pits | lap_start_time         |   DriverNo | lap_start_date             |
+   |---:|-------------:|:-----------------------|:-----------------------|:----------|:-----------------------|:-----------------------|:-----------------------|:-------|-----------:|-----------:|-----------:|-----------:|----------:|:-----------------------|-----------:|:---------------------------|
+   |  0 |            1 | NaT                    | 0 days 00:17:07.661000 | NaT       | NaT                    | 0 days 00:00:48.663000 | 0 days 00:00:29.571000 |        |        314 |        204 |        219 |        303 |         0 | NaT                    |         16 | 2024-07-28 13:03:52.742000 |
+   |  1 |            2 | 0 days 00:01:50.240000 | NaT                    | NaT       | 0 days 00:00:31.831000 | 0 days 00:00:48.675000 | 0 days 00:00:29.734000 |        |        303 |        203 |        215 |            |         0 | 0 days 00:57:07.067000 |         16 | 2024-07-28 13:05:45.045000 |
+   |  2 |            3 | 0 days 00:01:50.519000 | NaT                    | NaT       | 0 days 00:00:31.833000 | 0 days 00:00:49.132000 | 0 days 00:00:29.554000 |        |        311 |        202 |        217 |        304 |         0 | 0 days 00:58:57.307000 |         16 | 2024-07-28 13:07:35.285000 |
+   |  3 |            4 | 0 days 00:01:49.796000 | NaT                    | NaT       | 0 days 00:00:31.592000 | 0 days 00:00:48.778000 | 0 days 00:00:29.426000 |        |        312 |        201 |        217 |        309 |         0 | 0 days 01:00:47.870000 |         16 | 2024-07-28 13:09:25.848000 |
+   |  4 |            5 | 0 days 00:01:49.494000 | NaT                    | NaT       | 0 days 00:00:31.394000 | 0 days 00:00:48.729000 | 0 days 00:00:29.371000 |        |        313 |        197 |        216 |        311 |         0 | 0 days 01:02:37.721000 |         16 | 2024-07-28 13:11:15.699000 |
+
+The Silver tables provide high-quality data that is ready for analysis and reporting.
+
+.. Example: Visualize Car Data
+.. ------------------------------------
+
+.. Once you have loaded the car data, you can visualize it to gain insights into the performance and behavior of a specific driver. In this example, we will visualize the car data for driver number 44.
+
+.. First, load the car data using the `get_data` method:
 
 .. .. code-block:: python
-   
-..    >>> data.value
-..    [
-..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '1', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '3', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '4', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '10', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-..       {'SessionKey': 9590, 'timestamp': '00: 00: 30.209', 'Utc': '2024-09-01T12: 08: 13.7879709Z', 'DriverNo': '11', 'Status': 'OnTrack', 'X': 0, 'Y': 0, 'Z': 0},
-..       .
-..       ..
-..       ...
-..    ]
+
+..    import pandas as pd
+..    data = session.get_data(dataName="Car_Data")
+..    df_car = pd.DataFrame(data.value)
+
+.. Next, filter the data for driver number 44:
+
+.. .. code-block:: python
+
+..    driver_data = df_car[df_car['DriverNo'] == 44]
+
+.. Finally, use a plotting library such as `matplotlib` to visualize the data. For example, to plot the X, Y, and Z coordinates of the car:
+
+.. .. code-block:: python
+
+..    import matplotlib.pyplot as plt
+
+..    plt.figure(figsize=(10, 6))
+..    plt.plot(driver_data['timestamp'], driver_data['X'], label='X Coordinate')
+..    plt.plot(driver_data['timestamp'], driver_data['Y'], label='Y Coordinate')
+..    plt.plot(driver_data['timestamp'], driver_data['Z'], label='Z Coordinate')
+..    plt.xlabel('Timestamp')
+..    plt.ylabel('Coordinate Value')
+..    plt.title('Car Data for Driver No. 44')
+..    plt.legend()
+..    plt.show()
+
+.. This will generate a plot showing the X, Y, and Z coordinates of the car for driver number 44 over time.
+
+.. .. note::
+..    You can customize the visualization further by adding more plots or using different visualization libraries.

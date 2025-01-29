@@ -349,7 +349,7 @@ class Session:
         - The method checks if the `laps` attribute is populated.
         - If the `laps` attribute is not populated, it logs an informational message.
         """
-        if self.laps:
+        if self.laps != None:
             return self.laps
         else:
             logger.info("Laps table is not generated yet. Use .generate() to load required data and generate silver tables.")
@@ -371,7 +371,7 @@ class Session:
         - The method checks if the `carTelemetry` attribute is populated.
         - If the `carTelemetry` attribute is not populated, it logs an informational message.
         """
-        if self.carTelemetry: return self.carTelemetry
+        if self.carTelemetry != None: return self.carTelemetry
         else:
             logger.info("Car Telemetry table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
@@ -392,7 +392,7 @@ class Session:
         - The method checks if the `weather` attribute is populated.
         - If the `weather` attribute is not populated, it logs an informational message.
         """
-        if self.weather: return self.weather
+        if self.weather != None: return self.weather
         else:
             logger.info("Weather table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
@@ -414,7 +414,7 @@ class Session:
         - The method checks if the `timing` attribute is populated.
         - If the `timing` attribute is not populated, it logs an informational message.
         """
-        if self.timing: return self.timing
+        if self.timing != None: return self.timing
         else:
             logger.info("Timing table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None

@@ -231,11 +231,11 @@ TOPICS_MAP = {
     },
     "Position.z": {
         "key": "Position",
-        "description": "Position data in the Z coordinate."
+        "description": "Position data of cars."
     },
     "CarData.z": {
         "key": "Car_Data",
-        "description": "Car sensor data for the Z axis."
+        "description": "Car sensor data."
     },
     "TlaRcm": {
         "key": "Team_Audio_RCM",

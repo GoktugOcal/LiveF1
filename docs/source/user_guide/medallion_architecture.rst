@@ -1,3 +1,4 @@
+.. _medallion_architecture:
 Medallion Architecture
 ======================
 
