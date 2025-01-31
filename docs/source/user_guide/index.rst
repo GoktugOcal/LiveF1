@@ -6,30 +6,49 @@ Welcome to the **LiveF1 User Guide**! This guide will help you get started and w
 The Formula 1 Data
 ------------------
 
-In this section, we'll introduce the core concepts of Formula 1 data available in **LiveF1**, including race sessions, teams, drivers, and telemetry. We will explain the data models and how to access them.
+Formula 1 live timing data provides comprehensive insights into the performance of drivers, teams, and cars during races. This data is critical for real-time analytics, historical analysis, and developing strategies for races.
 
-(Topics to be filled later...)
+The live timing API follows a structured format to ensure efficient data access. Each API address corresponds to a specific endpoint, which streams or delivers data for various aspects of Formula 1 sessions. These endpoints can be accessed via HTTP requests.
 
-.. toctree::
-   :maxdepth: 1
+.. tip::
+   
+   For more detailed information, refer to the :ref:`f1-livetiming-data` section.
 
-   f1_data
+Data Topics
+^^^^^^^^^^^^^^^^^^
+
+Understanding the data topics is crucial for retrieving the required data from the F1 Livestreaming API. Each topic corresponds to specific data points and endpoints, which are essential for accessing and analyzing the live timing data effectively.
+
+.. tip::
+   
+   For the details of data topics, refer to the :ref:`data_topics` section.
 
 General Functions
 -----------------
 
 This section will cover the general functions available in **LiveF1**, such as how to retrieve and interact with data like race sessions, teams, and driver stats. You’ll learn how to use the library’s core functions for both basic and advanced use cases.
 
-(Topics to be filled later...)
+.. list-table::
+   :header-rows: 1
 
-
-Data Topics
------------------
-
-This section shows the data topics in **F1 Livestreaming API**.
-
-(Topics to be filled later...)
-
+   * - Function
+     - Description
+   * - **get_season**
+     - Retrieve data for a specific Formula 1 season. Usage Example: :ref:`get_season_example`
+   * - **get_meeting**
+     - Retrieve data for a specific meeting within a season. Usage Example: :ref:`get_meeting_example`
+   * - **get_session**
+     - Retrieve data for a specific session within a meeting and season. Usage Example: :ref:`get_session_example`
+   * - **load_data**
+     - Load and process data from a specific feed. Usage Example: :ref:`load_data_example`
+   * - **get_laps**
+     - Retrieve the laps data for a session. Usage Example: :ref:`get_laps_example`
+   * - **get_car_telemetry**
+     - Retrieve the car telemetry data for a session. Usage Example: :ref:`get_car_telemetry_example`
+   * - **get_weather**
+     - Retrieve the weather data for a session. Usage Example: :ref:`get_weather_example`
+   * - **get_timing**
+     - Retrieve the timing data for a session. Usage Example: :ref:`get_timing_example`
 
 Working with Data
 -----------------

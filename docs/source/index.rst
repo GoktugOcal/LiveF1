@@ -53,30 +53,23 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
    getting_started/quick_start
    getting_start/features
 
-
-
 .. toctree::
    :maxdepth: 1
    :caption: User Guide
    :hidden:
 
    user_guide/index
-   user_guide/f1_data
-   user_guide/data_topics
    user_guide/medallion_architecture
    user_guide/data_objects
    user_guide/accessing_data
-   .. user_guide/informative_data
-   .. user_guide/telemetry_data
-   .. user_guide/working_with_realtime_client
-   .. user_guide/visualization
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Official F1 Livetiming API
+   :hidden:
 
-   .. ./index
-   .. getting_started/index
-   .. features/index
-   .. developer_notes/index
-   .. additional_resources/index
+   livetimingf1/f1_data
+   livetimingf1/data_topics
 
 .. toctree::
    :maxdepth: 1
