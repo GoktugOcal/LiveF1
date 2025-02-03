@@ -422,6 +422,7 @@ class Session:
     def _get_first_datetime(self):
         pos_df = self.get_data("Position")
         car_df = self.get_data("Car_Data")
+        print(type(pos_df))
         first_date = np.amax([(helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(), (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()])
 
         return first_date
@@ -443,7 +444,9 @@ class Session:
 
         if gold:
             pass
-
+    
+    def generate_laps_table(self):
+        setattr(self, "laps", self.data_lake.silver_lake.generate_table("laps"))
 
 
 # session.load()

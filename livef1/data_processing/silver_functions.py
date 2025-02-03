@@ -97,41 +97,78 @@ def generate_laps_table(bronze_lake):
                 elif not pd.isnull(row.Sectors_2_PreviousValue):
                     laps[-1][col_map["LastLapTime_Value"]] = row.LastLapTime_Value
 
-            for sc_key, sc_value in row[list(speedTrap_cols.keys())].dropna().to_dict().items():
-                record[col_map[sc_key]] = sc_value
+            # for sc_key, sc_value in row[list(speedTrap_cols.keys())].dropna().to_dict().items():
+            #     record[col_map[sc_key]] = sc_value
 
-            for sc_key, sc_value in row[list(pit_cols.keys())].dropna().to_dict().items():
-                if sc_key == "InPit":
-                    if sc_value == 1:
-                        record[col_map[sc_key]] = ts
-                elif sc_key == "PitOut":
-                    if sc_value == True:
-                        record[col_map[sc_key]] = ts
-                        record["no_pits"] += 1
+            # for sc_key, sc_value in row[list(pit_cols.keys())].dropna().to_dict().items():
+            #     if sc_key == "InPit":
+            #         if sc_value == 1:
+            #             record[col_map[sc_key]] = ts
+            #     elif sc_key == "PitOut":
+            #         if sc_value == True:
+            #             record[col_map[sc_key]] = ts
+            #             record["no_pits"] += 1
 
-            for sc_key, sc_value in row[list(sector_cols.keys())].dropna().to_dict().items():
-                sc_no = int(sc_key.split("_")[1])
-                key_type = sc_key.split("_")[2]
+            # for sc_key, sc_value in row[list(sector_cols.keys())].dropna().to_dict().items():
+            #     sc_no = int(sc_key.split("_")[1])
+            #     key_type = sc_key.split("_")[2]
 
-                if key_type == "Value":
-                    if record[f"sector{str(sc_no + 1)}_time"] == None:
-                        record[f"sector{str(sc_no + 1)}_time"] = sc_value
-                        last_record_ts = ts
-                        if sc_no == 2:
-                            laps, record = enter_new_lap(laps, record)
-                            record["lap_start_time"] = ts
-                    elif sc_value == record[str(sc_no + 1)]:
-                        pass
-                    elif ts - last_record_ts > timedelta(seconds=10):
-                        laps, record = enter_new_lap(laps, record)
-                        record[f"sector{str(sc_no + 1)}_time"] = sc_value
-                        last_record_ts = ts
+            #     if key_type == "Value":
+            #         if record[f"sector{str(sc_no + 1)}_time"] == None:
+            #             record[f"sector{str(sc_no + 1)}_time"] = sc_value
+            #             last_record_ts = ts
+            #             if sc_no == 2:
+            #                 laps, record = enter_new_lap(laps, record)
+            #                 record["lap_start_time"] = ts
+            #         elif sc_value == record[str(sc_no + 1)]:
+            #             pass
+            #         elif ts - last_record_ts > timedelta(seconds=10):
+            #             laps, record = enter_new_lap(laps, record)
+            #             record[f"sector{str(sc_no + 1)}_time"] = sc_value
+            #             last_record_ts = ts
 
-                elif key_type == "PreviousValue" and ts - last_record_ts > timedelta(seconds=10):
-                    record[f"sector{str(sc_no + 1)}_time"] = sc_value
-                    last_record_ts = ts
-                    if sc_no == 2:
-                        laps, record = enter_new_lap(laps, record)
+            #     elif key_type == "PreviousValue" and ts - last_record_ts > timedelta(seconds=10):
+            #         record[f"sector{str(sc_no + 1)}_time"] = sc_value
+            #         last_record_ts = ts
+            #         if sc_no == 2:
+            #             laps, record = enter_new_lap(laps, record)
+
+            for sc_key, sc_value in row.to_dict().items():
+                if not pd.isna(sc_value):
+                    if sc_key in speedTrap_cols:
+                        record[col_map[sc_key]] = sc_value
+                    
+                    if sc_key in pit_cols:
+                        if sc_key == "InPit":
+                            if sc_value == 1:
+                                record[col_map[sc_key]] = ts
+                        elif sc_key == "PitOut":
+                            if sc_value == True:
+                                record[col_map[sc_key]] = ts
+                                record["no_pits"] += 1
+                    if sc_key in sector_cols:
+                        sc_no = int(sc_key.split("_")[1])
+                        key_type = sc_key.split("_")[2]
+
+                        if key_type == "Value":
+                            if record[f"sector{str(sc_no + 1)}_time"] == None:
+                                record[f"sector{str(sc_no + 1)}_time"] = sc_value
+                                last_record_ts = ts
+                                if sc_no == 2:
+                                    laps, record = enter_new_lap(laps, record)
+                                    record["lap_start_time"] = ts
+                            elif sc_value == record[str(sc_no + 1)]:
+                                pass
+                            elif ts - last_record_ts > timedelta(seconds=10):
+                                laps, record = enter_new_lap(laps, record)
+                                record[f"sector{str(sc_no + 1)}_time"] = sc_value
+                                last_record_ts = ts
+
+                        elif key_type == "PreviousValue" and ts - last_record_ts > timedelta(seconds=10):
+                            record[f"sector{str(sc_no + 1)}_time"] = sc_value
+                            last_record_ts = ts
+                            if sc_no == 2:
+                                laps, record = enter_new_lap(laps, record)
 
         laps_df = pd.DataFrame(laps)
         laps_df["DriverNo"] = driver_no
