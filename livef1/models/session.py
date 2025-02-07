@@ -447,6 +447,9 @@ class Session:
     
     def generate_laps_table(self):
         setattr(self, "laps", self.data_lake.silver_lake.generate_table("laps"))
+    
+    def generate_car_telemetry_table(self):
+        setattr(self, "car_telemetry", self.data_lake.silver_lake.generate_table("laps"))
 
 
 # session.load()
