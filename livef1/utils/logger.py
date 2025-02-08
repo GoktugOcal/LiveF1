@@ -20,3 +20,27 @@ file_handler.setFormatter(logging.Formatter(LOG_FORMAT,"%Y-%m-%d %H:%M:%S"))
 # Add handlers to logger
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
+
+def set_log_level(level):
+    """
+    Set the logging level for the livef1 logger.
+    
+    Parameters
+    ----------
+    level : Union[str, int]
+        The logging level to set. Can be either a string ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+        or the corresponding integer value.
+    
+    Examples
+    --------
+    >>> set_log_level('DEBUG')  # Set to debug level
+    >>> set_log_level(logging.INFO)  # Set to info level
+    """
+    if isinstance(level, str):
+        level = level.upper()
+        numeric_level = getattr(logging, level, None)
+        if not isinstance(numeric_level, int):
+            raise ValueError(f'Invalid log level: {level}')
+        level = numeric_level
+        
+    logger.setLevel(level)

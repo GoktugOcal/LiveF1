@@ -215,7 +215,7 @@ def generate_car_telemetry_table(bronze_lake):
 
         # laps_driver["lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"] - timedelta(milliseconds=1)
         # laps_driver = pd.concat([laps_driver[["lap_start_date", "lap_number"]].set_index("lap_start_date"), laps_driver[["lap_end_date", "lap_number"]].set_index("lap_end_date")]).reset_index().sort_values("index").dropna()
-        laps_driver["lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"]
+        laps_driver.loc[:, "lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"]
 
         # df_driver = df_driver.join(laps_driver.set_index("index"), how="outer")
         df_driver = df_driver.join(laps_driver[["lap_start_date", "lap_number"]].set_index("lap_start_date"), how="outer")
