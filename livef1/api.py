@@ -31,10 +31,10 @@ def get_season(season: int) -> Season:
     livef1Exception
         If no data is available for the specified season.
     """
-    logger.debug(f"Trying to get season {season}.")
+    logger.debug(f"Getting season {season}.")
     season_data = download_data(season_identifier=season)
     season = Season(**json_parser_for_objects(season_data))
-    logger.debug("The season was received successfully.")
+    logger.debug("Got the season.")
     return season
 
 def get_meeting(
@@ -84,12 +84,12 @@ def get_meeting(
     search_df_season = season_obj.season_table.reset_index()[required_cols].drop_duplicates()
 
     if meeting_identifier:
-        logger.debug("Trying to get meeting by meeting identifier.")
+        logger.debug("Getting meeting by meeting identifier.")
         result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
         meeting_key = season_obj.season_table.iloc[result_meeting["row"]].name
     
     elif meeting_key:
-        logger.debug("Trying to get meeting by meeting key.")
+        logger.debug("Getting meeting by meeting key.")
         pass
 
     meeting_obj = [meeting for meeting in season_obj.meetings if meeting.key == meeting_key][0]
@@ -103,7 +103,7 @@ def get_meeting(
         key = meeting_key,
         cols = required_cols
     )
-    logger.info("The meeting was received successfully.")
+    logger.info("Got the meeting.")
 
     return meeting_obj
 
@@ -165,12 +165,12 @@ def get_session(
     search_df_season = meeting_obj.sessions_table.reset_index()[required_cols].drop_duplicates()
 
     if session_identifier:
-        logger.debug("Trying to get session by identifier.")
+        logger.debug("Getting session by identifier.")
         result_session = find_most_similar_vectorized(search_df_season, session_identifier)
         session_key = meeting_obj.sessions_table.iloc[result_session["row"]].name
 
     elif session_key:
-        logger.debug("Trying to get session by key.")
+        logger.debug("Getting session by key.")
         pass
 
     session_obj = [session for session in meeting_obj.sessions if session.key == session_key][0]

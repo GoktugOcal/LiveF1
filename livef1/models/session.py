@@ -244,27 +244,26 @@ class Session:
                 dataName = topic
                 break
         
-        logger.info(f"Getting requested data : '{dataName}'.\n\tSelected session : {self.season.year} {self.meeting.name} {self.name}\n\tTopic : {dataName}")
-
+        # logger.info(f"Getting requested data : '{dataName}'.\n\tSelected session : {self.season.year} {self.meeting.name} {self.name}\n\tTopic : {dataName}")
+        logger.info(f"Fetching data : '{dataName}'")
         start = time()
         data = livetimingF1_getdata(
             urljoin(self.full_path, self.topic_names_info[dataName][dataType]),
             stream=stream
         )
-        logger.debug(f"Data has been get in {round(time() - start,3)} seconds")
-        logger.info("Data is successfully received.")
-
+        logger.debug(f"Fetched in {round(time() - start,3)} seconds")
         # Parse the retrieved data using the ETL parser and return the result.
         start = time()
         res = BasicResult(
             data=list(self.etl_parser.unified_parse(dataName, data))
         )
-        logger.debug(f"Data has been parsed in {round(time() - start,3)} seconds")
-        logger.info("Data is successfully parsed.")
+        logger.debug(f"Parsed in {round(time() - start,3)} seconds")
+        logger.info(f"'{dataName}' has fetched and parsed")
 
         self.data_lake.put(
             level="bronze", data_name=dataName, data=res
             )
+        logger.debug(f"'{dataName}' has been saved to the bronze lake.")
 
         return self.data_lake.get(level="bronze", data_name=dataName)
 

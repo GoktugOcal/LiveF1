@@ -138,7 +138,7 @@ def generate_laps_table(bronze_lake):
                     if sc_key in speedTrap_cols:
                         record[col_map[sc_key]] = sc_value
                     
-                    if sc_key in pit_cols:
+                    elif sc_key in pit_cols:
                         if sc_key == "InPit":
                             if sc_value == 1:
                                 record[col_map[sc_key]] = ts
@@ -146,7 +146,7 @@ def generate_laps_table(bronze_lake):
                             if sc_value == True:
                                 record[col_map[sc_key]] = ts
                                 record["no_pits"] += 1
-                    if sc_key in sector_cols:
+                    elif sc_key in sector_cols:
                         sc_no = int(sc_key.split("_")[1])
                         key_type = sc_key.split("_")[2]
 
