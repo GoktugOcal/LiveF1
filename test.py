@@ -8,4 +8,10 @@ session = livef1.get_session(
    session_identifier="Race"
    )
 
-session.generate()
+# session.generate()
+
+# session.load_data("CarData.z", parallel=False)
+
+data = session.get_data(["CarData.z", "Position.z", "SessionStatus"], parallel=True)
+
+print(data)
