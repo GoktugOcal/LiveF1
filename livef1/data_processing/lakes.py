@@ -108,10 +108,10 @@ class SilverLake:
             The generated table as a pandas DataFrame.
         """
         if table_name in TABLE_GENERATION_FUNCTIONS:
-            required_data = TABLE_REQUIREMENTS.get(table_name, [])
+            required_data = TABLE_REQUIREMENTS[table_name]
             for data_name in required_data:
                 if not self.bronze_lake.has_data(data_name):
-                    self.great_lake.session.load_data(data_name)
+                    self.great_lake.session.get_data(data_name)
             function_name = TABLE_GENERATION_FUNCTIONS[table_name]
             return globals()[function_name](self.bronze_lake)
         else:

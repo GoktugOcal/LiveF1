@@ -15,6 +15,11 @@ from ..data_processing.data_models import *
 from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES, TABLE_GENERATION_FUNCTIONS
 from ..data_processing.lakes import DataLake
 
+from multiprocessing import Pool
+from functools import partial
+import multiprocessing
+from itertools import repeat
+
 
 class Session:
     """
@@ -258,7 +263,7 @@ class Session:
             data=list(self.etl_parser.unified_parse(dataName, data))
         )
         logger.debug(f"Parsed in {round(time() - start,3)} seconds")
-        logger.info(f"'{dataName}' has fetched and parsed")
+        logger.info(f"'{dataName}' has been fetched and parsed")
 
         self.data_lake.put(
             level="bronze", data_name=dataName, data=res
@@ -292,10 +297,11 @@ class Session:
         dataName = self.check_data_name(dataName)
 
         if dataName in self.data_lake.raw:
-            logger.info(f"'{dataName}' has been found in lake.")
-            return BasicResult(data=self.data_lake.raw[dataName])
+            logger.debug(f"'{dataName}' has been found in lake.")
+            return self.data_lake.get(level="bronze", data_name=dataName)
+            # return BasicResult(data=self.data_lake.raw[dataName])
         else:
-            logger.info(f"'{dataName}' has not been found in lake, loading it.")
+            logger.debug(f"'{dataName}' has not been found in lake, loading it.")
             return self.load_data(dataName)
 
     
@@ -419,17 +425,26 @@ class Session:
             return None
     
     def _get_first_datetime(self):
-        pos_df = self.get_data("Position")
-        car_df = self.get_data("Car_Data")
-        print(type(pos_df))
+        pos_df = self.get_data("Position.z")
+        car_df = self.get_data("CarData.z")
         first_date = np.amax([(helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(), (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()])
-
         return first_date
     
     def _get_session_start_time(self):
         return pd.to_timedelta(self.get_data(dataName="SessionStatus").set_index("status").loc["Started"].timestamp)
 
     def generate(self, silver=True, gold=False):
+
+        required_data = set(["CarData.z", "Position.z", "SessionStatus"])
+        tables_to_generate = set()
+        if silver:
+            tables_to_generate.update(SILVER_SESSION_TABLES)
+        if gold:
+            tables_to_generate.update(GOLD_SESSION_TABLES)
+        for table_name in tables_to_generate:
+            required_data.update(TABLE_REQUIREMENTS[table_name])
+        self.get_data_parallel(list(required_data))
+
         self.first_datetime = self._get_first_datetime()
         self.session_start_time = self._get_session_start_time()
         self.session_start_datetime = self.first_datetime + self.session_start_time
@@ -440,7 +455,7 @@ class Session:
                 if table_name in TABLE_GENERATION_FUNCTIONS:
                     setattr(self, table_name, self.data_lake.silver_lake.generate_table(table_name))
                     logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
-
+        
         if gold:
             pass
     
@@ -449,6 +464,110 @@ class Session:
     
     def generate_car_telemetry_table(self):
         setattr(self, "car_telemetry", self.data_lake.silver_lake.generate_table("laps"))
+
+    def load_data_parallel(
+        self,
+        dataNames : List[str],
+        dataType : str = "StreamPath",
+        stream : bool = True
+        ):
+        """
+        Standalone function for parallel data loading.
+        
+        Parameters
+        ----------
+        dataNames : List[str]
+            List of data names to load
+        dataType : str
+            The type of the data to fetch. This is used to determine the feed path. 
+            Currently overridden to `"StreamPath"` within the method.
+        stream : bool
+            Whether to fetch the data as a stream. This is currently overridden to `True` 
+            within the method.
+        
+        Returns
+        -------
+        dict
+            Dictionary mapping data names to their BasicResult objects
+        """
+        
+        # Use number of CPUs minus 1 to avoid overloading
+        n_processes = max(1, multiprocessing.cpu_count() - 1)
+        # Execute parallel load
+        with Pool(processes=n_processes) as pool:
+            results = pool.starmap(load_single_data, zip(dataNames, repeat(self)))
+
+        for name, result in results:
+            self.data_lake.put(
+                level="bronze", data_name=name, data=result
+                )
+            logger.debug(f"'{name}' has been saved to the bronze lake.")
+        
+        # Convert list of tuples to dictionary
+        results_dict = {name: result for name, result in results}
+        return results_dict
+
+    def get_data_parallel(self, dataNames: List[str]):
+        """
+        Retrieve multiple data topics in parallel.
+        
+        Parameters
+        ----------
+        dataNames : List[str]
+            List of data topic names to retrieve
+            
+        Returns
+        -------
+        dict
+            Dictionary mapping data names to their BasicResult objects
+        """
+        if not hasattr(self, "topic_names_info"):
+            self.get_topic_names()
+        
+        # Validate and convert all data names
+        validated_names = [self.check_data_name(name) for name in dataNames]
+        
+        # Check which data needs to be loaded
+        to_load = []
+        results = {}
+        
+        for name in validated_names:
+            if name in self.data_lake.raw:
+                logger.debug(f"'{name}' found in lake, using cached version")
+                results[name] = self.data_lake.get(level="bronze", data_name=name)
+            else:
+                to_load.append(name)
+        
+        if to_load:
+            logger.info(f"Loading {len(to_load)} data topics in parallel")
+            
+            # Call load_data_parallel with all names at once
+            loaded_results = self.load_data_parallel(dataNames=to_load)
+            results.update(loaded_results)
+        
+        return results
+
+
+def load_single_data(dataName, session):
+    dataType = "StreamPath"
+    stream = True
+
+    logger.info(f"Fetching data : '{dataName}'")
+    start = time()
+    data = livetimingF1_getdata(
+        urljoin(session.full_path, session.topic_names_info[dataName][dataType]),
+        stream=stream
+    )
+    logger.debug(f"Fetched in {round(time() - start,3)} seconds")
+    # Parse the retrieved data using the ETL parser and return the result.
+    start = time()
+    res = BasicResult(
+        data=list(session.etl_parser.unified_parse(dataName, data))
+    )
+    logger.debug(f"Parsed in {round(time() - start,3)} seconds")
+    logger.info(f"'{dataName}' has been fetched and parsed")
+
+    return dataName, res
 
 
 # session.load()
