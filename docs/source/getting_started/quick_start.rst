@@ -152,6 +152,38 @@ Once you’ve identified the desired data feed, you can load its contents using 
    |  3 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |         10 | OnTrack  |   0 |   0 |   0 |
    |  4 |         9590 | 00:00:30.209 | 2024-09-01T12:08:13.7879709Z |         11 | OnTrack  |   0 |   0 |   0 |
 
+Loading Multiple Data Topics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can load multiple data topics simultaneously using a list of topic names:
+
+.. code-block:: python
+
+   # Load multiple topics in parallel (default)
+   data = session.get_data(["Car_Data", "Position", "SessionStatus"])
+   
+   # Load multiple topics sequentially
+   data = session.get_data(["Car_Data", "Position"], parallel=False)
+
+Each topic's data will be returned in a dictionary with topic names as keys.
+
+Error Handling
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's good practice to handle potential errors when working with F1 data:
+
+.. code-block:: python
+
+   try:
+       session = livef1.get_session(
+           season=2024,
+           meeting_identifier="Spa",
+           session_identifier="Race"
+       )
+       data = session.get_data("Car_Data")
+   except Exception as e:
+       print(f"Error loading data: {e}")
+
 Load silver tables
 ^^^^^^^^^^^^^^^^^^
 
@@ -188,42 +220,68 @@ This method processes the raw data in the Bronze layer and creates cleaned and e
 
 The Silver tables provide high-quality data that is ready for analysis and reporting.
 
-.. Example: Visualize Car Data
-.. ------------------------------------
+Example Use Case: Analyzing Lap Times
+-----------------------------------
 
-.. Once you have loaded the car data, you can visualize it to gain insights into the performance and behavior of a specific driver. In this example, we will visualize the car data for driver number 44.
+Let's create a complete example that analyzes lap times for a race session:
 
-.. First, load the car data using the `get_data` method:
+.. code-block:: python
+
+   import livef1
+   import pandas as pd
+   import matplotlib.pyplot as plt
+
+   # Get the session
+   session = livef1.get_session(
+       season=2024,
+       meeting_identifier="Spa",
+       session_identifier="Race"
+   )
+
+   # Generate silver tables
+   session.generate(silver=True)
+
+   # Get lap times data
+   df = session.get_laps()
+
+   # Calculate average lap times per driver
+   avg_lap_times = df.groupby('DriverNo')['lap_time'].mean()
+
+   # Visualize the results
+   plt.figure(figsize=(12, 6))
+   avg_lap_times.plot(kind='bar')
+   plt.title('Average Lap Times by Driver')
+   plt.xlabel('Driver Number')
+   plt.ylabel('Average Lap Time (seconds)')
+   plt.grid(True)
+   plt.tight_layout()
+   plt.show()
+
+.. Visualizing Telemetry Data
+.. -------------------------
+
+.. You can also visualize telemetry data for detailed analysis:
 
 .. .. code-block:: python
 
-..    import pandas as pd
-..    data = session.get_data(dataName="Car_Data")
-..    df_car = pd.DataFrame(data.value)
-
-.. Next, filter the data for driver number 44:
-
-.. .. code-block:: python
-
-..    driver_data = df_car[df_car['DriverNo'] == 44]
-
-.. Finally, use a plotting library such as `matplotlib` to visualize the data. For example, to plot the X, Y, and Z coordinates of the car:
-
-.. .. code-block:: python
-
-..    import matplotlib.pyplot as plt
-
-..    plt.figure(figsize=(10, 6))
-..    plt.plot(driver_data['timestamp'], driver_data['X'], label='X Coordinate')
-..    plt.plot(driver_data['timestamp'], driver_data['Y'], label='Y Coordinate')
-..    plt.plot(driver_data['timestamp'], driver_data['Z'], label='Z Coordinate')
-..    plt.xlabel('Timestamp')
-..    plt.ylabel('Coordinate Value')
-..    plt.title('Car Data for Driver No. 44')
-..    plt.legend()
+..    # Get car telemetry data
+..    telemetry = session.get_data("Car_Data")
+   
+..    # Filter for a specific driver
+..    driver_data = telemetry[telemetry['DriverNo'] == 1]  # Max Verstappen
+   
+..    # Create a speed plot
+..    plt.figure(figsize=(15, 5))
+..    plt.plot(driver_data['timestamp'], driver_data['Speed'])
+..    plt.title('Speed Telemetry - Max Verstappen')
+..    plt.xlabel('Time')
+..    plt.ylabel('Speed (km/h)')
+..    plt.grid(True)
 ..    plt.show()
 
-.. This will generate a plot showing the X, Y, and Z coordinates of the car for driver number 44 over time.
+.. admonition:: Next Steps
+   :class: tip
 
-.. .. note::
-..    You can customize the visualization further by adding more plots or using different visualization libraries.
+   - For detailed information about available data topics, see :ref:`data_topics`
+   - Learn about data organization in :ref:`medallion_architecture`
+   - Explore more examples in the THERE WILL BE SECTIONS PAGE.

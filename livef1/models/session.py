@@ -272,7 +272,7 @@ class Session:
 
     def get_data(
         self,
-        data_names,
+        dataNames,
         parallel: bool = True
     ):
         """
@@ -316,11 +316,11 @@ class Session:
             self.get_topic_names()
         
         # Handle single data name case
-        single_input = isinstance(data_names, str)
-        data_names = [data_names] if single_input else data_names
+        single_input = isinstance(dataNames, str)
+        dataNames = [dataNames] if single_input else dataNames
         
         # Validate all data names
-        validated_names = [self.check_data_name(name) for name in data_names]
+        validated_names = [self.check_data_name(name) for name in dataNames]
         
         # Check cache and identify topics to load
         to_load = []
@@ -398,11 +398,12 @@ class Session:
         - The method checks if the `laps` attribute is populated.
         - If the `laps` attribute is not populated, it logs an informational message.
         """
-        if self.laps != None:
+        if self.laps is not None:
             return self.laps
         else:
             logger.info("Laps table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
+
     def get_car_telemetry(self):
         """
         Retrieve the car telemetry data.
@@ -420,10 +421,12 @@ class Session:
         - The method checks if the `carTelemetry` attribute is populated.
         - If the `carTelemetry` attribute is not populated, it logs an informational message.
         """
-        if self.carTelemetry != None: return self.carTelemetry
+        if self.carTelemetry is not None:
+            return self.carTelemetry
         else:
             logger.info("Car Telemetry table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
+
     def get_weather(self):
         """
         Retrieve the weather data.
@@ -441,10 +444,13 @@ class Session:
         - The method checks if the `weather` attribute is populated.
         - If the `weather` attribute is not populated, it logs an informational message.
         """
-        if self.weather != None: return self.weather
-        else:
-            logger.info("Weather table is not generated yet. Use .generate() to load required data and generate silver tables.")
-            return None
+
+        logger.error(".get_weather() is not implemented yet.")
+
+        # if self.weather != None: return self.weather
+        # else:
+        #     logger.info("Weather table is not generated yet. Use .generate() to load required data and generate silver tables.")
+        #     return None
     
     def get_timing(self):
         """
@@ -463,10 +469,13 @@ class Session:
         - The method checks if the `timing` attribute is populated.
         - If the `timing` attribute is not populated, it logs an informational message.
         """
-        if self.timing != None: return self.timing
-        else:
-            logger.info("Timing table is not generated yet. Use .generate() to load required data and generate silver tables.")
-            return None
+
+        logger.error(".get_timing() is not implemented yet.")
+
+        # if self.timing != None: return self.timing
+        # else:
+        #     logger.info("Timing table is not generated yet. Use .generate() to load required data and generate silver tables.")
+        #     return None
     
     def _get_first_datetime(self):
         pos_df = self.get_data("Position.z")
@@ -475,7 +484,7 @@ class Session:
         return first_date
     
     def _get_session_start_time(self):
-        return pd.to_timedelta(self.get_data(dataName="SessionStatus").set_index("status").loc["Started"].timestamp)
+        return pd.to_timedelta(self.get_data(dataNames="SessionStatus").set_index("status").loc["Started"].timestamp)
 
     def generate(self, silver=True, gold=False):
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])

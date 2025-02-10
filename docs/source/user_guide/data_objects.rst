@@ -2,15 +2,7 @@
 Data Objects
 *******************
 
-.. automodule:: livef1
-    :undoc-members:
-    :inherited-members:
-   
-    .. autosummary::
-        models.Season
-        models.Meeting
-        models.Session
-
+.. _get_season:
 Season
 ======
 
@@ -31,6 +23,7 @@ Example:
     # Access the meetings
     meetings = season_2023.meetings
 
+.. _get_meeting:
 Meeting
 =======
 
@@ -51,6 +44,7 @@ Example:
     # Access the sessions
     sessions = meeting.sessions
 
+.. _get_session:
 Session
 =======
 
@@ -97,3 +91,13 @@ Running the `.generate` method is important for the following reasons:
 1. **Data Organization**: It organizes raw data into structured tables, making it easier to analyze and visualize.
 2. **Efficiency**: Preprocessing and storing data in tables reduces the need for repeated data parsing and processing.
 3. **Accessibility**: Generated tables can be accessed directly through the session object, simplifying data retrieval.
+
+
+.. automodule:: livef1
+    :undoc-members:
+    :inherited-members:
+   
+    .. autosummary::
+        models.Season
+        models.Meeting
+        models.Session

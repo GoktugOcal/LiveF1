@@ -1,64 +1,76 @@
 User Guide
 ===========
 
-Welcome to the **LiveF1 User Guide**! This guide will help you get started and walk you through the main features of the **LiveF1** package, covering both basic and advanced usage.
+Welcome to the **LiveF1 User Guide**! This guide will help you understand how to effectively use the LiveF1 package for accessing and analyzing Formula 1 timing data. Whether you're interested in real-time race analytics or historical data analysis, this guide will walk you through the essential concepts and features.
 
-The Formula 1 Data
-------------------
+Understanding Formula 1 Data
+---------------------------
 
 Formula 1 live timing data provides comprehensive insights into the performance of drivers, teams, and cars during races. This data is critical for real-time analytics, historical analysis, and developing strategies for races.
 
 The live timing API follows a structured format to ensure efficient data access. Each API address corresponds to a specific endpoint, which streams or delivers data for various aspects of Formula 1 sessions. These endpoints can be accessed via HTTP requests.
 
+.. seealso::
+   For detailed information about the F1 timing data structure and available endpoints, see :ref:`f1-livetiming-data`.
+
+The LiveF1 package organizes this data using the :ref:`medallion_architecture`, which structures data into Bronze (raw), Silver (cleaned), and Gold (analytics-ready) layers.
+
+Core Concepts
+------------
+
+Before diving into specific features, it's important to understand these key concepts:
+
+1. **Data Organization**
+   - Seasons contain multiple race meetings
+   - Meetings contain multiple sessions (Practice, Qualifying, Race)
+   - Sessions contain various data feeds (telemetry, timing, weather, etc.)
+
+2. **Data Access Patterns**
+   - Historical data access for past races
+   - Real-time data streaming for live sessions
+   - Data transformation through the medallion architecture
+
+3. **Data Types**
+   Each session provides multiple data feeds, organized by topics like car telemetry, position data, and timing information.
+
 .. tip::
-   
-   For more detailed information, refer to the :ref:`f1-livetiming-data` section.
+   Browse available data topics and their descriptions in :ref:`data_topics`.
 
-Data Topics
-^^^^^^^^^^^^^^^^^^
+Getting Started with Data
+------------------------
 
-Understanding the data topics is crucial for retrieving the required data from the F1 Livestreaming API. Each topic corresponds to specific data points and endpoints, which are essential for accessing and analyzing the live timing data effectively.
+The package provides three main functions for accessing F1 data:
 
-.. tip::
-   
-   For the details of data topics, refer to the :ref:`data_topics` section.
+1. :ref:`get_season`: Access an entire F1 season
+2. :ref:`get_meeting`: Access a specific race meeting
+3. :ref:`get_session`: Access a specific session
 
-General Functions
------------------
+Once you have a session object, you can:
 
-This section will cover the general functions available in **LiveF1**, such as how to retrieve and interact with data like race sessions, teams, and driver stats. You’ll learn how to use the library’s core functions for both basic and advanced use cases.
+- Load raw data using ``get_data()``
+- Generate processed tables using ``generate()``
+- Access specific data types through helper methods like ``get_laps()``, ``get_car_telemetry()``, etc.
 
-.. list-table::
-   :header-rows: 1
+Examples and Use Cases
+---------------------
 
-   * - Function
-     - Description
-   * - **get_season**
-     - Retrieve data for a specific Formula 1 season. Usage Example: :ref:`get_season_example`
-   * - **get_meeting**
-     - Retrieve data for a specific meeting within a season. Usage Example: :ref:`get_meeting_example`
-   * - **get_session**
-     - Retrieve data for a specific session within a meeting and season. Usage Example: :ref:`get_session_example`
-   * - **load_data**
-     - Load and process data from a specific feed. Usage Example: :ref:`load_data_example`
-   * - **get_laps**
-     - Retrieve the laps data for a session. Usage Example: :ref:`get_laps_example`
-   * - **get_car_telemetry**
-     - Retrieve the car telemetry data for a session. Usage Example: :ref:`get_car_telemetry_example`
-   * - **get_weather**
-     - Retrieve the weather data for a session. Usage Example: :ref:`get_weather_example`
-   * - **get_timing**
-     - Retrieve the timing data for a session. Usage Example: :ref:`get_timing_example`
+- :ref:`historical_data`: Learn how to analyze past race data
+- :ref:`realtime_data`: Learn how to work with live session data
+- :ref:`quick_start`: Quick examples to get started
 
-Working with Data
------------------
+Where to Go Next
+---------------
 
-In this section, you will find detailed instructions on how to load, process, and analyze F1 data using **LiveF1**. It will cover how to fetch data from different seasons, sessions, and data types, as well as how to handle both real-time and historical data.
-
-(Topics to be filled later...)
+* For detailed API documentation, see the :ref:`api_reference`
+* For examples and tutorials, check out the :ref:`examples` section
+* For understanding data organization, read about the :ref:`medallion_architecture`
+* For available data feeds, browse the :ref:`data_topics`
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
+   :hidden:
 
-   ../working_with_data/historical_data
-   ../working_with_data/realtime_data
+   medallion_architecture
+   data_objects
+   data_models
+   accessing_data

@@ -77,7 +77,7 @@ class livef1SessionETL:
         :class:`~BronzeResult`
             An object containing the bronze level data.
         """
-        raw_data = self.session.get_data(dataName="Raw_Data")
+        raw_data = self.session.get_data(dataNames="Raw_Data")
         # Perform any additional processing if needed
         return BronzeResult(data=raw_data.value)
 

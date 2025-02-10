@@ -61,6 +61,7 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
    user_guide/index
    user_guide/medallion_architecture
    user_guide/data_objects
+   user_guide/data_models
    user_guide/accessing_data
 
 .. toctree::
