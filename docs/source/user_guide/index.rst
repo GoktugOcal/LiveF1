@@ -73,4 +73,5 @@ Where to Go Next
    medallion_architecture
    data_objects
    data_models
-   accessing_data
+   historical_data
+   realtime_data

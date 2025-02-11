@@ -60,9 +60,9 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
 
    user_guide/index
    user_guide/medallion_architecture
-   user_guide/data_objects
    user_guide/data_models
-   user_guide/accessing_data
+   user_guide/historical_data
+   user_guide/realtime_data
 
 .. toctree::
    :maxdepth: 1
@@ -71,14 +71,6 @@ LiveF1 is an open-source project! Contributions are welcome to enhance its funct
 
    livetimingf1/f1_data
    livetimingf1/data_topics
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Working with data
-   :hidden:
-
-   working_with_data/historical_data
-   working_with_data/realtime_data
 
 .. toctree::
    :maxdepth: 1

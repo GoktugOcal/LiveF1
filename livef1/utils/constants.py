@@ -324,15 +324,15 @@ interpolation_map = {
   "WindSpeed" : "polynomial",
   }
 
-SILVER_SESSION_TABLES = ["laps", "car_telemetry"]
+SILVER_SESSION_TABLES = ["laps", "carTelemetry"]
 # SILVER_SESSION_TABLES = ["laps", "car_telemetry", "weather", "timing"]
 
 TABLE_GENERATION_FUNCTIONS = {
     "laps": "generate_laps_table",
-    "car_telemetry": "generate_car_telemetry_table"
+    "carTelemetry": "generate_car_telemetry_table"
 }
 
 TABLE_REQUIREMENTS = {
     "laps": ["TimingData"],
-    "car_telemetry": ["TimingData", "CarData.z", "Position.z"]
+    "carTelemetry": ["TimingData", "CarData.z", "Position.z"]
 }

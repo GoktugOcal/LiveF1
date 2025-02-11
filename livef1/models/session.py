@@ -228,8 +228,6 @@ class Session:
                     break
             validated_names.append(name)
 
-        
-        print(validated_names)
         results = {}
         if parallel and len(validated_names) > 1:
             # Parallel loading
@@ -241,20 +239,22 @@ class Session:
         else:
             # Sequential loading
             for name in validated_names:
-                logger.info(f"Fetching data : '{name}'")
-                start = time()
-                data = livetimingF1_getdata(
-                    urljoin(self.full_path, self.topic_names_info[name][dataType]),
-                    stream=stream
-                )
-                logger.debug(f"Fetched in {round(time() - start,3)} seconds")
+
+                name, res = load_single_data(name, self)
+                # logger.info(f"Fetching data : '{name}'")
+                # start = time()
+                # data = livetimingF1_getdata(
+                #     urljoin(self.full_path, self.topic_names_info[name][dataType]),
+                #     stream=stream
+                # )
+                # logger.debug(f"Fetched in {round(time() - start,3)} seconds")
                 
-                start = time()
-                res = BasicResult(
-                    data=list(self.etl_parser.unified_parse(name, data))
-                )
-                logger.debug(f"Parsed in {round(time() - start,3)} seconds")
-                logger.info(f"'{name}' has been fetched and parsed")
+                # start = time()
+                # res = BasicResult(
+                #     data=list(self.etl_parser.unified_parse(name, data))
+                # )
+                # logger.debug(f"Parsed in {round(time() - start,3)} seconds")
+                # logger.info(f"'{name}' has been fetched and parsed")
                 results[name] = res
 
         # Save all results to bronze lake
@@ -273,7 +273,8 @@ class Session:
     def get_data(
         self,
         dataNames,
-        parallel: bool = True
+        parallel: bool = False,
+        force: bool = False
     ):
         """
         Retrieve one or multiple data topics from cache or load them, with optional parallel processing.
@@ -284,7 +285,10 @@ class Session:
             Single data topic name or list of data topic names to retrieve
         parallel : bool, optional
             Whether to use parallel processing when fetching multiple topics.
-            Defaults to True.
+            Defaults to False.
+        force : bool, optional
+            Whether to force download data even if it exists in cache.
+            Defaults to False.
 
         Returns
         -------
@@ -303,11 +307,14 @@ class Session:
         
         # Get multiple topics sequentially
         >>> data = session.get_data(["CarData.z", "Position.z"], parallel=False)
+        
+        # Force download data even if cached
+        >>> data = session.get_data("CarData.z", force=True)
 
         Notes
         -----
         - Automatically handles both single and multiple data requests
-        - Checks cache (data lake) before loading new data
+        - Checks cache (data lake) before loading new data unless force=True
         - Uses parallel processing for multiple topics when parallel=True
         - Returns same format as input: single result for str input, dict for list input
         """
@@ -327,7 +334,7 @@ class Session:
         results = {}
         
         for name in validated_names:
-            if name in self.data_lake.raw:
+            if not force and name in self.data_lake.raw:
                 logger.debug(f"'{name}' found in lake, using cached version")
                 results[name] = self.data_lake.get(level="bronze", data_name=name)
             else:
@@ -524,11 +531,6 @@ def load_single_data(dataName, session):
     dataType = "StreamPath"
     stream = True
 
-    for topic in session.topic_names_info:
-        if session.topic_names_info[topic]["key"] == dataName:
-            dataName = topic
-            break
-
     logger.info(f"Fetching data : '{dataName}'")
     start = time()
     data = livetimingF1_getdata(
@@ -543,6 +545,11 @@ def load_single_data(dataName, session):
     )
     logger.debug(f"Parsed in {round(time() - start,3)} seconds")
     logger.info(f"'{dataName}' has been fetched and parsed")
+
+    # session.data_lake.put(
+    #     level="bronze", data_name=dataName, data=res
+    # )
+    # logger.debug(f"'{dataName}' has been saved to the bronze lake.")
 
     return dataName, res
 

@@ -6,10 +6,15 @@ Season
 The Season model is the top-level container for Formula 1 data. It manages all meetings and sessions for a specific year.
 
 **Key Attributes:**
+
 - ``year``: The F1 season year
+
 - ``meetings``: List of Meeting objects
+
 - ``meetings_json``: Raw meeting data
+
 - ``season_table``: Pandas DataFrame with season data
+
 - ``meetings_table``: Aggregated meetings data
 
 **Example Usage:**
@@ -33,12 +38,19 @@ Meeting
 The Meeting model represents a specific Grand Prix event within a season. It manages session data and meeting metadata.
 
 **Key Attributes:**
+
 - ``season``: Reference to parent Season object
+
 - ``code``: Meeting code (e.g., "MON")
+
 - ``key``: Unique identifier
+
 - ``location``: Circuit location
+
 - ``name``: Grand Prix name
+
 - ``sessions``: List of Session objects
+
 - ``sessions_table``: DataFrame of session data
 
 **Example Usage:**
@@ -62,19 +74,31 @@ Session
 The Session model represents individual F1 sessions (Practice, Qualifying, Race) and implements the medallion architecture for data processing.
 
 **Key Attributes:**
+
 - ``meeting``: Reference to parent Meeting object
+
 - ``type``: Session type (e.g., "Race", "Practice 1")
+
 - ``name``: Session name
+
 - ``key``: Unique identifier
+
 - ``startdate``: Session start time
+
 - ``enddate``: Session end time
+
 - ``data_lake``: DataLake object for data storage
+
 - ``topic_names_info``: Available data topics
 
 **Data Access Methods:**
+
 - ``get_data()``: Retrieve raw data
+
 - ``generate()``: Create processed tables
+
 - ``get_laps()``: Access lap data
+
 - ``get_car_telemetry()``: Access telemetry data
 
 **Example Usage:**
