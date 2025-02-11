@@ -66,12 +66,12 @@ Where to Go Next
 * For understanding data organization, read about the :ref:`medallion_architecture`
 * For available data feeds, browse the :ref:`data_topics`
 
-.. toctree::
-   :maxdepth: 2
-   :hidden:
+.. .. toctree::
+..    :maxdepth: 2
+..    :hidden:
 
-   medallion_architecture
-   data_objects
-   data_models
-   historical_data
-   realtime_data
+..    medallion_architecture
+..    data_objects
+..    data_models
+..    historical_data
+..    realtime_data
