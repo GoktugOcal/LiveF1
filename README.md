@@ -5,6 +5,10 @@
 
 LiveF1 is a powerful Python toolkit for accessing and analyzing Formula 1 data in real-time or from historical archives. It's designed for developers, analysts, and F1 fans building applications around Formula 1 insights.
 
+<p align="center">
+  <img src="docs/source/_static/LiveF1 Overview 1.png" alt="LiveF1 Data Flow"/>
+</p>
+
 ### Features
 - **Real-Time Race Data**: Provides live telemetry, timing, and position updates, ideal for powering dashboards and live analytics.
 - **Historical Data Access**: Includes comprehensive race data from past seasons, perfect for performance analysis and comparisons.
