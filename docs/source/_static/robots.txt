@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: /_static/
 Disallow: /_build/
-Sitemap: http://livef1.goktugocal.com
+Sitemap: http://livef1.goktugocal.com/sitemap.xml
