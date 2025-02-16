@@ -35,6 +35,7 @@ extensions = [
     'sphinx_tabs.tabs',
     'sphinx_design',
     # 'jupyter_sphinx'
+    'sphinx_sitemap'
 ]
 # Automatically generate summary tables
 autosummary_generate = True  # Enable autosummary generation
@@ -59,9 +60,15 @@ pygments_style = "xcode"
 # Select a different color scheme for dark mode
 pygments_style_dark = "monokai"
 
+html_baseurl = "http://livef1.goktugocal.com"
+sitemap_excluded_pages = ["404.html"]
+sitemap_url_scheme = "{link}"
+html_extra_path = ['_static/robots.txt']
+
 html_favicon = "_static/favicon.png"
 html_static_path = ['_static']
 html_theme_options = {
+    "extrahead": "",
     "show_nav_level": 2,  # Adjust depth of sidebar navigation (optional)
     "rightsidebar": "true",
     "relbarbgcolor": "black",
@@ -73,7 +80,6 @@ html_theme_options = {
     'display_version': False,  
     # Navbar things
     "github_url": "https://github.com/goktugocal/livef1",
-    # "discussion_url": "https://www.reddit.com/r/formula1/",
     "nav_links": [
         {
             "title": "Getting Started",
