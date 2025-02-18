@@ -115,7 +115,7 @@ The Gold layer provides optimized, aggregated data ready for business intelligen
    :emphasize-lines: 4
 
     # Generate gold metrics 
-    session = livef1.get_session(2024, "Spa", "Race")
+    session = livef1.get_session(season=2024, meeting_identifier="Spa", session_identifier="Race")
     session.generate(silver=True, gold=True)
     
     aggregated_data = session.get_gold_metrics()  # Access Gold lake
