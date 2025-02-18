@@ -110,8 +110,8 @@ def get_meeting(
 def get_session(
     season: int, 
     meeting_identifier: str = None,
-    meeting_key: int = None,
     session_identifier: str = None,
+    meeting_key: int = None,
     session_key: int = None
 ) -> Session:
     """
