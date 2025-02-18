@@ -518,6 +518,7 @@ class Session:
                     logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
         
         if gold:
+            logger.info("Gold tables are not implemented yet.")
             pass
     
     def generate_laps_table(self):

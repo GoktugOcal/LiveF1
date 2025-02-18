@@ -110,24 +110,28 @@ Gold Layer (Analytics Ready)
 
 The Gold layer provides optimized, aggregated data ready for business intelligence and machine learning.
 
-.. code-block:: python
-   :caption: Example: Accessing Gold Layer Data
-   :emphasize-lines: 4
+.. note::
 
-    # Generate gold metrics 
-    session = livef1.get_session(season=2024, meeting_identifier="Spa", session_identifier="Race")
-    session.generate(silver=True, gold=True)
+   Gold layer is not implemented yet. There will be an option for developers to generate their own gold tables. This is why gold layer is for in LiveF1.
+
+.. .. code-block:: python
+..    :caption: Example: Accessing Gold Layer Data
+..    :emphasize-lines: 4
+
+..     # Generate gold metrics 
+..     session = livef1.get_session(season=2024, meeting_identifier="Spa", session_identifier="Race")
+..     session.generate(silver=True, gold=True)
     
-    aggregated_data = session.get_gold_metrics()  # Access Gold lake
+..     aggregated_data = session.get_gold_metrics()  # Access Gold lake
 
-.. admonition:: Optimizations
-   :class: tip
+.. .. admonition:: Optimizations
+..    :class: tip
 
-   - Pre-calculated aggregations
-   - Optimized query patterns
-   - Business metrics
-   - ML-ready features
-   - Performance tuning
+..    - Pre-calculated aggregations
+..    - Optimized query patterns
+..    - Business metrics
+..    - ML-ready features
+..    - Performance tuning
 
 Implementation Details
 --------------------

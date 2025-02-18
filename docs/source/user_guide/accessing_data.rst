@@ -30,7 +30,7 @@ Example:
 .. code-block:: python
 
     session.generate(silver=True, gold=False)  # Generate silver tables only
-    session.generate(silver=True, gold=True)   # Generate both silver and gold tables
+    session.generate(silver=True, gold=True)   # Generate both silver and gold tables (not implemented yet)
 
 Accessing Generated Tables
 --------------------------
