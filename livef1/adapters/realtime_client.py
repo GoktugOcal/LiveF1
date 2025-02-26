@@ -203,7 +203,9 @@ class RealF1Client:
         """
         Start the client in asynchronous mode.
         """
+        start = time.time()
         self._async_engine_run()
+        logger.info(f"Client have run for {(time.time() - start):.2f} seconds.")
 
     def _async_engine_run(self):
         """
@@ -258,7 +260,6 @@ class RealF1Client:
         await loop.run_in_executor(executor, self._connection.start)
 
 
-
 class MessageHandlerTemplate:
     """
     A template for handling incoming SignalR messages.
@@ -310,7 +311,7 @@ class MessageHandlerTemplate:
                         topic_name = key
                         data = batch.get("R")[key]
                         timestamp = None
-                        records = list(function_map[topic_name]({timestamp: data}, None))
+                        records = list(function_map[topic_name]([(timestamp, data)], None))
                         await self._func(records)
                         # await self._func(
                         #     topic_name = key,
@@ -327,7 +328,7 @@ class MessageHandlerTemplate:
                     topic_name = message[0]
                     data = message[1]
                     timestamp = message[2]
-                    records = list(function_map[topic_name]({timestamp: data}, None))
+                    records = list(function_map[topic_name]([(timestamp, data)], None))
                     await self._func(records)
                     # await self._func(
                     #     topic_name = message[0],
