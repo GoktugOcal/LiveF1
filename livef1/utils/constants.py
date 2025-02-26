@@ -289,6 +289,10 @@ TOPICS_MAP = {
         "key": "Lap_Count",
         "description": "Number of laps completed in the session."
     },
+    "DriverTracker": {
+        "key": "Driver_Tracker",
+        "description": "Real-time tracking of driver positions."
+    }
 }
 
 channel_name_map = {
