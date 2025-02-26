@@ -6,3 +6,4 @@ Requests==2.32.3
 setuptools==59.6.0
 ujson==5.10.0
 websockets==13.0.1
+scipy==1.11.4
