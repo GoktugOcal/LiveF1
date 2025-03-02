@@ -184,7 +184,9 @@ def parse_timing_data(data, sessionKey):
         Recursively parses nested dictionaries in the timing data.
         """
         for info_k, info_v in info.items():
-            if isinstance(info_v, list):
+            if info_k == "_deleted":
+                record = {**record, **{"_deleted": info_v}}
+            elif isinstance(info_v, list):
                 record = {**record, **{f"{info_k}_{sector_no+1}_{k}": v for sector_no in range(len(info_v)) for k, v in info_v[sector_no].items()}}
             elif isinstance(info_v, dict):
                 record = parse_helper(info_v, record, prefix=prefix + info_k + "_")
