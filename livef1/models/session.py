@@ -491,7 +491,7 @@ class Session:
         return first_date
     
     def _get_session_start_time(self):
-        return pd.to_timedelta(self.get_data(dataNames="SessionStatus").set_index("status").loc["Started"].timestamp)
+        return pd.to_timedelta(self.get_data(dataNames="SessionStatus").set_index("status").loc["Started"].timestamp[0])
 
     def generate(self, silver=True, gold=False):
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])
