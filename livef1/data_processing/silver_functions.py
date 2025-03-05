@@ -161,7 +161,6 @@ def generate_laps_table(bronze_lake):
                             elif sc_value == record[f"sector{str(sc_no + 1)}_time"]:
                                 pass
                             elif ts - last_record_ts > timedelta(seconds=10):
-                                print(">>", sc_no, record)
                                 laps, record = enter_new_lap(laps, record)
                                 record[f"sector{str(sc_no + 1)}_time"] = sc_value
                                 last_record_ts = ts
@@ -186,10 +185,9 @@ def generate_laps_table(bronze_lake):
     new_ts = (all_laps_df["lap_start_time"] + all_laps_df["lap_time"]).shift(1)
     all_laps_df["lap_start_time"] = (new_ts.isnull() * all_laps_df["lap_start_time"]) + new_ts.fillna(timedelta(0))
     all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime
-    # (all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
-    # all_laps_df["lap_start_date"] = (all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
+    all_laps_df["lap_start_date"] = (all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
 
-    # all_laps_df[["lap_start_time"] + all_laps_df.columns.tolist()]
+    all_laps_df[["lap_start_time"] + all_laps_df.columns.tolist()]
     return all_laps_df
 
 

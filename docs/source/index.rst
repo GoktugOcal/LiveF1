@@ -78,3 +78,4 @@ LiveF1
    :hidden:
 
    api_reference/index
+   user_guide/logging_config

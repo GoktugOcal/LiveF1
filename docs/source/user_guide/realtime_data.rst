@@ -150,6 +150,8 @@ Here's a complete example combining multiple features:
     # Start the client
     client.run()
 
+.. seealso::
+   For information about logging configuration, see :doc:`logging_config`
 
 Example:Database Handler
 --------------------------------
