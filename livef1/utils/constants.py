@@ -153,146 +153,181 @@ session_index = {
 }
 
 TOPICS_MAP = {
-    "SessionInfo": {
-        "key": "Session_Info",
-        "description": "Details about the current session."
-    },
-    "ArchiveStatus": {
-        "key": "Archive_Status",
-        "description": "Status of archived session data."
-    },
-    "TrackStatus": {
-        "key": "Track_Status",
-        "description": "Current conditions and status of the track."
-    },
-    "SessionData": {
-        "key": "Session_Data",
-        "description": "Raw data for the ongoing session."
-    },
-    "ContentStreams": {
-        "key": "Content_Streams",
-        "description": "Streams of multimedia content."
-    },
-    "AudioStreams": {
-        "key": "Audio_Streams",
-        "description": "Live audio broadcast streams."
-    },
-    "ExtrapolatedClock": {
-        "key": "Extrapolated_Clock",
-        "description": "Predicted session time data."
-    },
-    "TyreStintSeries": {
-        "key": "Tyre_Stints",
-        "description": "Data on tyre usage over stints."
-    },
-    "SessionStatus": {
-        "key": "Session_Status",
-        "description": "Live status of the session."
-    },
-    "TimingDataF1": {
-        "key": "Timing_Data_F1",
-        "description": "Timing information specific to Formula 1."
-    },
-    "TimingData": {
-        "key": "Timing_Data",
-        "description": "General timing data for the session."
-    },
-    "DriverList": {
-        "key": "Driver_List",
-        "description": "List of active drivers in the session."
-    },
-    "LapSeries": {
-        "key": "Lap_Series",
-        "description": "Data series for laps completed."
-    },
-    "TopThree": {
-        "key": "Top_Three",
-        "description": "Information about the top three drivers."
-    },
-    "TimingAppData": {
-        "key": "Timing_App",
-        "description": "Timing data from the application."
-    },
-    "TimingStats": {
-        "key": "Timing_Stats",
-        "description": "Statistical analysis of timing data."
-    },
-    "Heartbeat": {
-        "key": "Heartbeat",
-        "description": "Regular status signal of the system."
-    },
-    "WeatherData": {
-        "key": "Weather_Data",
-        "description": "Current weather information."
-    },
-    "WeatherDataSeries": {
-        "key": "Weather_History",
-        "description": "Historical weather data series."
-    },
-    "Position.z": {
-        "key": "Position",
-        "description": "Position data of cars."
-    },
-    "CarData.z": {
-        "key": "Car_Data",
-        "description": "Car sensor data."
-    },
-    "TlaRcm": {
-        "key": "Team_Audio_RCM",
-        "description": "Team live audio and race control messages."
-    },
-    "RaceControlMessages": {
-        "key": "Race_Control",
-        "description": "Messages from race control."
-    },
-    "PitLaneTimeCollection": {
-        "key": "Pit_Lane_Times",
-        "description": "Timing data for pit lane activity."
-    },
-    "CurrentTyres": {
-        "key": "Current_Tyres",
-        "description": "Details of the tyres currently in use."
-    },
-    "DriverRaceInfo": {
-      "key": "Driver_Race_Info",
-      "description": "Information about individual driver performance."
-    },
-    "TeamRadio": {
-        "key": "Team_Radio",
-        "description": "Radio communications with the team."
-    },
-    "ChampionshipPrediction": {
-        "key": "Championship_Prediction",
-        "description": "Predictions for championship outcomes."
-    },
-    "OvertakeSeries": {
-        "key": "Overtake_Series",
-        "description": "Data series tracking overtakes."
-    },
-    "DriverScore": {
-        "key": "Driver_Score",
-        "description": "Scores reflecting driver performance."
-    },
-    "SPFeed": {
-        "key": "SP_Feed",
-        "description": "Special data feed for the session."
-    },
-    "PitStopSeries": {
-        "key": "Pit_Stop_Series",
-        "description": "Data series for multiple pit stops."
-    },
-    "PitStop": {
-        "key": "Pit_Stop",
-        "description": "Details about individual pit stops."
-    },
-    "LapCount": {
-        "key": "Lap_Count",
-        "description": "Number of laps completed in the session."
-    },
-    "DriverTracker": {
-        "key": "Driver_Tracker",
-        "description": "Real-time tracking of driver positions."
-    }
+  "SessionInfo": {
+    "key": "Session_Info",
+    "description": "Details about the current session.",
+    "default_is_stream": True
+  },
+  "ArchiveStatus": {
+    "key": "Archive_Status",
+    "description": "Status of archived session data.",
+    "default_is_stream": True
+  },
+  "TrackStatus": {
+    "key": "Track_Status",
+    "description": "Current conditions and status of the track.",
+    "default_is_stream": True
+  },
+  "SessionData": {
+    "key": "Session_Data",
+    "description": "Raw data for the ongoing session.",
+    "default_is_stream": True
+  },
+  "ContentStreams": {
+    "key": "Content_Streams",
+    "description": "Streams of multimedia content.",
+    "default_is_stream": True
+  },
+  "AudioStreams": {
+    "key": "Audio_Streams",
+    "description": "Live audio broadcast streams.",
+    "default_is_stream": True
+  },
+  "ExtrapolatedClock": {
+    "key": "Extrapolated_Clock",
+    "description": "Predicted session time data.",
+    "default_is_stream": True
+  },
+  "TyreStintSeries": {
+    "key": "Tyre_Stints",
+    "description": "Data on tyre usage over stints.",
+    "default_is_stream": True
+  },
+  "SessionStatus": {
+    "key": "Session_Status",
+    "description": "Live status of the session.",
+    "default_is_stream": True
+  },
+  "TimingDataF1": {
+    "key": "Timing_Data_F1",
+    "description": "Timing information specific to Formula 1.",
+    "default_is_stream": True
+  },
+  "TimingData": {
+    "key": "Timing_Data",
+    "description": "General timing data for the session.",
+    "default_is_stream": True
+  },
+  "DriverList": {
+    "key": "Driver_List",
+    "description": "List of active drivers in the session.",
+    "default_is_stream": False
+  },
+  "LapSeries": {
+    "key": "Lap_Series",
+    "description": "Data series for laps completed.",
+    "default_is_stream": True
+  },
+  "TopThree": {
+    "key": "Top_Three",
+    "description": "Information about the top three drivers.",
+    "default_is_stream": True
+  },
+  "TimingAppData": {
+    "key": "Timing_App",
+    "description": "Timing data from the application.",
+    "default_is_stream": True
+  },
+  "TimingStats": {
+    "key": "Timing_Stats",
+    "description": "Statistical analysis of timing data.",
+    "default_is_stream": True
+  },
+  "Heartbeat": {
+    "key": "Heartbeat",
+    "description": "Regular status signal of the system.",
+    "default_is_stream": True
+  },
+  "WeatherData": {
+    "key": "Weather_Data",
+    "description": "Current weather information.",
+    "default_is_stream": True
+  },
+  "WeatherDataSeries": {
+    "key": "Weather_History",
+    "description": "Historical weather data series.",
+    "default_is_stream": True
+  },
+  "Position.z": {
+    "key": "Position",
+    "description": "Position data of cars.",
+    "default_is_stream": True
+  },
+  "CarData.z": {
+    "key": "Car_Data",
+    "description": "Car sensor data.",
+    "default_is_stream": True
+  },
+  "TlaRcm": {
+    "key": "Team_Audio_RCM",
+    "description": "Team live audio and race control messages.",
+    "default_is_stream": True
+  },
+  "RaceControlMessages": {
+    "key": "Race_Control",
+    "description": "Messages from race control.",
+    "default_is_stream": True
+  },
+  "PitLaneTimeCollection": {
+    "key": "Pit_Lane_Times",
+    "description": "Timing data for pit lane activity.",
+    "default_is_stream": True
+  },
+  "CurrentTyres": {
+    "key": "Current_Tyres",
+    "description": "Details of the tyres currently in use.",
+    "default_is_stream": True
+  },
+  "DriverRaceInfo": {
+    "key": "Driver_Race_Info",
+    "description": "Information about individual driver performance.",
+    "default_is_stream": True
+  },
+  "TeamRadio": {
+    "key": "Team_Radio",
+    "description": "Radio communications with the team.",
+    "default_is_stream": True
+  },
+  "ChampionshipPrediction": {
+    "key": "Championship_Prediction",
+    "description": "Predictions for championship outcomes.",
+    "default_is_stream": True
+  },
+  "OvertakeSeries": {
+    "key": "Overtake_Series",
+    "description": "Data series tracking overtakes.",
+    "default_is_stream": True
+  },
+  "DriverScore": {
+    "key": "Driver_Score",
+    "description": "Scores reflecting driver performance.",
+    "default_is_stream": True
+  },
+  "SPFeed": {
+    "key": "SP_Feed",
+    "description": "Special data feed for the session.",
+    "default_is_stream": True
+  },
+  "PitStopSeries": {
+    "key": "Pit_Stop_Series",
+    "description": "Data series for multiple pit stops.",
+    "default_is_stream": True
+  },
+  "PitStop": {
+    "key": "Pit_Stop",
+    "description": "Details about individual pit stops.",
+    "default_is_stream": True
+  },
+  "LapCount": {
+    "key": "Lap_Count",
+    "description": "Number of laps completed in the session.",
+    "default_is_stream": True
+  },
+  "DriverTracker": {
+    "key": "Driver_Tracker",
+    "description": "Real-time tracking of driver positions.",
+    "default_is_stream": True
+  }
 }
 
 channel_name_map = {

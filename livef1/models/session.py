@@ -138,6 +138,7 @@ class Session:
         for topic in self.topic_names_info:
             self.topic_names_info[topic]["description"] = TOPICS_MAP[topic]["description"]
             self.topic_names_info[topic]["key"] = TOPICS_MAP[topic]["key"]
+            self.topic_names_info[topic]["default_is_stream"] = TOPICS_MAP[topic]["default_is_stream"]
 
         return self.topic_names_info
 
@@ -215,18 +216,21 @@ class Session:
             self.get_topic_names()
 
         # Handle single data name case
-        single_input = isinstance(dataNames, str)
-        if single_input:
-            dataNames = [dataNames]
+        single_input = len(dataNames) == 1
+        # if single_input:
+        #     dataNames = [dataNames]
 
-        # Validate all data names
-        validated_names = []
-        for name in dataNames:
-            for topic in self.topic_names_info:
-                if self.topic_names_info[topic]["key"] == name:
-                    name = topic
-                    break
-            validated_names.append(name)
+        # # Validate all data names
+        # validated_names = []
+        # for name in dataNames:
+        #     for topic in self.topic_names_info:
+        #         if self.topic_names_info[topic]["key"] == name:
+        #             name = topic
+        #             stream = self.topic_names_info[topic]["default_is_stream"]
+        #             break
+        #     validated_names.append((name, stream))
+
+        validated_names = dataNames
 
         results = {}
         if parallel and len(validated_names) > 1:
@@ -238,9 +242,9 @@ class Session:
                 results = {name: result for name, result in loaded_results}
         else:
             # Sequential loading
-            for name in validated_names:
-
-                name, res = load_single_data(name, self)
+            for name, stream in validated_names:
+                print(name, stream)
+                name, res = load_single_data(name, self, stream)
                 # logger.info(f"Fetching data : '{name}'")
                 # start = time()
                 # data = livetimingF1_getdata(
@@ -266,7 +270,7 @@ class Session:
 
         # Return single result or dict based on input type
         if single_input:
-            return self.data_lake.get(level="bronze", data_name=validated_names[0])
+            return self.data_lake.get(level="bronze", data_name=validated_names[0][0])
         return {name: self.data_lake.get(level="bronze", data_name=name) 
                for name in validated_names}
 
@@ -338,7 +342,8 @@ class Session:
                 logger.debug(f"'{name}' found in lake, using cached version")
                 results[name] = self.data_lake.get(level="bronze", data_name=name)
             else:
-                to_load.append(name)
+                stream = self.topic_names_info[name]["default_is_stream"]
+                to_load.append((name, stream))
         
         if to_load:
             # Load new data using load_data with parallel option
@@ -351,7 +356,7 @@ class Session:
                 results.update(loaded_results)
             else:
                 # Handle single result case
-                results[to_load[0]] = loaded_results
+                results[to_load[0][0]] = loaded_results
         
         # Return single result if single input, otherwise return dictionary
         return results[validated_names[0]] if single_input else results
@@ -529,9 +534,10 @@ class Session:
         setattr(self, "car_telemetry", self.data_lake.silver_lake.generate_table("laps"))
 
 
-def load_single_data(dataName, session):
-    dataType = "StreamPath"
-    stream = True
+def load_single_data(dataName, session, stream):
+
+    if stream: dataType = "StreamPath"
+    else: dataType = "KeyFramePath"
 
     logger.info(f"Fetching data : '{dataName}'")
     start = time()
