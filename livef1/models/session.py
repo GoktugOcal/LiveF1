@@ -14,6 +14,7 @@ from ..data_processing.etl import *
 from ..data_processing.data_models import *
 from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES, TABLE_GENERATION_FUNCTIONS
 from ..data_processing.lakes import DataLake
+from .driver import Driver
 
 from multiprocessing import Pool
 from functools import partial
@@ -85,6 +86,15 @@ class Session:
         # Build the full path for accessing session data if path attribute exists.
         if hasattr(self, "path"):
             self.full_path = helper.build_session_endpoint(self.path)
+    
+    def load_session_data(self):
+        """
+        Load the session data.
+
+        This method loads the session data by fetching the topic names and drivers.
+        """
+        self.get_topic_names()
+        self._load_drivers()
 
     def get_topic_names(self):
         """
@@ -143,8 +153,10 @@ class Session:
         return self.topic_names_info
 
     def print_topic_names(self):
-        """
-        Print the topic names and their descriptions.
+        """livetimingF1_getdata(
+        urljoin(session.full_path, session.topic_names_info[dataName][dataType]),
+        stream=stream
+    )
 
         This method prints the key and description for each topic available in 
         the `topic_names_info` attribute. If the `topic_names_info` attribute is not 
@@ -177,6 +189,37 @@ class Session:
         logger.debug(f"Printing topic names and descriptions for the session: {self.meeting.name}: {self.name}")
         for topic in self.topic_names_info:
             print(self.topic_names_info[topic]["key"], ": \n\t", self.topic_names_info[topic]["description"])
+
+    def _load_drivers(self):
+        """
+        Load the driver list for the session.
+        """
+        logger.info(f"Fetching drivers.")
+        self.drivers = {}
+        data = livetimingF1_getdata(
+            urljoin(self.full_path, self.topic_names_info["DriverList"]["KeyFramePath"]),
+            stream=False
+        )
+        for key, driver_info in data.items():
+            driver = Driver(session=self, **driver_info)
+            self.drivers[driver.RacingNumber] = driver
+
+
+    def get_driver(self, driver_number: str) -> Driver:
+        """
+        Get a specific driver by their number.
+
+        Parameters
+        ----------
+        driver_number : str
+            The driver's racing number
+
+        Returns
+        -------
+        Driver
+            The Driver object for the specified number
+        """
+        return self.drivers.get(str(driver_number))
 
     def load_data(
         self,
@@ -243,7 +286,6 @@ class Session:
         else:
             # Sequential loading
             for name, stream in validated_names:
-                print(name, stream)
                 name, res = load_single_data(name, self, stream)
                 # logger.info(f"Fetching data : '{name}'")
                 # start = time()

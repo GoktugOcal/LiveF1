@@ -101,14 +101,16 @@ def parse_driver_list(data, sessionKey):
         dict :
             A record containing the session key, driver number, and driver-related info.
     """
-    for driver_no, info in data:
-    #data.items()::
-        record = {
-            "session_key": sessionKey,
-            "DriverNo": driver_no,
-            **info
-        }
-        yield record
+    for driver_no, info in data.items():
+        yield info
+    # for driver_no, info in data:
+    # #data.items()::
+    #     record = {
+    #         "session_key": sessionKey,
+    #         "DriverNo": driver_no,
+    #         **info
+    #     }
+    #     yield record
 
 def parse_session_data(data, sessionKey):
     """

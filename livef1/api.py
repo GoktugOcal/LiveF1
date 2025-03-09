@@ -181,4 +181,5 @@ def get_session(
     )
     logger.info("The session was received successfully.")
 
+    session_obj.load_session_data()
     return session_obj
