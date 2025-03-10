@@ -8,7 +8,7 @@ with open("requirements.txt") as f:
 
 setup(
     name="livef1",
-    version="0.1.4",
+    version="0.1.40",
     description="A Python toolkit for seamless access to live and historical Formula 1 data.",
     long_description=long_description,
     long_description_content_type="text/markdown",
