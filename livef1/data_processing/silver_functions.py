@@ -180,7 +180,8 @@ def generate_laps_table(bronze_lake):
     segments = ["sector1_time", "sector2_time", "sector3_time"]
     for idx in range(len(segments)):
         rest = np.delete(segments, idx)
-        all_laps_df[segments[idx]] = (all_laps_df[segments[idx]].fillna(timedelta(minutes=0)) + (all_laps_df[segments[idx]].isnull() & (all_laps_df["lap_number"] > 1)) * (all_laps_df[segments[idx]].isnull() * (all_laps_df["lap_time"].fillna(timedelta(minutes=0)) - all_laps_df[rest].sum(axis=1)))).replace(timedelta(minutes=0), np.timedelta64("NaT"))
+        all_laps_df[segments[idx]] = (
+            all_laps_df[segments[idx]].fillna(timedelta(minutes=0)) + (all_laps_df[segments[idx]].isnull() & (all_laps_df["lap_number"] > 1) & (~all_laps_df["lap_time"].isnull())) * (all_laps_df[segments[idx]].isnull() * (all_laps_df["lap_time"].fillna(timedelta(minutes=0)) - all_laps_df[rest].sum(axis=1)))).replace(timedelta(minutes=0), np.timedelta64("NaT"))
 
     new_ts = (all_laps_df["lap_start_time"] + all_laps_df["lap_time"]).shift(1)
     all_laps_df["lap_start_time"] = (new_ts.isnull() * all_laps_df["lap_start_time"]) + new_ts.fillna(timedelta(0))
