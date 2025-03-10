@@ -226,7 +226,6 @@ class Session:
         dataNames,
         parallel: bool = False,
         dataType: str = "StreamPath",
-        stream: bool = True
     ):
         """
         Retrieve and parse data from feeds, either sequentially or in parallel.
@@ -280,8 +279,12 @@ class Session:
             # Parallel loading
             n_processes = max(1, multiprocessing.cpu_count() - 1)
             with Pool(processes=n_processes) as pool:
-                loaded_results = pool.starmap(load_single_data, 
-                                           zip(validated_names, repeat(self)))
+                loaded_results = pool.starmap(
+                    load_single_data, 
+                    zip(
+                        np.asarray(validated_names)[:,0],
+                        repeat(self),
+                        np.asarray(validated_names)[:,1]))
                 results = {name: result for name, result in loaded_results}
         else:
             # Sequential loading
