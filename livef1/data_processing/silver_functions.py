@@ -7,6 +7,10 @@ from ..utils.constants import interpolation_map
 
 def generate_laps_table(bronze_lake):
     df_exp = bronze_lake.get("TimingData")
+    if "_deleted" not in df_exp.columns:
+        df_exp["_deleted"] = None
+    else:
+        df_exp["_deleted"] = df_exp["_deleted"].fillna(False)
 
     sector_cols = {
         "Sectors_0_Value": "sector1_time",
@@ -34,7 +38,7 @@ def generate_laps_table(bronze_lake):
     }
 
     extra_cols = ["no_pits"]
-    extra_raw_cols = ["Stopped"]
+    extra_raw_cols = ["Stopped","_deleted"]
 
     col_map = {**base_cols, **pit_cols, **sector_cols, **speedTrap_cols}
     cols = list(base_cols.values()) + list(pit_cols.values()) + list(sector_cols.values()) + list(speedTrap_cols.values())
@@ -51,6 +55,25 @@ def generate_laps_table(bronze_lake):
                 return x
         else:
             return x
+    
+    def enter_new_lap(laps, record):
+        if laps is None and record is None:
+            no_pits = 0
+            laps = []
+            record = {key: None if key != "lap_number" else 1 for key in cols}
+            record["no_pits"] = no_pits
+            return [], record, timedelta(seconds=0)
+
+        if (record["lap_time"] is None) & ((record["sector1_time"] != None) and (record["sector2_time"] != None) and (record["sector3_time"] != None)):
+            record["lap_time"] = record["sector1_time"] + record["sector2_time"] + record["sector3_time"]
+
+        laps.append(record)
+
+        no_pits = record["no_pits"]
+        record = {key: None if key != "lap_number" else val + 1 for key, val in record.items()}
+        record["no_pits"] = no_pits
+
+        return laps, record
 
     all_laps = []
 
@@ -61,25 +84,6 @@ def generate_laps_table(bronze_lake):
         for col in ["Sectors_0_Value", "Sectors_1_Value", "Sectors_2_Value", "Sectors_0_PreviousValue", "Sectors_1_PreviousValue", "Sectors_2_PreviousValue", "LastLapTime_Value"]:
             df_test[col] = df_test[col]
             df_test[col] = pd.to_timedelta(df_test[col].apply(str_timedelta))
-
-        def enter_new_lap(laps, record):
-            if laps is None and record is None:
-                no_pits = 0
-                laps = []
-                record = {key: None if key != "lap_number" else 1 for key in cols}
-                record["no_pits"] = no_pits
-                return [], record, timedelta(seconds=0)
-
-            if (record["lap_time"] is None) & ((record["sector1_time"] != None) and (record["sector2_time"] != None) and (record["sector3_time"] != None)):
-                record["lap_time"] = record["sector1_time"] + record["sector2_time"] + record["sector3_time"]
-
-            laps.append(record)
-
-            no_pits = record["no_pits"]
-            record = {key: None if key != "lap_number" else val + 1 for key, val in record.items()}
-            record["no_pits"] = no_pits
-
-            return laps, record
 
         new_lap_allowed = True
         laps, record, last_record_ts = enter_new_lap(None, None)
@@ -97,44 +101,21 @@ def generate_laps_table(bronze_lake):
                 elif not pd.isnull(row.Sectors_2_PreviousValue):
                     laps[-1][col_map["LastLapTime_Value"]] = row.LastLapTime_Value
 
-            # for sc_key, sc_value in row[list(speedTrap_cols.keys())].dropna().to_dict().items():
-            #     record[col_map[sc_key]] = sc_value
-
-            # for sc_key, sc_value in row[list(pit_cols.keys())].dropna().to_dict().items():
-            #     if sc_key == "InPit":
-            #         if sc_value == 1:
-            #             record[col_map[sc_key]] = ts
-            #     elif sc_key == "PitOut":
-            #         if sc_value == True:
-            #             record[col_map[sc_key]] = ts
-            #             record["no_pits"] += 1
-
-            # for sc_key, sc_value in row[list(sector_cols.keys())].dropna().to_dict().items():
-            #     sc_no = int(sc_key.split("_")[1])
-            #     key_type = sc_key.split("_")[2]
-
-            #     if key_type == "Value":
-            #         if record[f"sector{str(sc_no + 1)}_time"] == None:
-            #             record[f"sector{str(sc_no + 1)}_time"] = sc_value
-            #             last_record_ts = ts
-            #             if sc_no == 2:
-            #                 laps, record = enter_new_lap(laps, record)
-            #                 record["lap_start_time"] = ts
-            #         elif sc_value == record[str(sc_no + 1)]:
-            #             pass
-            #         elif ts - last_record_ts > timedelta(seconds=10):
-            #             laps, record = enter_new_lap(laps, record)
-            #             record[f"sector{str(sc_no + 1)}_time"] = sc_value
-            #             last_record_ts = ts
-
-            #     elif key_type == "PreviousValue" and ts - last_record_ts > timedelta(seconds=10):
-            #         record[f"sector{str(sc_no + 1)}_time"] = sc_value
-            #         last_record_ts = ts
-            #         if sc_no == 2:
-            #             laps, record = enter_new_lap(laps, record)
-
+            ## Iterate over all columns
             for sc_key, sc_value in row.to_dict().items():
-                if not pd.isna(sc_value):
+
+                if (sc_key == "_deleted"):
+                    if sc_value:
+                        print(sc_key,sc_value)
+                        for deletion in sc_value:
+                            if deletion == "Lap":
+                                laps[-1]["lap_time"] = pd.NaT
+                                laps[-1]["sector1_time"] = pd.NaT
+                                laps[-1]["sector2_time"] = pd.NaT
+                                laps[-1]["sector3_time"] = pd.NaT
+                                laps[-1]["_deleted"] = True
+
+                elif not pd.isna(sc_value):
                     if sc_key in speedTrap_cols:
                         record[col_map[sc_key]] = sc_value
                     
@@ -170,8 +151,10 @@ def generate_laps_table(bronze_lake):
                             last_record_ts = ts
                             if sc_no == 2:
                                 laps, record = enter_new_lap(laps, record)
+                    
+                
 
-        laps_df = pd.DataFrame(laps)
+        laps_df = pd.DataFrame(laps)    
         laps_df["DriverNo"] = driver_no
         all_laps.append(laps_df)
 

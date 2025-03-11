@@ -317,7 +317,7 @@ class Session:
         if single_input:
             return self.data_lake.get(level="bronze", data_name=validated_names[0][0])
         return {name: self.data_lake.get(level="bronze", data_name=name) 
-               for name in validated_names}
+               for name, stream in validated_names}
 
     def get_data(
         self,
