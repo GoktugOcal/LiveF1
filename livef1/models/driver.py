@@ -32,17 +32,17 @@ class Driver:
 
     def __init__(
         self,
-        RacingNumber: str,
-        BroadcastName: str,
-        FullName: str,
-        Tla: str,
-        Line: int,
-        TeamName: str,
-        TeamColour: str,
-        FirstName: str,
-        LastName: str,
-        Reference: str,
-        HeadshotUrl: str,
+        RacingNumber: str = None,
+        BroadcastName: str = None,
+        FullName: str = None,
+        Tla: str = None,
+        Line: int = None,
+        TeamName: str = None,
+        TeamColour: str = None,
+        FirstName: str = None,
+        LastName: str = None,
+        Reference: str = None,
+        HeadshotUrl: str = None,
         session: "Session" = None,
         **kwargs
     ):
