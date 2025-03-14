@@ -37,8 +37,13 @@ def generate_laps_table(bronze_lake):
         "LastLapTime_Value": "lap_time"
     }
 
-    extra_cols = ["no_pits"]
-    extra_raw_cols = ["Stopped","_deleted"]
+    extra_cols = [
+        "no_pits",
+        "sector1_finish_timestamp",
+        "sector2_finish_timestamp",
+        "sector3_finish_timestamp"
+        ]
+    extra_raw_cols = ["RacingNumber","Stopped","_deleted"]
 
     col_map = {**base_cols, **pit_cols, **sector_cols, **speedTrap_cols}
     cols = list(base_cols.values()) + list(pit_cols.values()) + list(sector_cols.values()) + list(speedTrap_cols.values())
@@ -88,7 +93,11 @@ def generate_laps_table(bronze_lake):
         new_lap_allowed = True
         laps, record, last_record_ts = enter_new_lap(None, None)
 
-        for idx, row in df_test.iterrows():
+        for idx, row in df_test[df_test.RacingNumber.isna()].iterrows():
+            # if ~pd.isna(row.RacingNumber):
+            #     print(row.RacingNumber)
+            #     continue
+
             ts = pd.to_timedelta(row.timestamp)
 
             if row.Stopped == True:
@@ -103,10 +112,8 @@ def generate_laps_table(bronze_lake):
 
             ## Iterate over all columns
             for sc_key, sc_value in row.to_dict().items():
-
                 if (sc_key == "_deleted"):
                     if sc_value:
-                        print(sc_key,sc_value)
                         for deletion in sc_value:
                             if deletion == "Lap":
                                 laps[-1]["lap_time"] = pd.NaT
@@ -128,7 +135,6 @@ def generate_laps_table(bronze_lake):
                                 record[col_map[sc_key]] = ts
                                 record["no_pits"] += 1
                     elif sc_key in sector_cols:
-                        # print(sc_key, sc_value)
                         sc_no = int(sc_key.split("_")[1])
                         key_type = sc_key.split("_")[2]
 
@@ -145,12 +151,22 @@ def generate_laps_table(bronze_lake):
                                 laps, record = enter_new_lap(laps, record)
                                 record[f"sector{str(sc_no + 1)}_time"] = sc_value
                                 last_record_ts = ts
+                        
+                        elif key_type == "PreviousValue":
+                            if sc_no != 2:
+                                record[f"sector{str(sc_no + 1)}_time"] = sc_value
+                                last_record_ts = ts
+                            else:
+                                laps[-1][f"sector{str(sc_no + 1)}_time"] = sc_value
+                                last_record_ts = ts
+                                
 
-                        elif key_type == "PreviousValue" and ts - last_record_ts > timedelta(seconds=10):
-                            record[f"sector{str(sc_no + 1)}_time"] = sc_value
-                            last_record_ts = ts
-                            if sc_no == 2:
-                                laps, record = enter_new_lap(laps, record)
+                        # elif key_type == "PreviousValue" and ts - last_record_ts > timedelta(seconds=10):
+                        #     print("in")
+                        #     record[f"sector{str(sc_no + 1)}_time"] = sc_value
+                        #     last_record_ts = ts
+                        #     if sc_no == 2:
+                        #         laps, record = enter_new_lap(laps, record)
                     
                 
 
