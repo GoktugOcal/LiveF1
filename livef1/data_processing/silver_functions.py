@@ -115,7 +115,7 @@ def generate_laps_table(bronze_lake):
                 if (sc_key == "_deleted"):
                     if sc_value:
                         for deletion in sc_value:
-                            if deletion == "Lap":
+                            if deletion == "Lap" and (len(laps) > 0):
                                 laps[-1]["lap_time"] = pd.NaT
                                 laps[-1]["sector1_time"] = pd.NaT
                                 laps[-1]["sector2_time"] = pd.NaT
@@ -156,7 +156,7 @@ def generate_laps_table(bronze_lake):
                             if sc_no != 2:
                                 record[f"sector{str(sc_no + 1)}_time"] = sc_value
                                 last_record_ts = ts
-                            else:
+                            elif len(laps) > 0:
                                 laps[-1][f"sector{str(sc_no + 1)}_time"] = sc_value
                                 last_record_ts = ts
                                 
