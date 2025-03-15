@@ -7,6 +7,8 @@ from ..utils.constants import interpolation_map
 
 def generate_laps_table(bronze_lake):
     df_exp = bronze_lake.get("TimingData")
+    df_rcm = bronze_lake.get("RaceControlMessages")
+
     if "_deleted" not in df_exp.columns:
         df_exp["_deleted"] = None
     else:
@@ -73,7 +75,6 @@ def generate_laps_table(bronze_lake):
             record["lap_time"] = record["sector1_time"] + record["sector2_time"] + record["sector3_time"]
 
         laps.append(record)
-
         no_pits = record["no_pits"]
         record = {key: None if key != "lap_number" else val + 1 for key, val in record.items()}
         record["no_pits"] = no_pits
@@ -94,10 +95,6 @@ def generate_laps_table(bronze_lake):
         laps, record, last_record_ts = enter_new_lap(None, None)
 
         for idx, row in df_test[df_test.RacingNumber.isna()].iterrows():
-            # if ~pd.isna(row.RacingNumber):
-            #     print(row.RacingNumber)
-            #     continue
-
             ts = pd.to_timedelta(row.timestamp)
 
             if row.Stopped == True:
@@ -112,17 +109,10 @@ def generate_laps_table(bronze_lake):
 
             ## Iterate over all columns
             for sc_key, sc_value in row.to_dict().items():
-                if (sc_key == "_deleted"):
-                    if sc_value:
-                        for deletion in sc_value:
-                            if deletion == "Lap" and (len(laps) > 0):
-                                laps[-1]["lap_time"] = pd.NaT
-                                laps[-1]["sector1_time"] = pd.NaT
-                                laps[-1]["sector2_time"] = pd.NaT
-                                laps[-1]["sector3_time"] = pd.NaT
-                                laps[-1]["_deleted"] = True
-
+                if (sc_key == "_deleted"): continue
+                
                 elif not pd.isna(sc_value):
+                    
                     if sc_key in speedTrap_cols:
                         record[col_map[sc_key]] = sc_value
                     
@@ -176,6 +166,26 @@ def generate_laps_table(bronze_lake):
 
     all_laps_df = pd.concat(all_laps, ignore_index=True)
 
+
+    def delete_laps(laps_df, df_rcm):
+        laps_df["isDeleted"] = False
+
+        df_rcm_del = df_rcm[(df_rcm["Category"] == "Other") & (df_rcm.Message.str.split(" ").str[0] == "CAR")]
+        df_rcm_del["deleted_driver"] = df_rcm_del.Message.str.split(" ").str[1]
+        df_rcm_del["deleted_type"] = df_rcm_del.Message.str.split(" ").str[3]
+        df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
+        df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
+
+        for idx, row in df_rcm_del.iterrows():
+
+            row_bool = (laps_df["lap_number"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
+            laps_df.loc[row_bool, "isDeleted"] = True
+            laps_df.loc[row_bool, "deleationMessage"] = row["Message"]
+
+        return laps_df
+    
+
+
     ## TODO: This is a temporary fix for the sector times.
     # segments = ["sector1_time", "sector2_time", "sector3_time"]
     # for idx in range(len(segments)):
@@ -189,6 +199,9 @@ def generate_laps_table(bronze_lake):
     all_laps_df["lap_start_date"] = (all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
 
     all_laps_df[["lap_start_time"] + all_laps_df.columns.tolist()]
+
+    all_laps_df = delete_laps(all_laps_df, df_rcm)
+
     return all_laps_df
 
 
