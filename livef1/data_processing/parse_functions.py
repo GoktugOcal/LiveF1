@@ -203,14 +203,15 @@ def parse_timing_data(data, sessionKey):
         else:
             withTheId = None
 
-        for driver_no, info in value["Lines"].items():
-            record = {
-                "SessionKey": sessionKey,
-                "timestamp": ts,
-                "DriverNo": driver_no
-            }
-            record = parse_helper(info, record)
-            yield record
+        if "Lines" in value.keys(): ## TODO: Check if this loses important data
+            for driver_no, info in value["Lines"].items():
+                record = {
+                    "SessionKey": sessionKey,
+                    "timestamp": ts,
+                    "DriverNo": driver_no
+                }
+                record = parse_helper(info, record)
+                yield record
 
 def parse_lap_series(data, sessionKey):
     """
