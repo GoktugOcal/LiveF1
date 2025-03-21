@@ -12,6 +12,8 @@ from .utils.constants import SESSIONS_COLUMN_MAP
 
 from datetime import datetime
 
+__version__ = "0.1.48"
+
 def get_season(season: int) -> Season:
     """
     Retrieve data for a specified Formula 1 season.
