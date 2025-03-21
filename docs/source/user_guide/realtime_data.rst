@@ -136,15 +136,17 @@ Here's a complete example combining multiple features:
     @client.callback("process_telemetry")
     async def handle_telemetry(records):
         # Process car telemetry data
-        for record in records:
-            if "CarData.z" in record:
+        telemetry_data = records.get("CarData.z")
+        if telemetry_data:
+            for record in telemetry_data:
                 process_telemetry_data(record) # this is a placeholder for your code
 
     @client.callback("track_status")
     async def handle_track_status(records):
         # Monitor track conditions
-        for record in records:
-            if "TrackStatus" in record:
+        track_data = records.get("TrackStatus")
+        if track_data:
+            for record in track_data:
                 update_track_status(record) # this is a placeholder for your code
 
     # Start the client

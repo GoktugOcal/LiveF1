@@ -312,6 +312,7 @@ class MessageHandlerTemplate:
                         data = batch.get("R")[key]
                         timestamp = None
                         records = list(function_map[topic_name]([(timestamp, data)], None))
+                        records = {topic_name: records}
                         await self._func(records)
                         # await self._func(
                         #     topic_name = key,
@@ -329,6 +330,8 @@ class MessageHandlerTemplate:
                     data = message[1]
                     timestamp = message[2]
                     records = list(function_map[topic_name]([(timestamp, data)], None))
+                    records = {topic_name: records}
+
                     await self._func(records)
                     # await self._func(
                     #     topic_name = message[0],
