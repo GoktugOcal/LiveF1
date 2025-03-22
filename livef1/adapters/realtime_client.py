@@ -82,8 +82,9 @@ class RealF1Client:
             async def print_callback(
                 records
                 ):
-                for record in records:
-                    await self._file_logger(record)
+                for topic, data in records.items():
+                    for record in data:
+                        await self._file_logger(f"{topic} > {record}")
 
     def _create_session(self):
         """
