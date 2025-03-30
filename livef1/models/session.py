@@ -538,11 +538,16 @@ class Session:
         pos_df = self.get_data("Position.z")
         car_df = self.get_data("CarData.z")
         first_date = np.amax([(helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(), (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()])
+        
+        # sess_data = self.get_data("Session_Data")
+        # first_date = helper.to_datetime(sess_data[sess_data["SessionStatus"] == "Started"].Utc).tolist()[0]
         return first_date
     
-    def _get_session_start_time(self):
-        return pd.to_timedelta(self.get_data(dataNames="SessionStatus").set_index("status").loc["Started"].timestamp[0])
-        # return pd.to_timedelta(self.get_data(dataNames="SessionStatus").set_index("status").loc["Started"].timestamp)
+    def _get_session_start_datetime(self):
+        # return pd.to_timedelta(self.get_data(dataNames="SessionStatus").set_index("status").loc["Started"].timestamp[0])
+        sess_data = self.get_data("Session_Data")
+        first_date = helper.to_datetime(sess_data[sess_data["SessionStatus"] == "Started"].Utc).tolist()[0]
+        return first_date
 
     def generate(self, silver=True, gold=False):
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])
@@ -558,8 +563,8 @@ class Session:
         self.get_data(list(required_data), parallel=True)
 
         self.first_datetime = self._get_first_datetime()
-        self.session_start_time = self._get_session_start_time()
-        self.session_start_datetime = self.first_datetime + self.session_start_time
+        # self.session_start_time = self._get_session_start_time()
+        self.session_start_datetime = self._get_session_start_datetime()
         
         if silver:
             logger.info(f"Silver tables are being generated.")

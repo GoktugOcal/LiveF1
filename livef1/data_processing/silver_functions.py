@@ -149,14 +149,6 @@ def generate_laps_table(bronze_lake):
                             elif len(laps) > 0:
                                 laps[-1][f"sector{str(sc_no + 1)}_time"] = sc_value
                                 last_record_ts = ts
-                                
-
-                        # elif key_type == "PreviousValue" and ts - last_record_ts > timedelta(seconds=10):
-                        #     print("in")
-                        #     record[f"sector{str(sc_no + 1)}_time"] = sc_value
-                        #     last_record_ts = ts
-                        #     if sc_no == 2:
-                        #         laps, record = enter_new_lap(laps, record)
                     
                 
 
@@ -180,12 +172,10 @@ def generate_laps_table(bronze_lake):
 
             row_bool = (laps_df["lap_number"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
             laps_df.loc[row_bool, "isDeleted"] = True
-            laps_df.loc[row_bool, "deleationMessage"] = row["Message"]
+            laps_df.loc[row_bool, "deletionMessage"] = row["Message"]
 
         return laps_df
     
-
-
     ## TODO: This is a temporary fix for the sector times.
     # segments = ["sector1_time", "sector2_time", "sector3_time"]
     # for idx in range(len(segments)):
@@ -195,10 +185,7 @@ def generate_laps_table(bronze_lake):
 
     new_ts = (all_laps_df["lap_start_time"] + all_laps_df["lap_time"]).shift(1)
     all_laps_df["lap_start_time"] = (new_ts.isnull() * all_laps_df["lap_start_time"]) + new_ts.fillna(timedelta(0))
-    all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime
     all_laps_df["lap_start_date"] = (all_laps_df["lap_start_time"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
-
-    all_laps_df[["lap_start_time"] + all_laps_df.columns.tolist()]
 
     all_laps_df = delete_laps(all_laps_df, df_rcm)
 
