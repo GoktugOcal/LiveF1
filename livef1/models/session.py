@@ -205,21 +205,29 @@ class Session:
             self.drivers[driver.RacingNumber] = driver
 
 
-    def get_driver(self, driver_number: str) -> Driver:
+    def get_driver(self, identifier: str) -> Driver:
         """
-        Get a specific driver by their number.
+        Get a specific driver by their number, name, or short name.
 
         Parameters
         ----------
-        driver_number : str
-            The driver's racing number
+        identifier : str
+            The driver's racing number, full name, or short name.
 
         Returns
         -------
         Driver
-            The Driver object for the specified number
+            The Driver object for the specified identifier, or None if not found.
         """
-        return self.drivers.get(str(driver_number))
+        for driver in self.drivers.values():
+            if (
+                str(driver.RacingNumber) == identifier or
+                driver.FirstName.lower() == identifier.lower() or
+                driver.LastName.lower() == identifier.lower() or
+                driver.Tla.lower() == identifier.lower()
+            ):
+                return driver
+        return None
 
     def load_data(
         self,
