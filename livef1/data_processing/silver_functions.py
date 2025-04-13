@@ -169,7 +169,8 @@ def generate_laps_table(bronze_lake):
         df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
 
         for idx, row in df_rcm_del.iterrows():
-
+            try: int(row["deleted_lap"])
+            except: continue
             row_bool = (laps_df["lap_number"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
             laps_df.loc[row_bool, "isDeleted"] = True
             laps_df.loc[row_bool, "deletionMessage"] = row["Message"]
