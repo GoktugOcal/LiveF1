@@ -215,6 +215,8 @@ def generate_car_telemetry_table(bronze_lake):
 
         for col in df_driver.columns:
             if col in interpolation_map:
+                if len(df_driver[col].dropna()) < len(df_driver)*0.5:
+                    continue
                 df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
 
         # laps_driver["lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"] - timedelta(milliseconds=1)
