@@ -165,6 +165,13 @@ def generate_laps_table(bronze_lake):
         df_rcm_del = df_rcm[(df_rcm["Category"] == "Other") & (df_rcm.Message.str.split(" ").str[0] == "CAR")]
         df_rcm_del["deleted_driver"] = df_rcm_del.Message.str.split(" ").str[1]
         df_rcm_del["deleted_type"] = df_rcm_del.Message.str.split(" ").str[3]
+        df_rcm_del["deleted_time"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[4] if x.deleted_type == "TIME" else None, axis=1)
+
+        for idx, row in df_rcm_del[df_rcm_del["Message"].str.contains("REINSTATED") & (df_rcm_del["deleted_type"] == "TIME")].iterrows():
+            driver = row.deleted_driver
+            time = row.deleted_time
+            df_rcm_del = df_rcm_del.drop(df_rcm_del[(df_rcm_del.deleted_driver == driver) & (df_rcm_del.deleted_time == time)].index)
+
         df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
         df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
 
@@ -215,7 +222,7 @@ def generate_car_telemetry_table(bronze_lake):
 
         for col in df_driver.columns:
             if col in interpolation_map:
-                if len(df_driver[col].dropna()) < len(df_driver)*0.5:
+                if len(df_driver[col].dropna()) < len(df_driver)*0.2:
                     continue
                 df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
 
