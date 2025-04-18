@@ -1,0 +1,302 @@
+{
+    "Silverstone": {
+        "start_coordinates": [
+            -1719.0,
+            1259.0696915293308
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "Hungaroring": {
+        "start_coordinates": [
+            -1503.1760607788005,
+            -97.79438368267355
+        ],
+        "start_direction": [
+            -1.0,
+            1.0
+        ]
+    },
+    "Imola": {
+        "start_coordinates": [
+            -1567.6526404890294,
+            -1609.0
+        ],
+        "start_direction": [
+            -1.0,
+            -1.0
+        ]
+    },
+    "Spa-Francorchamps": {
+        "start_coordinates": [
+            -434.74837653627947,
+            1306.8582922622738
+        ],
+        "start_direction": [
+            -1.0,
+            1.0
+        ]
+    },
+    "Austin": {
+        "start_coordinates": [
+            -1296.857864097475,
+            -418.4940661710967
+        ],
+        "start_direction": [
+            1.0,
+            -1.0
+        ]
+    },
+    "Melbourne": {
+        "start_coordinates": [
+            -1117.044473859799,
+            -1407.8614972009418
+        ],
+        "start_direction": [
+            1.0,
+            -1.0
+        ]
+    },
+    "Interlagos": {
+        "start_coordinates": [
+            -3640.956428946304,
+            -5403.238457322315
+        ],
+        "start_direction": [
+            1.0,
+            -1.0
+        ]
+    },
+    "Catalunya": {
+        "start_coordinates": [
+            1333.0,
+            -318.0
+        ],
+        "start_direction": [
+            -1.0,
+            -1.0
+        ]
+    },
+    "Spielberg": {
+        "start_coordinates": [
+            1051.9430707003812,
+            -1221.0
+        ],
+        "start_direction": [
+            -1.0,
+            -1.0
+        ]
+    },
+    "Monte Carlo": {
+        "start_coordinates": [
+            -7666.021463369087,
+            -6542.6118060293875
+        ],
+        "start_direction": [
+            -1.0,
+            1.0
+        ]
+    },
+    "Montreal": {
+        "start_coordinates": [
+            3374.964298911727,
+            754.2371366743143
+        ],
+        "start_direction": [
+            1.0,
+            -1.0
+        ]
+    },
+    "Paul Ricard": {
+        "start_coordinates": [
+            -442.0,
+            -1382.0
+        ],
+        "start_direction": [
+            -1.0,
+            1.0
+        ]
+    },
+    "Monza": {
+        "start_coordinates": [
+            -1373.7278248908085,
+            -678.8106088197458
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "Suzuka": {
+        "start_coordinates": [
+            1747.021795551225,
+            -703.9474171350629
+        ],
+        "start_direction": [
+            1.0,
+            -1.0
+        ]
+    },
+    "Shanghai": {
+        "start_coordinates": [
+            30.519037360871856,
+            -1502.3037163443846
+        ],
+        "start_direction": [
+            -1.0,
+            -1.0
+        ]
+    },
+    "Zandvoort": {
+        "start_coordinates": [
+            520.7570772162252,
+            3808.0258182955977
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "Istanbul": {
+        "start_coordinates": [
+            582.4348669934898,
+            -1402.0
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "Singapore": {
+        "start_coordinates": [
+            1056.5297920098192,
+            -325.4606469128227
+        ],
+        "start_direction": [
+            -1.0,
+            1.0
+        ]
+    },
+    "Sakhir": {
+        "start_coordinates": [
+            -376.0,
+            1345.0
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "Mexico City": {
+        "start_coordinates": [
+            -162.85000000000014,
+            1208.321410000574
+        ],
+        "start_direction": [
+            1.0,
+            -1.0
+        ]
+    },
+    "Yas Marina Circuit": {
+        "start_coordinates": [
+            626.9032354136568,
+            2088.0
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "N\u00fcrburgring": {
+        "start_coordinates": [
+            1653.0,
+            -346.22388097316923
+        ],
+        "start_direction": [
+            -1.0,
+            -1.0
+        ]
+    },
+    "Sochi": {
+        "start_coordinates": [
+            1221.9475505080843,
+            -502.7054245901702
+        ],
+        "start_direction": [
+            -1.0,
+            -1.0
+        ]
+    },
+    "Baku": {
+        "start_coordinates": [
+            1123.0,
+            -566.0
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "Mugello": {
+        "start_coordinates": [
+            -954.6910821331189,
+            -332.13248185993336
+        ],
+        "start_direction": [
+            -1.0,
+            -1.0
+        ]
+    },
+    "Algarve International Circuit": {
+        "start_coordinates": [
+            -1887.7766731353843,
+            1568.8178947218707
+        ],
+        "start_direction": [
+            -1.0,
+            1.0
+        ]
+    },
+    "Sakhir Outer Track": {
+        "start_coordinates": [
+            -365.0,
+            1383.1499999999999
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    },
+    "Jeddah": {
+        "start_coordinates": [
+            -1316.0,
+            286.0
+        ],
+        "start_direction": [
+            -1.0,
+            1.0
+        ]
+    },
+    "Miami": {
+        "start_coordinates": [
+            1938.7747920436402,
+            65.07787460514575
+        ],
+        "start_direction": [
+            1.0,
+            -1.0
+        ]
+    },
+    "Las Vegas": {
+        "start_coordinates": [
+            2180.991946047756,
+            -485.05109463819497
+        ],
+        "start_direction": [
+            1.0,
+            1.0
+        ]
+    }
+}
