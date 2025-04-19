@@ -172,15 +172,34 @@ def generate_laps_table(bronze_lake):
             time = row.deleted_time
             df_rcm_del = df_rcm_del.drop(df_rcm_del[(df_rcm_del.deleted_driver == driver) & (df_rcm_del.deleted_time == time)].index)
 
-        df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
-        df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
 
-        for idx, row in df_rcm_del.iterrows():
-            try: int(row["deleted_lap"])
-            except: continue
-            row_bool = (laps_df["lap_number"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
-            laps_df.loc[row_bool, "isDeleted"] = True
-            laps_df.loc[row_bool, "deletionMessage"] = row["Message"]
+        # print(df_rcm_del)
+        # for idx, row in df_rcm_del.iterrows():
+        #     print(row.Message)
+        #     row.Message.split(" ")[12]
+        #     row.Message.split(" ")[13]
+
+        def lap_finder(x):
+            if len(x.Message.split(" ")) > 12:
+                if x.deleted_type == "LAP":
+                    return x.Message.split(" ")[12]
+                elif x.deleted_type == "TIME":
+                    return x.Message.split(" ")[13]
+                else:
+                    return None
+            else:
+                return None
+
+        if len(df_rcm_del) > 0:
+            df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: lap_finder(x), axis=1)
+            # df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
+
+            for idx, row in df_rcm_del.iterrows():
+                try: int(row["deleted_lap"])
+                except: continue
+                row_bool = (laps_df["lap_number"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
+                laps_df.loc[row_bool, "isDeleted"] = True
+                laps_df.loc[row_bool, "deletionMessage"] = row["Message"]
 
         return laps_df
     
@@ -198,7 +217,6 @@ def generate_laps_table(bronze_lake):
     all_laps_df = delete_laps(all_laps_df, df_rcm)
 
     return all_laps_df
-
 
 def generate_car_telemetry_table(bronze_lake):
     session = bronze_lake.great_lake.session
@@ -226,24 +244,52 @@ def generate_car_telemetry_table(bronze_lake):
                     continue
                 df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
 
-        # laps_driver["lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"] - timedelta(milliseconds=1)
-        # laps_driver = pd.concat([laps_driver[["lap_start_date", "lap_number"]].set_index("lap_start_date"), laps_driver[["lap_end_date", "lap_number"]].set_index("lap_end_date")]).reset_index().sort_values("index").dropna()
         laps_driver.loc[:, "lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"]
 
-        # df_driver = df_driver.join(laps_driver.set_index("index"), how="outer")
         df_driver = df_driver.join(laps_driver[["lap_start_date", "lap_number"]].set_index("lap_start_date"), how="outer")
         df_driver["lap_number"] = df_driver["lap_number"].ffill().bfill()
         df_driver.index.names = ['Utc']
 
         df_driver = df_driver.reset_index()
-        # df_driver = df_driver[df_driver.Utc.between(laps_driver["index"].min(), laps_driver["index"].max())]
         df_driver = df_driver[df_driver.Utc.between(laps_driver["lap_start_date"].min(), laps_driver["lap_end_date"].max())]
 
         df_driver["SessionKey"] = df_driver["SessionKey"].ffill().bfill()
         df_driver["timestamp"] = df_driver["Utc"] - session.first_datetime
+
+        # Add distance to lap
+        for lap_no in df_driver["lap_number"].unique():
+            lap_df = df_driver[df_driver["lap_number"] == lap_no]
+            lap_df = add_distance_to_lap(
+                lap_df,
+                session.meeting.circuit.start_coordinates[0],
+                session.meeting.circuit.start_coordinates[1],
+                session.meeting.circuit.start_direction[0],
+                session.meeting.circuit.start_direction[1]
+                )
+            
+            df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
 
         all_drivers_data.append(df_driver)
 
     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
     
     return all_drivers_df
+
+
+def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
+
+    if len(lap_df) > 0:
+        lap_df["Distance"] = ((lap_df.speed / 3.6) * lap_df["timestamp"].diff().dt.total_seconds()).cumsum()
+
+        start_line = lap_df.iloc[0]
+        if ((start_line.X - start_x) / x_coeff > 0) & ((start_line.Y - start_y) / y_coeff > 0): direction = 1
+        else: direction = -1
+        
+        distance = direction * (((start_line.X - start_x)**2 + (start_line.Y - start_y)**2)**0.5) / 10 
+        lap_df["Distance"] = distance + lap_df["Distance"].fillna(0)
+
+    else:
+        print("Passed...")
+        pass
+
+    return lap_df

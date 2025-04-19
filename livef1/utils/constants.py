@@ -3,6 +3,9 @@ BASE_URL = "https://livetiming.formula1.com"
 STATIC_ENDPOINT = "/static/"
 SIGNALR_ENDPOINT = "/signalr/"
 
+# Circuit Start Coordinates URL
+START_COORDINATES_URL = "https://raw.githubusercontent.com/GoktugOcal/LiveF1/refs/heads/main/livef1/data/starting_coordinates.json"
+
 DEFAULT_METHOD = "livef1"
 
 REALTIME_CALLBACK_DEFAULT_PARAMETERS = [

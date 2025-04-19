@@ -10,6 +10,7 @@ from typing import List, Dict
 # Internal Project Imports
 from ..adapters import download_data
 from ..models.session import Session
+from ..models.circuit import Circuit
 from ..utils.helper import json_parser_for_objects, build_session_endpoint
 from ..utils.constants import SESSIONS_COLUMN_MAP
 
@@ -69,6 +70,10 @@ class Meeting:
         for key, value in locals().items():
             if value:
                 setattr(self, key.lower(), value)
+
+        # Load Circuit
+        self.circuit = Circuit(self.circuit["Key"],self.circuit["ShortName"])
+        self.circuit._load_start_coordinates()
 
         if hasattr(self, "sessions"):
             self.sessions_json = self.sessions
@@ -148,8 +153,7 @@ class Meeting:
                 "meeting_country_key": self.country["Key"],
                 "meeting_country_code": self.country["Code"],
                 "meeting_country_name": self.country["Name"],
-                "meeting_circuit_key": self.circuit["Key"],
-                "meeting_circuit_shortname": self.circuit["ShortName"],
+                "circuit": self.circuit,
                 "session_key": session.get("Key", None),
                 "session_type": session["Type"] + " " + str(session["Number"]) if "Number" in session else session["Type"],
                 "session_name": session.get("Name", None),

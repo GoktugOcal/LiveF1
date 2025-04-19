@@ -2,7 +2,8 @@ from .adapters import LivetimingF1adapters, livetimingF1_request
 from .models import (
     Session,
     Season,
-    Meeting
+    Meeting,
+    Circuit
 )
 from .adapters import download_data
 from .utils.helper import json_parser_for_objects, find_most_similar_vectorized, print_found_model
