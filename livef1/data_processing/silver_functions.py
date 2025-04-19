@@ -140,6 +140,7 @@ def generate_laps_table(bronze_lake):
                             elif ts - last_record_ts > timedelta(seconds=10):
                                 laps, record = enter_new_lap(laps, record)
                                 record[f"sector{str(sc_no + 1)}_time"] = sc_value
+                                record["lap_start_time"] = ts - sc_value
                                 last_record_ts = ts
                         
                         elif key_type == "PreviousValue":
@@ -219,6 +220,30 @@ def generate_laps_table(bronze_lake):
     return all_laps_df
 
 def generate_car_telemetry_table(bronze_lake):
+    """
+    Generates a telemetry table for car data by combining and processing position and car data
+    from the provided BronzeLake object. The function interpolates missing data, aligns it with
+    session laps, and calculates cumulative distance covered during each lap.
+    Args:
+        bronze_lake (BronzeLake): An object containing the raw position and car data, as well as
+                                  session and circuit information.
+    Returns:
+        pd.DataFrame: A DataFrame containing processed telemetry data for all drivers, including:
+                      - DriverNo: Driver number.
+                      - Utc: Timestamp in UTC.
+                      - lap_number: Lap number for the driver.
+                      - Distance: Cumulative distance covered during the lap.
+                      - SessionKey: Session identifier.
+                      - timestamp: Time elapsed since the session start.
+                      - Other interpolated and processed telemetry data.
+    Notes:
+        - The function interpolates missing data based on predefined interpolation methods.
+        - Data is filtered to include only timestamps within the lap start and end times.
+        - Cumulative distance is calculated for each lap using speed and timestamp data, adjusted
+          for the circuit's starting line position and direction.
+    Raises:
+        ValueError: If required data is missing or cannot be processed.
+    """
     session = bronze_lake.great_lake.session
 
     df_pos = bronze_lake.get("Position.z")
@@ -247,6 +272,7 @@ def generate_car_telemetry_table(bronze_lake):
         laps_driver.loc[:, "lap_end_date"] = laps_driver["lap_start_date"] + laps_driver["lap_time"]
 
         df_driver = df_driver.join(laps_driver[["lap_start_date", "lap_number"]].set_index("lap_start_date"), how="outer")
+
         df_driver["lap_number"] = df_driver["lap_number"].ffill().bfill()
         df_driver.index.names = ['Utc']
 
@@ -256,7 +282,10 @@ def generate_car_telemetry_table(bronze_lake):
         df_driver["SessionKey"] = df_driver["SessionKey"].ffill().bfill()
         df_driver["timestamp"] = df_driver["Utc"] - session.first_datetime
 
-        # Add distance to lap
+        df_driver = df_driver.dropna(subset=["DriverNo"])
+
+        # Iterate through each unique lap number for the driver to calculate and add the cumulative distance
+        # covered during the lap based on speed and timestamp, adjusted for the starting line position.
         for lap_no in df_driver["lap_number"].unique():
             lap_df = df_driver[df_driver["lap_number"] == lap_no]
             lap_df = add_distance_to_lap(
@@ -266,7 +295,7 @@ def generate_car_telemetry_table(bronze_lake):
                 session.meeting.circuit.start_direction[0],
                 session.meeting.circuit.start_direction[1]
                 )
-            
+                        
             df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
 
         all_drivers_data.append(df_driver)
@@ -277,19 +306,38 @@ def generate_car_telemetry_table(bronze_lake):
 
 
 def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
+    """
+    Calculates the cumulative distance covered by a car during a lap based on its speed and timestamp.
+    Adjusts the distance based on the starting line coordinates and direction.
+
+    Args:
+        lap_df (pd.DataFrame): DataFrame containing lap data with columns 'speed', 'timestamp', 'X', and 'Y'.
+        start_x (float): X-coordinate of the starting line.
+        start_y (float): Y-coordinate of the starting line.
+        x_coeff (float): Coefficient for determining direction along the X-axis.
+        y_coeff (float): Coefficient for determining direction along the Y-axis.
+
+    Returns:
+        pd.DataFrame: Updated DataFrame with a new 'Distance' column representing the cumulative distance.
+    """
 
     if len(lap_df) > 0:
+        # Calculate cumulative distance based on speed and time difference
         lap_df["Distance"] = ((lap_df.speed / 3.6) * lap_df["timestamp"].diff().dt.total_seconds()).cumsum()
 
+        # Get the first row to determine the starting line position
         start_line = lap_df.iloc[0]
-        if ((start_line.X - start_x) / x_coeff > 0) & ((start_line.Y - start_y) / y_coeff > 0): direction = 1
-        else: direction = -1
-        
-        distance = direction * (((start_line.X - start_x)**2 + (start_line.Y - start_y)**2)**0.5) / 10 
-        lap_df["Distance"] = distance + lap_df["Distance"].fillna(0)
 
-    else:
-        print("Passed...")
-        pass
+        # Determine the direction based on the starting line coordinates and coefficients
+        if ((start_line.X - start_x) / x_coeff > 0) & ((start_line.Y - start_y) / y_coeff > 0):
+            direction = 1
+        else:
+            direction = -1
+
+        # Calculate the initial distance from the starting line
+        distance = direction * (((start_line.X - start_x)**2 + (start_line.Y - start_y)**2)**0.5) / 10
+
+        # Adjust the cumulative distance with the initial distance
+        lap_df["Distance"] = distance + lap_df["Distance"].fillna(0)
 
     return lap_df

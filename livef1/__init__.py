@@ -23,6 +23,8 @@ from pandas.errors import SettingWithCopyWarning
 warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+__version__ = "0.1.54"
+
 __all__ = [
     'set_log_level',
     'get_season',
