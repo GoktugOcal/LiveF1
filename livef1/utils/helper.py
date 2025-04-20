@@ -374,7 +374,7 @@ def print_found_model(df, key, cols):
 
 def to_datetime(var):
     if isinstance(var, pd.Series):
-        return pd.to_datetime(var.values).tz_localize(None).round("ms")
+        return pd.to_datetime(var.values, format='ISO8601').tz_localize(None).round("ms")
     elif isinstance(var, np.ndarray):
-        return pd.to_datetime(var).tz_localize(None).round("ms")
+        return pd.to_datetime(var, format='ISO8601').tz_localize(None).round("ms")
         

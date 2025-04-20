@@ -545,7 +545,12 @@ class Session:
     def _get_first_datetime(self):
         pos_df = self.get_data("Position.z")
         car_df = self.get_data("CarData.z")
-        first_date = np.amax([(helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(), (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()])
+        first_date = np.amax(
+            [
+                (helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(),
+                (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()
+            ]
+        )
         
         # sess_data = self.get_data("Session_Data")
         # first_date = helper.to_datetime(sess_data[sess_data["SessionStatus"] == "Started"].Utc).tolist()[0]
