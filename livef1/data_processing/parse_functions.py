@@ -540,7 +540,6 @@ def parse_car_data_z(data, sessionKey):
     
     if isinstance(data, list):
         for ts, v in data:
-    #data.items()::
             parsed_entry = parse(v, zipped=True)
             for entry in parsed_entry["Entries"]:
                 utc = entry["Utc"]

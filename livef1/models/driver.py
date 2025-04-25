@@ -94,4 +94,4 @@ class Driver:
         return None
 
     def __repr__(self):
-        return f"Driver({self.Tla} - {self.TeamName})"
+        return f"[{self.RacingNumber}] {self.Tla} - {self.TeamName}"

@@ -3,6 +3,7 @@ import json
 
 # Third-Party Library Imports
 import pandas as pd
+from ..utils.constants import column_mapping
 
 
 class BasicResult:
@@ -25,7 +26,9 @@ class BasicResult:
         Initializes the BasicResult instance with the provided data.
         """
         self.value = data
-        self.df = pd.DataFrame(data)
+        self.df = pd.DataFrame(data).rename(
+            columns = column_mapping
+        )
 
     def __get__(self):
         """

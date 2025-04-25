@@ -267,19 +267,6 @@ class Session:
 
         # Handle single data name case
         single_input = len(dataNames) == 1
-        # if single_input:
-        #     dataNames = [dataNames]
-
-        # # Validate all data names
-        # validated_names = []
-        # for name in dataNames:
-        #     for topic in self.topic_names_info:
-        #         if self.topic_names_info[topic]["key"] == name:
-        #             name = topic
-        #             stream = self.topic_names_info[topic]["default_is_stream"]
-        #             break
-        #     validated_names.append((name, stream))
-
         validated_names = dataNames
 
         results = {}
@@ -298,20 +285,6 @@ class Session:
             # Sequential loading
             for name, stream in validated_names:
                 name, res = load_single_data(name, self, stream)
-                # logger.info(f"Fetching data : '{name}'")
-                # start = time()
-                # data = livetimingF1_getdata(
-                #     urljoin(self.full_path, self.topic_names_info[name][dataType]),
-                #     stream=stream
-                # )
-                # logger.debug(f"Fetched in {round(time() - start,3)} seconds")
-                
-                # start = time()
-                # res = BasicResult(
-                #     data=list(self.etl_parser.unified_parse(name, data))
-                # )
-                # logger.debug(f"Parsed in {round(time() - start,3)} seconds")
-                # logger.info(f"'{name}' has been fetched and parsed")
                 results[name] = res
 
         # Save all results to bronze lake
@@ -617,39 +590,4 @@ def load_single_data(dataName, session, stream):
     logger.debug(f"Parsed in {round(time() - start,3)} seconds")
     logger.info(f"'{dataName}' has been fetched and parsed")
 
-    # session.data_lake.put(
-    #     level="bronze", data_name=dataName, data=res
-    # )
-    # logger.debug(f"'{dataName}' has been saved to the bronze lake.")
-
     return dataName, res
-
-
-# session.load()
-# session.generate(silver=True, gold=False)
-
-# session.load(
-#     bronze=True,
-#     silver=True,
-#     gold=True
-#     )
-
-# session.telemetry
-# session.timing
-# session.weather
-# session.position
-
-# telemetry
-# coordinates
-# tyre
-# stint
-# position
-
-# laps
-# pitduration
-# pitstops
-# timings
-
-# bronzeLake
-# silverLake
-# goldLake

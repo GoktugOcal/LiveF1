@@ -184,7 +184,7 @@ class DataLake:
 
         if level == "bronze":
             self.raw[data_name] = data.value
-            self.bronze_lake.put(data_name, pd.DataFrame(data.value))
+            self.bronze_lake.put(data_name, data.df)
         elif level == "silver":
             pass
         elif level == "gold":

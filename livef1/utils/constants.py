@@ -378,3 +378,31 @@ TABLE_REQUIREMENTS = {
     "laps": ["TimingData", "RaceControlMessages"],
     "carTelemetry": ["TimingData", "CarData.z", "Position.z", "SessionData"]
 }
+
+column_mapping = {
+  'rpm': "RPM",
+  'speed' : "Speed",
+  'n_gear' : "GearNo",
+  'throttle': "Throttle",
+  'brake' : "Brake",
+  'drs' : "DRS"
+}
+
+silver_cartel_col_order = [
+  'Utc',
+  'timestamp',
+  'SessionKey',
+  'DriverNo',
+  'LapNo',
+  'RPM',
+  'Speed',
+  'GearNo',
+  'Throttle',
+  'Brake',
+  'DRS',
+  'X',
+  'Y',
+  'Z',
+  'Distance',
+  'Status'
+  ]
