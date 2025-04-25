@@ -184,8 +184,8 @@ function_map = {
     'OvertakeSeries': None,
     'DriverScore': None,
     'SPFeed': None,
-    'PitStopSeries': None,
-    'PitStop': None,
+    'PitStopSeries': parse_pit_stop_series,
+    'PitStop': parse_basic,
     'LapCount': parse_basic
 }
 

@@ -3,11 +3,18 @@ import numpy as np
 from datetime import timedelta
 
 from ..utils.helper import to_datetime
-from ..utils.constants import interpolation_map, silver_cartel_col_order
+from ..utils.constants import interpolation_map, silver_cartel_col_order, silver_laps_col_order
 
 def generate_laps_table(bronze_lake):
+    session = bronze_lake.great_lake.session
+
     df_exp = bronze_lake.get("TimingData")
     df_rcm = bronze_lake.get("RaceControlMessages")
+    df_pit = bronze_lake.get("PitStopSeries")
+    df_pit = df_pit[["RacingNumber", "PitStopTime", "PitLaneTime", "Lap"]].rename(columns={"RacingNumber": "DriverNo", "Lap":"LapNo", "PitStopTime": "PitStopDuration", "PitLaneTime":"PitLaneDuration"})
+    df_pit["LapNo"] = df_pit["LapNo"].astype(int)
+
+    sessionKey = df_exp["SessionKey"].values[0]
 
     if "_deleted" not in df_exp.columns:
         df_exp["_deleted"] = None
@@ -173,13 +180,6 @@ def generate_laps_table(bronze_lake):
             time = row.deleted_time
             df_rcm_del = df_rcm_del.drop(df_rcm_del[(df_rcm_del.deleted_driver == driver) & (df_rcm_del.deleted_time == time)].index)
 
-
-        # print(df_rcm_del)
-        # for idx, row in df_rcm_del.iterrows():
-        #     print(row.Message)
-        #     row.Message.split(" ")[12]
-        #     row.Message.split(" ")[13]
-
         def lap_finder(x):
             if len(x.Message.split(" ")) > 12:
                 if x.deleted_type == "LAP":
@@ -193,7 +193,6 @@ def generate_laps_table(bronze_lake):
 
         if len(df_rcm_del) > 0:
             df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: lap_finder(x), axis=1)
-            # df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[12] if x.deleted_type == "LAP" else x.Message.split(" ")[13] if x.deleted_type == "TIME" else None, axis=1)
 
             for idx, row in df_rcm_del.iterrows():
                 try: int(row["deleted_lap"])
@@ -201,23 +200,21 @@ def generate_laps_table(bronze_lake):
                 row_bool = (laps_df["LapNo"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
                 laps_df.loc[row_bool, "IsDeleted"] = True
                 laps_df.loc[row_bool, "DeletionMessage"] = row["Message"]
-
+            
+        
         return laps_df
     
-    ## TODO: This is a temporary fix for the sector times.
-    # segments = ["Sector1_Time", "Sector2_Time", "Sector3_Time"]
-    # for idx in range(len(segments)):
-    #     rest = np.delete(segments, idx)
-    #     all_laps_df[segments[idx]] = (
-    #         all_laps_df[segments[idx]].fillna(timedelta(minutes=0)) + (all_laps_df[segments[idx]].isnull() & (all_laps_df["LapNo"] > 1) & (~all_laps_df["LapTime"].isnull())) * (all_laps_df[segments[idx]].isnull() * (all_laps_df["LapTime"].fillna(timedelta(minutes=0)) - all_laps_df[rest].sum(axis=1)))).replace(timedelta(minutes=0), np.timedelta64("NaT"))
-
     new_ts = (all_laps_df["LapStartTime"] + all_laps_df["LapTime"]).shift(1)
     all_laps_df["LapStartTime"] = (new_ts.isnull() * all_laps_df["LapStartTime"]) + new_ts.fillna(timedelta(0))
     all_laps_df["LapStartDate"] = (all_laps_df["LapStartTime"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
 
     all_laps_df = delete_laps(all_laps_df, df_rcm)
 
-    return all_laps_df
+    all_laps_df["SessionKey"] = sessionKey
+    all_laps_df["Driver"] = all_laps_df["DriverNo"].map(session.drivers)
+    all_laps_df = all_laps_df.set_index(["DriverNo", "LapNo"]).join(df_pit.set_index(["DriverNo", "LapNo"])).reset_index()
+
+    return all_laps_df[silver_laps_col_order]
 
 def generate_car_telemetry_table(bronze_lake):
     """
@@ -322,7 +319,10 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
 
     if len(lap_df) > 0:
         # Calculate cumulative distance based on speed and time difference
-        lap_df["Distance"] = ((lap_df.Speed / 3.6) * lap_df["timestamp"].diff().dt.total_seconds()).cumsum()
+        dt_diff = lap_df["timestamp"].diff().dt.total_seconds()
+        # dt_diff.iloc[0] = lap_df["timestamp"].iloc[0].total_seconds()
+        dt_diff.iloc[0] = 0
+        lap_df["Distance"] = ((((lap_df.Speed + lap_df.Speed.shift(1)) / 2) / 3.6) * dt_diff).cumsum()
 
         # Get the first row to determine the starting line position
         start_line = lap_df.iloc[0]
@@ -337,6 +337,7 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
         distance = direction * (((start_line.X - start_x)**2 + (start_line.Y - start_y)**2)**0.5) / 10
 
         # Adjust the cumulative distance with the initial distance
-        lap_df["Distance"] = distance + lap_df["Distance"].fillna(0)
+        # lap_df["Distance"] = distance + lap_df["Distance"].fillna(0)
+        lap_df["Distance"] = distance + lap_df["Distance"]
 
     return lap_df

@@ -591,6 +591,41 @@ def parse_pit_lane_time(data, sessionKey):
                 yield record
 
 
+def parse_pit_stop_series(data, sessionKey):
+
+    for ts, value in data:
+        for driver_no, driver_pits in value["PitTimes"].items():
+
+            if isinstance(driver_pits, list):
+                for pit in driver_pits:
+                    utc = pit["Timestamp"]
+                    pit_data = pit["PitStop"]
+
+                    record = {
+                        "session_ky": 0,
+                        "timestamp": ts,
+                        "Utc" : utc,
+                        **pit_data
+                    }
+                    yield record
+                
+            else:
+                for pit in driver_pits.values():
+                    utc = pit["Timestamp"]
+                    pit_data = pit["PitStop"]
+
+                    record = {
+                        "session_ky": 0,
+                        "timestamp": ts,
+                        "Utc" : utc,
+                        **pit_data
+                    }
+                    yield record
+
+                    
+def parse_printer(data, sessionKey):
+    print(data)
+
 
 def parse_basic(data, sessionKey):
     for key, info in data:

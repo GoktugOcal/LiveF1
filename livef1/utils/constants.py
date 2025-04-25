@@ -364,6 +364,7 @@ interpolation_map = {
   "WindDirection" : "linear",
   "WindDirection" : "linear",
   "WindSpeed" : "polynomial",
+  # "Distance" : "quadratic"
   }
 
 SILVER_SESSION_TABLES = ["laps", "carTelemetry"]
@@ -375,7 +376,7 @@ TABLE_GENERATION_FUNCTIONS = {
 }
 
 TABLE_REQUIREMENTS = {
-    "laps": ["TimingData", "RaceControlMessages"],
+    "laps": ["TimingData", "RaceControlMessages", "PitStopSeries"],
     "carTelemetry": ["TimingData", "CarData.z", "Position.z", "SessionData"]
 }
 
@@ -389,10 +390,10 @@ column_mapping = {
 }
 
 silver_cartel_col_order = [
-  'Utc',
-  'timestamp',
   'SessionKey',
   'DriverNo',
+  'Utc',
+  'timestamp',
   'LapNo',
   'RPM',
   'Speed',
@@ -406,3 +407,26 @@ silver_cartel_col_order = [
   'Distance',
   'Status'
   ]
+
+silver_laps_col_order = [
+  'SessionKey',
+  'DriverNo',
+  'LapNo',
+  'LapTime',
+  'NoPits',
+  'PitIn',
+  'PitOut',
+  'PitStopDuration',
+  'Sector1_Time',
+  'Sector2_Time',
+  'Sector3_Time',
+  'LapStartTime',
+  'LapStartDate',
+  'Speed_I1',
+  'Speed_I2',
+  'Speed_FL',
+  'Speed_ST',
+  'IsDeleted',
+  'DeletionMessage',
+  'Driver'
+]
