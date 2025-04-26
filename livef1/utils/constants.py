@@ -349,12 +349,12 @@ interpolation_map = {
   'Y': 'quadratic',
   'Z': 'quadratic',
   #Car
-  'speed': 'linear',
-  'rpm': 'linear',
-  'throttle': 'linear',
-  'brake': 'ffill',
-  'drs': 'ffill',
-  'n_gear': 'ffill',
+  'Speed': 'linear',
+  'RPM': 'linear',
+  'Throttle': 'linear',
+  'Brake': 'ffill',
+  'DRS': 'ffill',
+  'GearNo': 'ffill',
   #Weather
   "AirTemp" : "linear",
   "Humidity" : "linear",
@@ -376,8 +376,8 @@ TABLE_GENERATION_FUNCTIONS = {
 }
 
 TABLE_REQUIREMENTS = {
-    "laps": ["TimingData", "RaceControlMessages", "PitStopSeries"],
-    "carTelemetry": ["TimingData", "CarData.z", "Position.z", "SessionData"]
+    "laps": ["TimingData", "RaceControlMessages", "PitStopSeries", "TyreStintSeries"],
+    "carTelemetry": ["TimingData", "CarData.z", "Position.z", "SessionData", "TyreStintSeries"]
 }
 
 column_mapping = {
@@ -404,6 +404,8 @@ silver_cartel_col_order = [
   'X',
   'Y',
   'Z',
+  'Compound',
+  'TyreAge',
   'Distance',
   'Status'
   ]
@@ -417,6 +419,8 @@ silver_laps_col_order = [
   'PitIn',
   'PitOut',
   'PitStopDuration',
+  'Compound',
+  'TyreAge',
   'Sector1_Time',
   'Sector2_Time',
   'Sector3_Time',

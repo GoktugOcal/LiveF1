@@ -6,14 +6,59 @@ from ..utils.helper import to_datetime
 from ..utils.constants import interpolation_map, silver_cartel_col_order, silver_laps_col_order
 
 def generate_laps_table(bronze_lake):
+
+    def delete_laps(laps_df, df_rcm):
+        laps_df["IsDeleted"] = False
+
+        df_rcm_del = df_rcm[(df_rcm["Category"] == "Other") & (df_rcm.Message.str.split(" ").str[0] == "CAR")]
+        df_rcm_del["deleted_driver"] = df_rcm_del.Message.str.split(" ").str[1]
+        df_rcm_del["deleted_type"] = df_rcm_del.Message.str.split(" ").str[3]
+        df_rcm_del["deleted_time"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[4] if x.deleted_type == "TIME" else None, axis=1)
+
+        for idx, row in df_rcm_del[df_rcm_del["Message"].str.contains("REINSTATED") & (df_rcm_del["deleted_type"] == "TIME")].iterrows():
+            driver = row.deleted_driver
+            time = row.deleted_time
+            df_rcm_del = df_rcm_del.drop(df_rcm_del[(df_rcm_del.deleted_driver == driver) & (df_rcm_del.deleted_time == time)].index)
+
+        def lap_finder(x):
+            if len(x.Message.split(" ")) > 12:
+                if x.deleted_type == "LAP":
+                    return x.Message.split(" ")[12]
+                elif x.deleted_type == "TIME":
+                    return x.Message.split(" ")[13]
+                else:
+                    return None
+            else:
+                return None
+
+        if len(df_rcm_del) > 0:
+            df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: lap_finder(x), axis=1)
+
+            for idx, row in df_rcm_del.iterrows():
+                try: int(row["deleted_lap"])
+                except: continue
+                row_bool = (laps_df["LapNo"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
+                laps_df.loc[row_bool, "IsDeleted"] = True
+                laps_df.loc[row_bool, "DeletionMessage"] = row["Message"]
+            
+        
+        return laps_df
+
+    
     session = bronze_lake.great_lake.session
 
+    # Get Timing Data
     df_exp = bronze_lake.get("TimingData")
+    # Get Race Control Messages
     df_rcm = bronze_lake.get("RaceControlMessages")
+    # Get Pit Stop Data
     df_pit = bronze_lake.get("PitStopSeries")
     df_pit = df_pit[["RacingNumber", "PitStopTime", "PitLaneTime", "Lap"]].rename(columns={"RacingNumber": "DriverNo", "Lap":"LapNo", "PitStopTime": "PitStopDuration", "PitLaneTime":"PitLaneDuration"})
     df_pit["LapNo"] = df_pit["LapNo"].astype(int)
-
+    # Get Tyre Stint Data
+    df_tyre = bronze_lake.get("TyreStintSeries")
+    df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
+    # Get Session Data
     sessionKey = df_exp["SessionKey"].values[0]
 
     if "_deleted" not in df_exp.columns:
@@ -165,54 +210,29 @@ def generate_laps_table(bronze_lake):
         all_laps.append(laps_df)
 
     all_laps_df = pd.concat(all_laps, ignore_index=True)
-
-
-    def delete_laps(laps_df, df_rcm):
-        laps_df["IsDeleted"] = False
-
-        df_rcm_del = df_rcm[(df_rcm["Category"] == "Other") & (df_rcm.Message.str.split(" ").str[0] == "CAR")]
-        df_rcm_del["deleted_driver"] = df_rcm_del.Message.str.split(" ").str[1]
-        df_rcm_del["deleted_type"] = df_rcm_del.Message.str.split(" ").str[3]
-        df_rcm_del["deleted_time"] = df_rcm_del.apply(lambda x: x.Message.split(" ")[4] if x.deleted_type == "TIME" else None, axis=1)
-
-        for idx, row in df_rcm_del[df_rcm_del["Message"].str.contains("REINSTATED") & (df_rcm_del["deleted_type"] == "TIME")].iterrows():
-            driver = row.deleted_driver
-            time = row.deleted_time
-            df_rcm_del = df_rcm_del.drop(df_rcm_del[(df_rcm_del.deleted_driver == driver) & (df_rcm_del.deleted_time == time)].index)
-
-        def lap_finder(x):
-            if len(x.Message.split(" ")) > 12:
-                if x.deleted_type == "LAP":
-                    return x.Message.split(" ")[12]
-                elif x.deleted_type == "TIME":
-                    return x.Message.split(" ")[13]
-                else:
-                    return None
-            else:
-                return None
-
-        if len(df_rcm_del) > 0:
-            df_rcm_del["deleted_lap"] = df_rcm_del.apply(lambda x: lap_finder(x), axis=1)
-
-            for idx, row in df_rcm_del.iterrows():
-                try: int(row["deleted_lap"])
-                except: continue
-                row_bool = (laps_df["LapNo"] == int(row["deleted_lap"])) & (laps_df["DriverNo"] == row["deleted_driver"])
-                laps_df.loc[row_bool, "IsDeleted"] = True
-                laps_df.loc[row_bool, "DeletionMessage"] = row["Message"]
-            
-        
-        return laps_df
     
     new_ts = (all_laps_df["LapStartTime"] + all_laps_df["LapTime"]).shift(1)
     all_laps_df["LapStartTime"] = (new_ts.isnull() * all_laps_df["LapStartTime"]) + new_ts.fillna(timedelta(0))
     all_laps_df["LapStartDate"] = (all_laps_df["LapStartTime"] + bronze_lake.great_lake.session.first_datetime).fillna(bronze_lake.great_lake.session.session_start_datetime)
+    all_laps_df["LapStartTime"] = all_laps_df["LapStartTime"].fillna(all_laps_df.iloc[1].LapStartTime - (all_laps_df.iloc[1].LapStartDate - all_laps_df.iloc[0].LapStartDate))
 
+    # Delete laps
     all_laps_df = delete_laps(all_laps_df, df_rcm)
 
+    # Add session data
     all_laps_df["SessionKey"] = sessionKey
+    # Add driver data
     all_laps_df["Driver"] = all_laps_df["DriverNo"].map(session.drivers)
+    # Add pit data
     all_laps_df = all_laps_df.set_index(["DriverNo", "LapNo"]).join(df_pit.set_index(["DriverNo", "LapNo"])).reset_index()
+    # Add tyre data
+    all_laps_df["LapEndTime"] = all_laps_df["LapStartTime"] + all_laps_df["LapTime"]
+    all_laps_df = all_laps_df.set_index(["DriverNo", "LapEndTime"]).join(
+        df_tyre.rename(columns={"timestamp":"LapEndTime", "TotalLaps":"TyreAge"}).set_index(["DriverNo", "LapEndTime"]),
+        how="outer"
+    )
+    all_laps_df[["Compound","New","TyreAge"]] = all_laps_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
+    all_laps_df = all_laps_df.reset_index().dropna(subset = "SessionKey")
 
     return all_laps_df[silver_laps_col_order]
 
@@ -241,15 +261,23 @@ def generate_car_telemetry_table(bronze_lake):
     Raises:
         ValueError: If required data is missing or cannot be processed.
     """
+    # Get session data
     session = bronze_lake.great_lake.session
 
+    # Get position data
     df_pos = bronze_lake.get("Position.z").drop(columns=["SessionKey", "timestamp"])
     df_pos["Utc"] = to_datetime(df_pos["Utc"])
 
+    # Get car data
     df_car = bronze_lake.get("CarData.z")
     df_car["Utc"] = to_datetime(df_car["Utc"])
     df_car["timestamp"] = pd.to_timedelta(df_car["timestamp"])
 
+    # Get tyre data
+    df_tyre = bronze_lake.get("TyreStintSeries")
+    df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
+
+    # Join car and position data
     df = df_car.set_index(["DriverNo", "Utc"]).join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer").reset_index().sort_values(["DriverNo", "Utc"])
     df["Status"] = df["Status"].ffill()
 
@@ -298,6 +326,14 @@ def generate_car_telemetry_table(bronze_lake):
         all_drivers_data.append(df_driver)
 
     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
+
+    # Add Tyre Data
+    all_drivers_df = all_drivers_df.set_index(["DriverNo", "timestamp"]).join(
+        df_tyre.rename(columns={"TotalLaps":"TyreAge"}).set_index(["DriverNo", "timestamp"]),
+        how="outer"
+    )
+    all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
+    all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
     
     return all_drivers_df[silver_cartel_col_order]
 
