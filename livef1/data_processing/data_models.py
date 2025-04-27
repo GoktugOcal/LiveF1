@@ -53,52 +53,91 @@ class BasicResult:
         return self.df.__str__()
 
 
-class BronzeResult(BasicResult):
-    """
-    Encapsulates bronze level data, typically raw data.
+# class BronzeResult(BasicResult):
+#     """
+#     Encapsulates bronze level data, typically raw data.
 
-    Parameters
-    ----------
-    data : :class:`dict`
-        The raw data to be encapsulated within the result.
-    """
+#     Parameters
+#     ----------
+#     data : :class:`dict`
+#         The raw data to be encapsulated within the result.
+#     """
 
-    def __init__(self, data: dict):
-        """
-        Initializes the BronzeResult instance with the provided data.
-        """
-        super().__init__(data)
-
-
-class SilverResult(BasicResult):
-    """
-    Encapsulates silver level data, typically cleaned data.
-
-    Parameters
-    ----------
-    data : :class:`dict`
-        The cleaned data to be encapsulated within the result.
-    """
-
-    def __init__(self, data: dict):
-        """
-        Initializes the SilverResult instance with the provided data.
-        """
-        super().__init__(data)
+#     def __init__(self, data: dict):
+#         """
+#         Initializes the BronzeResult instance with the provided data.
+#         """
+#         super().__init__(data)
 
 
-class GoldResult(BasicResult):
-    """
-    Encapsulates gold level data, typically aggregated data.
+# class SilverResult(BasicResult):
+#     """
+#     Encapsulates silver level data, typically cleaned data.
 
-    Parameters
-    ----------
-    data : :class:`dict`
-        The aggregated data to be encapsulated within the result.
-    """
+#     Parameters
+#     ----------
+#     data : :class:`dict`
+#         The cleaned data to be encapsulated within the result.
+#     """
 
-    def __init__(self, data: dict):
-        """
-        Initializes the GoldResult instance with the provided data.
-        """
-        super().__init__(data)
+#     def __init__(self, data: dict):
+#         """
+#         Initializes the SilverResult instance with the provided data.
+#         """
+#         super().__init__(data)
+
+
+# class GoldResult(BasicResult):
+#     """
+#     Encapsulates gold level data, typically aggregated data.
+
+#     Parameters
+#     ----------
+#     data : :class:`dict`
+#         The aggregated data to be encapsulated within the result.
+#     """
+
+#     def __init__(self, data: dict):
+#         """
+#         Initializes the GoldResult instance with the provided data.
+#         """
+#         super().__init__(data)
+
+
+
+
+
+class Table:
+    def __init__(self, table_name, data_lake = None):
+        self.data_lake = data_lake
+        self.table_name = table_name
+        self.table = None
+        self.callback = None
+        self.df = None
+    
+    def generate_table(self):
+        print("Inside table create_table()")
+        if self.callback:
+            print("Just before running callback...")
+            self.df = self.callback(self)
+        return self.df
+
+class BronzeTable(Table):
+    def __init__(self, table_name, data, parsed_data, data_lake = None):
+        super().__init__(table_name, data_lake)
+        self.raw = data
+        self.df = pd.DataFrame(parsed_data).rename(
+            columns = column_mapping
+        )
+
+class SilverTable(Table):
+    def __init__(self, table_name, sources, data_lake = None):
+        super().__init__(table_name, data_lake)
+        self.sources = sources
+        self.df = None
+
+class GoldTable(Table):
+    def __init__(self, table_name, sources, data_lake = None):
+        super().__init__(table_name, data_lake)
+        self.sources = sources
+        self.df = None

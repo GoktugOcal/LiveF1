@@ -12,6 +12,7 @@ from ..utils import helper
 from ..utils.logger import logger
 from ..data_processing.etl import *
 from ..data_processing.data_models import *
+from ..data_processing.silver_functions import *
 from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES, TABLE_GENERATION_FUNCTIONS
 from ..data_processing.lakes import DataLake
 from .driver import Driver
@@ -86,6 +87,10 @@ class Session:
         # Build the full path for accessing session data if path attribute exists.
         if hasattr(self, "path"):
             self.full_path = helper.build_session_endpoint(self.path)
+
+    def _load_default_silver_tables(self):
+        for table_name in SILVER_SESSION_TABLES:
+            self.create_silver_table(table_name, TABLE_REQUIREMENTS[table_name], include_session=True)(globals()[TABLE_GENERATION_FUNCTIONS[table_name]])
     
     def load_session_data(self):
         """
@@ -280,27 +285,37 @@ class Session:
                         np.asarray(validated_names)[:,0],
                         repeat(self),
                         np.asarray(validated_names)[:,1]))
-                results = {name: result for name, result in loaded_results}
+                results = {name: {"data": data, "parsed_data": parsed_data} for name, data, parsed_data in loaded_results}
         else:
             # Sequential loading
             for name, stream in validated_names:
-                name, res = load_single_data(name, self, stream)
-                results[name] = res
+                name, data, parsed_data = load_single_data(name, self, stream)
+                results[name] = {"data": data, "parsed_data": parsed_data}
 
         # Save all results to bronze lake
         for name, result in results.items():
-            self.data_lake.put(
-                level="bronze", data_name=name, data=result
-            )
+            self.data_lake.create_bronze_table(table_name=name, raw_data=result["data"], parsed_data=result["parsed_data"])
             logger.debug(f"'{name}' has been saved to the bronze lake.")
 
         # Return single result or dict based on input type
         if single_input:
-            return self.data_lake.get(level="bronze", data_name=validated_names[0][0])
-        return {name: self.data_lake.get(level="bronze", data_name=name) 
+            return self.data_lake.get(level="bronze", table_name=validated_names[0][0])
+        return {name: self.data_lake.get(level="bronze", table_name=name)
                for name, stream in validated_names}
 
     def get_data(
+        self,
+        dataNames,
+        parallel: bool = False,
+        force: bool = False
+    ):
+        if isinstance(dataNames, str):
+            return self.get(dataNames, parallel, force).df
+        elif isinstance(dataNames, list):
+            return {name:table.df for name, table in self.get(dataNames, parallel, force).items()}
+        else: return None
+
+    def get(
         self,
         dataNames,
         parallel: bool = False,
@@ -364,10 +379,11 @@ class Session:
         results = {}
         
         for name in validated_names:
-            if not force and name in self.data_lake.raw:
+            if not force and name in self.data_lake.metadata:
                 logger.debug(f"'{name}' found in lake, using cached version")
-                results[name] = self.data_lake.get(level="bronze", data_name=name)
+                results[name] = self.data_lake.get(level="bronze", table_name=name)
             else:
+                logger.debug(f"'{name}' not found in lake, loading from livetiming.")
                 stream = self.topic_names_info[name]["default_is_stream"]
                 to_load.append((name, stream))
         
@@ -413,11 +429,26 @@ class Session:
             self.get_topic_names()
 
         for topic in self.topic_names_info:
-            if self.topic_names_info[topic]["key"] == dataName:
+            if self.topic_names_info[topic]["key"].lower() == dataName.lower():
                 dataName = topic
                 break
 
         return dataName
+    
+    def normalize_topic_name(self, topicName):
+        """
+        Normalize the topic name.
+        """
+
+        if not hasattr(self,"topic_names_info"):
+            self.get_topic_names()
+
+        for topic in self.topic_names_info:
+            if (self.topic_names_info[topic]["key"].lower() == topicName.lower()) or (topic.lower() == topicName.lower()):
+                topicName = self.topic_names_info[topic]["key"].lower()
+                break
+
+        return topicName
 
     def get_laps(self):
         """
@@ -547,7 +578,7 @@ class Session:
         
         # Use the unified get_data method instead of get_data_parallel
         self.get_data(list(required_data), parallel=True)
-
+        
         self.first_datetime = self._get_first_datetime()
         # self.session_start_time = self._get_session_start_time()
         self.session_start_datetime = self._get_session_start_datetime()
@@ -570,6 +601,69 @@ class Session:
         setattr(self, "car_telemetry", self.data_lake.silver_lake.generate_table("laps"))
 
 
+    
+
+    def create_silver_table(self, table_name, source_tables, include_session=False):
+        """
+        Decorator factory that creates a SilverTable instance
+        
+        Args:
+            table_name: Name for the silver table
+            source_tables: List of source table names to use from bronze lake
+        
+        Returns:
+            Decorator function that will register the callback for table generation
+        """
+        import inspect
+
+        if include_session:
+            source_tables = ["_session"] + source_tables
+        
+        def decorator(callback_func):
+            def wrapped_callback(*args, **kwargs):
+
+                # Inspect the function signature to get parameter names
+                sig = inspect.signature(callback_func)
+                param_names = list(sig.parameters.keys())
+                
+                # Create mapping from source tables to parameter names
+                if len(param_names) != len(source_tables):
+                    raise ValueError(f"Function {callback_func.__name__} has {len(param_names)} parameters, but {len(source_tables)} source tables were specified.\nRequired parameters: {source_tables}")
+                
+                else:
+                    print("Function signature is correct.")
+                param_mapping = dict(zip(source_tables, param_names))
+
+                # Get the source tables from bronze lake
+                source_data = {}
+                for table, param_name in param_mapping.items():
+                    if table == "_session": 
+                        source_data[param_name] = self
+                    else:
+                        norm_table_name = self.normalize_topic_name(table)
+                        topic_name = self.check_data_name(norm_table_name)
+                        bronze_table = self.get_data(topic_name)
+                        source_data[param_name] = bronze_table
+                
+                # Call the original function with source data as parameters
+                result = callback_func(**source_data)
+                return result
+            
+            # Create a new SilverTable instance
+            silver_table = SilverTable(table_name=table_name, sources=source_tables)
+            silver_table.callback = wrapped_callback
+            
+            # Store the table in the silver lake
+            self.data_lake.put(level="silver", table_name=table_name, table=silver_table)
+            
+            # Return the original function for documentation purposes
+            return callback_func
+        
+        return decorator
+
+# def normalize_topic_name(topic_name):
+
+
 def load_single_data(dataName, session, stream):
 
     if stream: dataType = "StreamPath"
@@ -584,10 +678,9 @@ def load_single_data(dataName, session, stream):
     logger.debug(f"Fetched in {round(time() - start,3)} seconds")
     # Parse the retrieved data using the ETL parser and return the result.
     start = time()
-    res = BasicResult(
-        data=list(session.etl_parser.unified_parse(dataName, data))
-    )
+    parsed_data = list(session.etl_parser.unified_parse(dataName, data))
+
     logger.debug(f"Parsed in {round(time() - start,3)} seconds")
     logger.info(f"'{dataName}' has been fetched and parsed")
 
-    return dataName, res
+    return dataName, data, parsed_data

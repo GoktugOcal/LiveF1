@@ -3,7 +3,7 @@ import os
 
 # Logger setup
 # LOG_LEVEL = logging.DEBUG if os.getenv("DEBUG", "False").lower() == "true" else logging.INFO
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 STREAM_LOG_FORMAT = "%(asctime)s - %(message)s"
 FILE_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
