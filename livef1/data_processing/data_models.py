@@ -1,5 +1,6 @@
 # Standard Library Imports
 import json
+from datetime import datetime
 
 # Third-Party Library Imports
 import pandas as pd
@@ -116,10 +117,14 @@ class Table:
         self.df = None
     
     def generate_table(self):
-        print("Inside table create_table()")
         if self.callback:
-            print("Just before running callback...")
             self.df = self.callback(self)
+            self.data_lake.update_metadata(
+                table_name = self.table_name,
+                level = None,
+                created_at = datetime.now(),
+                generated = True
+            )
         return self.df
 
 class BronzeTable(Table):

@@ -2,6 +2,7 @@
 from urllib.parse import urljoin
 from typing import List, Dict
 from time import time
+import functools
 
 # Third-Party Library Imports
 # (No third-party libraries imported in this file)
@@ -14,6 +15,7 @@ from ..data_processing.etl import *
 from ..data_processing.data_models import *
 from ..data_processing.silver_functions import *
 from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES, TABLE_GENERATION_FUNCTIONS
+from ..utils.exceptions import *
 from ..data_processing.lakes import DataLake
 from .driver import Driver
 
@@ -278,6 +280,7 @@ class Session:
         if parallel and len(validated_names) > 1:
             # Parallel loading
             n_processes = max(1, multiprocessing.cpu_count() - 1)
+            print(validated_names)
             with Pool(processes=n_processes) as pool:
                 loaded_results = pool.starmap(
                     load_single_data, 
@@ -303,21 +306,58 @@ class Session:
         return {name: self.data_lake.get(level="bronze", table_name=name)
                for name, stream in validated_names}
 
-    def get_data(
+    def get_table(
         self,
         dataNames,
+        level = "bronze",
         parallel: bool = False,
         force: bool = False
     ):
         if isinstance(dataNames, str):
-            return self.get(dataNames, parallel, force).df
+            return self.get(
+                dataNames,
+                level=level,
+                parallel= parallel,
+                force = force)
+
         elif isinstance(dataNames, list):
-            return {name:table.df for name, table in self.get(dataNames, parallel, force).items()}
+            res = self.get(
+                dataNames,
+                level=level,
+                parallel= parallel,
+                force = force
+                )
+            return {name:table for name, table in res.items()}
+        else: return None
+
+    def get_data(
+        self,
+        dataNames,
+        level = "bronze",
+        parallel: bool = False,
+        force: bool = False
+    ):
+        if isinstance(dataNames, str):
+            return self.get(
+                dataNames,
+                level=level,
+                parallel= parallel,
+                force = force).df
+
+        elif isinstance(dataNames, list):
+            res = self.get(
+                dataNames,
+                level=level,
+                parallel= parallel,
+                force = force
+                )
+            return {name:table.df for name, table in res.items()}
         else: return None
 
     def get(
         self,
         dataNames,
+        level = "bronze",
         parallel: bool = False,
         force: bool = False
     ):
@@ -363,45 +403,65 @@ class Session:
         - Uses parallel processing for multiple topics when parallel=True
         - Returns same format as input: single result for str input, dict for list input
         """
-        # Ensure topic names are loaded
-        if not hasattr(self, "topic_names_info"):
-            self.get_topic_names()
-        
-        # Handle single data name case
-        single_input = isinstance(dataNames, str)
-        dataNames = [dataNames] if single_input else dataNames
-        
-        # Validate all data names
-        validated_names = [self.check_data_name(name) for name in dataNames]
-        
-        # Check cache and identify topics to load
-        to_load = []
-        results = {}
-        
-        for name in validated_names:
-            if not force and name in self.data_lake.metadata:
-                logger.debug(f"'{name}' found in lake, using cached version")
-                results[name] = self.data_lake.get(level="bronze", table_name=name)
-            else:
-                logger.debug(f"'{name}' not found in lake, loading from livetiming.")
-                stream = self.topic_names_info[name]["default_is_stream"]
-                to_load.append((name, stream))
-        
-        if to_load:
-            # Load new data using load_data with parallel option
-            loaded_results = self.load_data(
-                dataNames=to_load,
-                parallel=parallel and len(to_load) > 1
-            )
+
+        if level == "bronze":
+            # Ensure topic names are loaded
+            if not hasattr(self, "topic_names_info"):
+                self.get_topic_names()
             
-            if isinstance(loaded_results, dict):
-                results.update(loaded_results)
-            else:
-                # Handle single result case
-                results[to_load[0][0]] = loaded_results
+            # Handle single data name case
+            single_input = isinstance(dataNames, str)
+            dataNames = [dataNames] if single_input else dataNames
+            
+            # Validate all data names
+            validated_names = [self.check_data_name(name) for name in dataNames]
+            
+            # Check cache and identify topics to load
+            to_load = []
+            results = {}
+            
+            for name in validated_names:
+                if not force and name in self.data_lake.metadata:
+                    logger.debug(f"'{name}' found in lake, using cached version")
+                    results[name] = self.data_lake.get(level="bronze", table_name=name)
+                else:
+                    logger.debug(f"'{name}' not found in lake, loading from livetiming.")
+                    stream = self.topic_names_info[name]["default_is_stream"]
+                    to_load.append((name, stream))
+            
+            if to_load:
+                # Load new data using load_data with parallel option
+                loaded_results = self.load_data(
+                    dataNames=to_load,
+                    parallel=parallel and len(to_load) > 1
+                )
+                
+                if isinstance(loaded_results, dict):
+                    results.update(loaded_results)
+                else:
+                    # Handle single result case
+                    results[to_load[0][0]] = loaded_results
+            
+            # Return single result if single input, otherwise return dictionary
+            return results[validated_names[0]] if single_input else results
         
-        # Return single result if single input, otherwise return dictionary
-        return results[validated_names[0]] if single_input else results
+        elif level == "silver":
+            # Handle single data name case
+            single_input = isinstance(dataNames, str)
+            dataNames = [dataNames] if single_input else dataNames
+
+            results = {}
+            for name in dataNames:
+                if name in self.data_lake.metadata:
+                    if self.data_lake.metadata[name]["generated"]:
+                        logger.debug(f"'{name}' has been created and generated.")
+                        results[name] = self.data_lake.get(level="silver", table_name=name)
+                    else:
+                        logger.debug(f"'{name}' has been created but not generated yet. It is being generated...")
+                        self.data_lake.get(level="silver", table_name=name).generate_table()
+                        results[name] = self.data_lake.get(level="silver", table_name=name)
+            
+            return results[dataNames[0]] if single_input else results
 
     def check_data_name(self, dataName: str):
         """
@@ -429,26 +489,37 @@ class Session:
             self.get_topic_names()
 
         for topic in self.topic_names_info:
-            if self.topic_names_info[topic]["key"].lower() == dataName.lower():
+            if (self.topic_names_info[topic]["key"].lower() == dataName.lower()) or (topic.lower() == dataName.lower()):
                 dataName = topic
-                break
+                return dataName
 
-        return dataName
+        raise TopicNotFoundError(f"The topic name you provided '{dataName}' is not included in the topics.")
     
-    def normalize_topic_name(self, topicName):
-        """
-        Normalize the topic name.
-        """
+    # def normalize_topic_name(self, topicName):
+    #     """
+    #     Normalize the topic name.
+    #     """
 
-        if not hasattr(self,"topic_names_info"):
-            self.get_topic_names()
+    #     if not hasattr(self,"topic_names_info"):
+    #         self.get_topic_names()
 
-        for topic in self.topic_names_info:
-            if (self.topic_names_info[topic]["key"].lower() == topicName.lower()) or (topic.lower() == topicName.lower()):
-                topicName = self.topic_names_info[topic]["key"].lower()
-                break
+    #     for topic in self.topic_names_info:
+    #         if (self.topic_names_info[topic]["key"].lower() == topicName.lower()) or (topic.lower() == topicName.lower()):
+    #             topicName = topic
+    #             break
 
-        return topicName
+    #     return topicName
+
+    def _identify_data_level(self, dataName):
+
+        try:
+            corrected_data_name = self.check_data_name(dataName)
+            return "bronze"
+        except:
+            for table_name, info in self.data_lake.metadata.items():
+                if dataName == table_name: return info["table_type"]
+
+        raise TopicNotFoundError(f"The topic name you provided '{dataName}' is not included in any level.")
 
     def get_laps(self):
         """
@@ -496,55 +567,45 @@ class Session:
             logger.info("Car Telemetry table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
 
-    def get_weather(self):
-        """
-        Retrieve the weather data.
+    # def get_weather(self):
+    #     """
+    #     Retrieve the weather data.
 
-        This method returns the weather data if it has been generated. If not, it logs an 
-        informational message indicating that the weather table is not generated yet.
+    #     This method returns the weather data if it has been generated. If not, it logs an 
+    #     informational message indicating that the weather table is not generated yet.
 
-        Returns
-        -------
-        :class:`~Weather` or None
-            The weather data if available, otherwise None.
+    #     Returns
+    #     -------
+    #     :class:`~Weather` or None
+    #         The weather data if available, otherwise None.
 
-        Notes
-        -----
-        - The method checks if the `weather` attribute is populated.
-        - If the `weather` attribute is not populated, it logs an informational message.
-        """
+    #     Notes
+    #     -----
+    #     - The method checks if the `weather` attribute is populated.
+    #     - If the `weather` attribute is not populated, it logs an informational message.
+    #     """
 
-        logger.error(".get_weather() is not implemented yet.")
-
-        # if self.weather != None: return self.weather
-        # else:
-        #     logger.info("Weather table is not generated yet. Use .generate() to load required data and generate silver tables.")
-        #     return None
+    #     logger.error(".get_weather() is not implemented yet.")
     
-    def get_timing(self):
-        """
-        Retrieve the timing data.
+    # def get_timing(self):
+    #     """
+    #     Retrieve the timing data.
 
-        This method returns the timing data if it has been generated. If not, it logs an 
-        informational message indicating that the timing table is not generated yet.
+    #     This method returns the timing data if it has been generated. If not, it logs an 
+    #     informational message indicating that the timing table is not generated yet.
 
-        Returns
-        -------
-        :class:`~Timing` or None
-            The timing data if available, otherwise None.
+    #     Returns
+    #     -------
+    #     :class:`~Timing` or None
+    #         The timing data if available, otherwise None.
 
-        Notes
-        -----
-        - The method checks if the `timing` attribute is populated.
-        - If the `timing` attribute is not populated, it logs an informational message.
-        """
+    #     Notes
+    #     -----
+    #     - The method checks if the `timing` attribute is populated.
+    #     - If the `timing` attribute is not populated, it logs an informational message.
+    #     """
 
-        logger.error(".get_timing() is not implemented yet.")
-
-        # if self.timing != None: return self.timing
-        # else:
-        #     logger.info("Timing table is not generated yet. Use .generate() to load required data and generate silver tables.")
-        #     return None
+    #     logger.error(".get_timing() is not implemented yet.")
     
     def _get_first_datetime(self):
         pos_df = self.get_data("Position.z")
@@ -555,9 +616,6 @@ class Session:
                 (helper.to_datetime(pos_df["Utc"]) - pd.to_timedelta(pos_df["timestamp"])).max()
             ]
         )
-        
-        # sess_data = self.get_data("Session_Data")
-        # first_date = helper.to_datetime(sess_data[sess_data["SessionStatus"] == "Started"].Utc).tolist()[0]
         return first_date
     
     def _get_session_start_datetime(self):
@@ -567,43 +625,37 @@ class Session:
         return first_date
 
     def generate(self, silver=True, gold=False):
+
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])
         tables_to_generate = set()
         if silver:
-            tables_to_generate.update(SILVER_SESSION_TABLES)
-        if gold:
-            tables_to_generate.update(GOLD_SESSION_TABLES)
-        for table_name in tables_to_generate:
-            required_data.update(TABLE_REQUIREMENTS[table_name])
-        
+            self._load_default_silver_tables()
+            silver_tables_to_generate = [self.data_lake.get("silver", table_name) for table_name, info in self.data_lake.metadata.items() if info["table_type"] == "silver"]
+            for silver_table in silver_tables_to_generate:
+                required_data.update(set(silver_table.sources["bronze"]))
+            tables_to_generate.update(silver_tables_to_generate)
+
         # Use the unified get_data method instead of get_data_parallel
-        self.get_data(list(required_data), parallel=True)
-        
+        logger.info(f"Topics to be loaded : {list(required_data)}")
+        self.get_data(list(required_data), parallel=False)
+
         self.first_datetime = self._get_first_datetime()
-        # self.session_start_time = self._get_session_start_time()
         self.session_start_datetime = self._get_session_start_datetime()
-        
+
         if silver:
             logger.info(f"Silver tables are being generated.")
-            for table_name in SILVER_SESSION_TABLES:
-                if table_name in TABLE_GENERATION_FUNCTIONS:
-                    setattr(self, table_name, self.data_lake.silver_lake.generate_table(table_name))
-                    logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
+            for silver_table in silver_tables_to_generate:
+                table_name = silver_table.table_name
+                silver_table.generate_table()
+                setattr(self, table_name, self.get_data(dataNames = table_name, level = "silver"))
+                logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
         
         if gold:
             logger.info("Gold tables are not implemented yet.")
             pass
-    
-    def generate_laps_table(self):
-        setattr(self, "laps", self.data_lake.silver_lake.generate_table("laps"))
-    
-    def generate_car_telemetry_table(self):
-        setattr(self, "car_telemetry", self.data_lake.silver_lake.generate_table("laps"))
 
 
-    
-
-    def create_silver_table(self, table_name, source_tables, include_session=False):
+    def _create_table(self, level, table_name, source_tables, include_session=False):
         """
         Decorator factory that creates a SilverTable instance
         
@@ -617,9 +669,25 @@ class Session:
         import inspect
 
         if include_session:
-            source_tables = ["_session"] + source_tables
+            param_table = ["_session"] + source_tables
+        
+       
+        if level == "silver":
+            table_sources = {
+                "bronze" : [],
+                "silver" : [],
+            }
+
+        elif level == "gold":
+            table_sources = {
+                "bronze" : [],
+                "silver" : [],
+                "gold" : []
+            }
         
         def decorator(callback_func):
+
+            @functools.wraps(callback_func)
             def wrapped_callback(*args, **kwargs):
 
                 # Inspect the function signature to get parameter names
@@ -627,12 +695,10 @@ class Session:
                 param_names = list(sig.parameters.keys())
                 
                 # Create mapping from source tables to parameter names
-                if len(param_names) != len(source_tables):
-                    raise ValueError(f"Function {callback_func.__name__} has {len(param_names)} parameters, but {len(source_tables)} source tables were specified.\nRequired parameters: {source_tables}")
-                
-                else:
-                    print("Function signature is correct.")
-                param_mapping = dict(zip(source_tables, param_names))
+                if len(param_names) != len(param_table):
+                    raise ValueError(f"Function {callback_func.__name__} has {len(param_names)} parameters, but {len(param_table)} source tables were specified.\nRequired parameters: {param_table}")
+
+                param_mapping = dict(zip(param_table, param_names))
 
                 # Get the source tables from bronze lake
                 source_data = {}
@@ -640,36 +706,57 @@ class Session:
                     if table == "_session": 
                         source_data[param_name] = self
                     else:
-                        norm_table_name = self.normalize_topic_name(table)
-                        topic_name = self.check_data_name(norm_table_name)
-                        bronze_table = self.get_data(topic_name)
+                        level = self._identify_data_level(table)
+                        table_sources[level].append(table)
+                        if level == "bronze":
+                            topic_name = self.check_data_name(table)
+                        else: topic_name = table
+                        bronze_table = self.get_data(topic_name, level=level)
                         source_data[param_name] = bronze_table
                 
                 # Call the original function with source data as parameters
                 result = callback_func(**source_data)
                 return result
             
-            # Create a new SilverTable instance
-            silver_table = SilverTable(table_name=table_name, sources=source_tables)
-            silver_table.callback = wrapped_callback
+            if level == "silver":
+                # Create a new SilverTable instance
+                silver_table = SilverTable(table_name=table_name, sources=table_sources)
+                silver_table.callback = wrapped_callback
             
-            # Store the table in the silver lake
-            self.data_lake.put(level="silver", table_name=table_name, table=silver_table)
+            elif level == "gold":
+                # Create a new SilverTable instance
+                gold_table = GoldTable(table_name=table_name, sources=source_tables)
+                gold_table.callback = wrapped_callback
+
+            # Store the table in the selected lake
+            self.data_lake.put(level=level, table_name=table_name, table=silver_table)
             
             # Return the original function for documentation purposes
             return callback_func
         
+        logger.info(f"The callback function for the SILVER table '{table_name}' was set.")
+
         return decorator
 
-# def normalize_topic_name(topic_name):
 
+    def create_silver_table(self, table_name, source_tables, include_session=False):
+
+        return self._create_table(
+            level = "silver",
+            table_name = table_name,
+            source_tables = source_tables,
+            include_session = include_session
+            )
+        
+
+    # def create_gold_table(self, table_name, source_tables, include_session=False):
 
 def load_single_data(dataName, session, stream):
 
     if stream: dataType = "StreamPath"
     else: dataType = "KeyFramePath"
 
-    logger.info(f"Fetching data : '{dataName}'")
+    logger.debug(f"Fetching data : '{dataName}'")
     start = time()
     data = livetimingF1_getdata(
         urljoin(session.full_path, session.topic_names_info[dataName][dataType]),

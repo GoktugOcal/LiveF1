@@ -30,8 +30,9 @@ class MissingFunctionError(LiveF1Error):
     """Raised when ETL functions does not include a function"""
     pass
 
-
-
+class TopicNotFoundError(LiveF1Error):
+    """Raised when topic name is not correct"""
+    pass
 
 
 class AdapterError(LiveF1Error):

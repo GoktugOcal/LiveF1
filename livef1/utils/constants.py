@@ -377,7 +377,7 @@ TABLE_GENERATION_FUNCTIONS = {
 
 TABLE_REQUIREMENTS = {
     "laps": ["TimingData", "RaceControlMessages", "PitStopSeries", "TyreStintSeries"],
-    "carTelemetry": ["TimingData", "CarData.z", "Position.z", "SessionData", "TyreStintSeries"]
+    "carTelemetry": ["CarData.z", "Position.z", "TyreStintSeries"]
 }
 
 column_mapping = {

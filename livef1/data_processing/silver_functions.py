@@ -236,106 +236,106 @@ from ..utils.constants import interpolation_map, silver_cartel_col_order, silver
 
 #     return all_laps_df[silver_laps_col_order]
 
-def generate_car_telemetry_table(bronze_lake):
-    """
-    Generates a telemetry table for car data by combining and processing position and car data
-    from the provided BronzeLake object. The function interpolates missing data, aligns it with
-    session laps, and calculates cumulative distance covered during each lap.
-    Args:
-        bronze_lake (BronzeLake): An object containing the raw position and car data, as well as
-                                  session and circuit information.
-    Returns:
-        pd.DataFrame: A DataFrame containing processed telemetry data for all drivers, including:
-                      - DriverNo: Driver number.
-                      - Utc: Timestamp in UTC.
-                      - LapNo: Lap number for the driver.
-                      - Distance: Cumulative distance covered during the lap.
-                      - SessionKey: Session identifier.
-                      - timestamp: Time elapsed since the session start.
-                      - Other interpolated and processed telemetry data.
-    Notes:
-        - The function interpolates missing data based on predefined interpolation methods.
-        - Data is filtered to include only timestamps within the lap start and end times.
-        - Cumulative distance is calculated for each lap using speed and timestamp data, adjusted
-          for the circuit's starting line position and direction.
-    Raises:
-        ValueError: If required data is missing or cannot be processed.
-    """
-    # Get session data
-    session = bronze_lake.great_lake.session
+# def generate_car_telemetry_table(bronze_lake):
+#     """
+#     Generates a telemetry table for car data by combining and processing position and car data
+#     from the provided BronzeLake object. The function interpolates missing data, aligns it with
+#     session laps, and calculates cumulative distance covered during each lap.
+#     Args:
+#         bronze_lake (BronzeLake): An object containing the raw position and car data, as well as
+#                                   session and circuit information.
+#     Returns:
+#         pd.DataFrame: A DataFrame containing processed telemetry data for all drivers, including:
+#                       - DriverNo: Driver number.
+#                       - Utc: Timestamp in UTC.
+#                       - LapNo: Lap number for the driver.
+#                       - Distance: Cumulative distance covered during the lap.
+#                       - SessionKey: Session identifier.
+#                       - timestamp: Time elapsed since the session start.
+#                       - Other interpolated and processed telemetry data.
+#     Notes:
+#         - The function interpolates missing data based on predefined interpolation methods.
+#         - Data is filtered to include only timestamps within the lap start and end times.
+#         - Cumulative distance is calculated for each lap using speed and timestamp data, adjusted
+#           for the circuit's starting line position and direction.
+#     Raises:
+#         ValueError: If required data is missing or cannot be processed.
+#     """
+#     # Get session data
+#     session = bronze_lake.great_lake.session
 
-    # Get position data
-    df_pos = bronze_lake.get("Position.z").drop(columns=["SessionKey", "timestamp"])
-    df_pos["Utc"] = to_datetime(df_pos["Utc"])
+#     # Get position data
+#     df_pos = bronze_lake.get("Position.z").drop(columns=["SessionKey", "timestamp"])
+#     df_pos["Utc"] = to_datetime(df_pos["Utc"])
 
-    # Get car data
-    df_car = bronze_lake.get("CarData.z")
-    df_car["Utc"] = to_datetime(df_car["Utc"])
-    df_car["timestamp"] = pd.to_timedelta(df_car["timestamp"])
+#     # Get car data
+#     df_car = bronze_lake.get("CarData.z")
+#     df_car["Utc"] = to_datetime(df_car["Utc"])
+#     df_car["timestamp"] = pd.to_timedelta(df_car["timestamp"])
 
-    # Get tyre data
-    df_tyre = bronze_lake.get("TyreStintSeries")
-    df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
+#     # Get tyre data
+#     df_tyre = bronze_lake.get("TyreStintSeries")
+#     df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
 
-    # Join car and position data
-    df = df_car.set_index(["DriverNo", "Utc"]).join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer").reset_index().sort_values(["DriverNo", "Utc"])
-    df["Status"] = df["Status"].ffill()
+#     # Join car and position data
+#     df = df_car.set_index(["DriverNo", "Utc"]).join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer").reset_index().sort_values(["DriverNo", "Utc"])
+#     df["Status"] = df["Status"].ffill()
 
-    all_drivers_data = []
+#     all_drivers_data = []
 
-    for driver_no in df["DriverNo"].unique():
-        df_driver = df[df["DriverNo"] == driver_no].set_index("Utc")
-        laps = session.laps
-        laps_driver = laps[laps["DriverNo"] == driver_no]
+#     for driver_no in df["DriverNo"].unique():
+#         df_driver = df[df["DriverNo"] == driver_no].set_index("Utc")
+#         laps = session.laps
+#         laps_driver = laps[laps["DriverNo"] == driver_no]
 
-        for col in df_driver.columns:
-            if col in interpolation_map:
-                if len(df_driver[col].dropna()) < len(df_driver)*0.2:
-                    continue
-                df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
+#         for col in df_driver.columns:
+#             if col in interpolation_map:
+#                 if len(df_driver[col].dropna()) < len(df_driver)*0.2:
+#                     continue
+#                 df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
 
-        laps_driver.loc[:, "lap_end_date"] = laps_driver["LapStartDate"] + laps_driver["LapTime"]
+#         laps_driver.loc[:, "lap_end_date"] = laps_driver["LapStartDate"] + laps_driver["LapTime"]
 
-        df_driver = df_driver.join(laps_driver[["LapStartDate", "LapNo"]].set_index("LapStartDate"), how="outer")
+#         df_driver = df_driver.join(laps_driver[["LapStartDate", "LapNo"]].set_index("LapStartDate"), how="outer")
 
-        df_driver["LapNo"] = df_driver["LapNo"].ffill().bfill()
-        df_driver.index.names = ['Utc']
+#         df_driver["LapNo"] = df_driver["LapNo"].ffill().bfill()
+#         df_driver.index.names = ['Utc']
 
-        df_driver = df_driver.reset_index()
-        df_driver = df_driver[df_driver.Utc.between(laps_driver["LapStartDate"].min(), laps_driver["lap_end_date"].max())]
+#         df_driver = df_driver.reset_index()
+#         df_driver = df_driver[df_driver.Utc.between(laps_driver["LapStartDate"].min(), laps_driver["lap_end_date"].max())]
 
-        df_driver["SessionKey"] = df_driver["SessionKey"].ffill().bfill()
-        df_driver["timestamp"] = df_driver["Utc"] - session.first_datetime
+#         df_driver["SessionKey"] = df_driver["SessionKey"].ffill().bfill()
+#         df_driver["timestamp"] = df_driver["Utc"] - session.first_datetime
 
-        df_driver = df_driver.dropna(subset=["DriverNo"])
+#         df_driver = df_driver.dropna(subset=["DriverNo"])
 
-        # Iterate through each unique lap number for the driver to calculate and add the cumulative distance
-        # covered during the lap based on speed and timestamp, adjusted for the starting line position.
-        for lap_no in df_driver["LapNo"].unique():
-            lap_df = df_driver[df_driver["LapNo"] == lap_no]
-            lap_df = add_distance_to_lap(
-                lap_df,
-                session.meeting.circuit.start_coordinates[0],
-                session.meeting.circuit.start_coordinates[1],
-                session.meeting.circuit.start_direction[0],
-                session.meeting.circuit.start_direction[1]
-                )
+#         # Iterate through each unique lap number for the driver to calculate and add the cumulative distance
+#         # covered during the lap based on speed and timestamp, adjusted for the starting line position.
+#         for lap_no in df_driver["LapNo"].unique():
+#             lap_df = df_driver[df_driver["LapNo"] == lap_no]
+#             lap_df = add_distance_to_lap(
+#                 lap_df,
+#                 session.meeting.circuit.start_coordinates[0],
+#                 session.meeting.circuit.start_coordinates[1],
+#                 session.meeting.circuit.start_direction[0],
+#                 session.meeting.circuit.start_direction[1]
+#                 )
                         
-            df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
+#             df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
 
-        all_drivers_data.append(df_driver)
+#         all_drivers_data.append(df_driver)
 
-    all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
+#     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
 
-    # Add Tyre Data
-    all_drivers_df = all_drivers_df.set_index(["DriverNo", "timestamp"]).join(
-        df_tyre.rename(columns={"TotalLaps":"TyreAge"}).set_index(["DriverNo", "timestamp"]),
-        how="outer"
-    )
-    all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
-    all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
+#     # Add Tyre Data
+#     all_drivers_df = all_drivers_df.set_index(["DriverNo", "timestamp"]).join(
+#         df_tyre.rename(columns={"TotalLaps":"TyreAge"}).set_index(["DriverNo", "timestamp"]),
+#         how="outer"
+#     )
+#     all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
+#     all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
     
-    return all_drivers_df[silver_cartel_col_order]
+#     return all_drivers_df[silver_cartel_col_order]
 
 def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
     """
@@ -377,8 +377,6 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
         lap_df["Distance"] = distance + lap_df["Distance"]
 
     return lap_df
-
-
 
 def generate_laps_table(session, df_exp, df_rcm, df_pit, df_tyre):
 
@@ -604,3 +602,98 @@ def generate_laps_table(session, df_exp, df_rcm, df_pit, df_tyre):
     all_laps_df = all_laps_df.reset_index().dropna(subset = "SessionKey")
 
     return all_laps_df[silver_laps_col_order]
+
+def generate_car_telemetry_table(session, df_car, df_pos, df_tyre):
+    """
+    Generates a telemetry table for car data by combining and processing position and car data
+    from the provided BronzeLake object. The function interpolates missing data, aligns it with
+    session laps, and calculates cumulative distance covered during each lap.
+    Args:
+        bronze_lake (BronzeLake): An object containing the raw position and car data, as well as
+                                  session and circuit information.
+    Returns:
+        pd.DataFrame: A DataFrame containing processed telemetry data for all drivers, including:
+                      - DriverNo: Driver number.
+                      - Utc: Timestamp in UTC.
+                      - LapNo: Lap number for the driver.
+                      - Distance: Cumulative distance covered during the lap.
+                      - SessionKey: Session identifier.
+                      - timestamp: Time elapsed since the session start.
+                      - Other interpolated and processed telemetry data.
+    Notes:
+        - The function interpolates missing data based on predefined interpolation methods.
+        - Data is filtered to include only timestamps within the lap start and end times.
+        - Cumulative distance is calculated for each lap using speed and timestamp data, adjusted
+          for the circuit's starting line position and direction.
+    Raises:
+        ValueError: If required data is missing or cannot be processed.
+    """
+    # Get position data
+    df_pos["Utc"] = to_datetime(df_pos["Utc"])
+
+    # Get car data
+    df_car["Utc"] = to_datetime(df_car["Utc"])
+    df_car["timestamp"] = pd.to_timedelta(df_car["timestamp"])
+
+    # Get tyre data
+    df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
+
+    # Join car and position data
+    df = df_car.set_index(["DriverNo", "Utc"]).join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer").reset_index().sort_values(["DriverNo", "Utc"])
+    df["Status"] = df["Status"].ffill()
+
+    all_drivers_data = []
+
+    for driver_no in df["DriverNo"].unique():
+        df_driver = df[df["DriverNo"] == driver_no].set_index("Utc")
+        laps = session.data_lake.silver.lake["laps"].df
+        laps_driver = laps[laps["DriverNo"] == driver_no]
+
+        for col in df_driver.columns:
+            if col in interpolation_map:
+                if len(df_driver[col].dropna()) < len(df_driver)*0.2:
+                    continue
+                df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
+
+        laps_driver.loc[:, "lap_end_date"] = laps_driver["LapStartDate"] + laps_driver["LapTime"]
+
+        df_driver = df_driver.join(laps_driver[["LapStartDate", "LapNo"]].set_index("LapStartDate"), how="outer")
+
+        df_driver["LapNo"] = df_driver["LapNo"].ffill().bfill()
+        df_driver.index.names = ['Utc']
+
+        df_driver = df_driver.reset_index()
+        df_driver = df_driver[df_driver.Utc.between(laps_driver["LapStartDate"].min(), laps_driver["lap_end_date"].max())]
+
+        df_driver["SessionKey"] = df_driver["SessionKey"].ffill().bfill()
+        df_driver["timestamp"] = df_driver["Utc"] - session.first_datetime
+
+        df_driver = df_driver.dropna(subset=["DriverNo"])
+
+        # Iterate through each unique lap number for the driver to calculate and add the cumulative distance
+        # covered during the lap based on speed and timestamp, adjusted for the starting line position.
+        for lap_no in df_driver["LapNo"].unique():
+            lap_df = df_driver[df_driver["LapNo"] == lap_no]
+            lap_df = add_distance_to_lap(
+                lap_df,
+                session.meeting.circuit.start_coordinates[0],
+                session.meeting.circuit.start_coordinates[1],
+                session.meeting.circuit.start_direction[0],
+                session.meeting.circuit.start_direction[1]
+                )
+                        
+            df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
+
+        all_drivers_data.append(df_driver)
+
+    all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
+
+    # Add Tyre Data
+    all_drivers_df = all_drivers_df.set_index(["DriverNo", "timestamp"]).join(
+        df_tyre.rename(columns={"TotalLaps":"TyreAge"}).set_index(["DriverNo", "timestamp"]),
+        how="outer"
+    )
+    all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
+    all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
+    
+    return all_drivers_df[silver_cartel_col_order]

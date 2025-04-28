@@ -239,7 +239,11 @@ class BronzeLake:
         """
         table.data_lake = self.great_lake
         self.lake[table_name] = table
-        self.great_lake.update_metadata(table_name, "bronze")
+        self.great_lake.update_metadata(
+            table_name = table_name,
+            level = "bronze",
+            created_at = datetime.now()
+            )
 
     def get(self, table_name):
         """
@@ -297,7 +301,10 @@ class SilverLake:
         """
         table.data_lake = self.great_lake
         self.lake[table_name] = table
-        self.great_lake.update_metadata(table_name, "silver")
+        self.great_lake.update_metadata(
+            table_name,
+            "silver"
+            )
 
     def get(self, data_name):
         """
@@ -325,6 +332,22 @@ class SilverLake:
             cleaned_record = record  # Placeholder for actual cleaning logic
             cleaned_data.append(cleaned_record)
         return cleaned_data
+    
+    def has_data(self, table_name):
+        """
+        Check if the data exists in the BronzeLake.
+
+        Parameters
+        ----------
+        data_name : str
+            The name of the data to check.
+
+        Returns
+        -------
+        bool
+            True if the data exists, False otherwise.
+        """
+        return table_name in self.lake
 
     # def generate_table(self, table_name):
     #     """
@@ -394,14 +417,27 @@ class DataLake:
         self.silver = SilverLake(great_lake=self, bronze_lake=self.bronze)
         self.gold = GoldLake(great_lake=self, silver_lake=self.silver)
     
-    def update_metadata(self, table_name, level):
-        if level == "bronze": created_at = datetime.now()
-        else: created_at = None
+    def update_metadata(
+        self,
+        table_name,
+        level,
+        created_at=None,
+        generated=False
+        ):
 
-        self.metadata[table_name] = {
-            "table_type": level,
-            "created_at": created_at
-        }
+        if table_name in self.metadata:
+            self.metadata[table_name] = {
+                "table_type": level if level else self.metadata[table_name]["table_type"],
+                "created_at": created_at if created_at else self.metadata[table_name]["created_at"],
+                "generated" : generated if generated else self.metadata[table_name]["generated"]
+            }
+        
+        else:
+            self.metadata[table_name] = {
+                "table_type": level,
+                "created_at": created_at,
+                "generated" : generated
+            }
     
     def put(self, level, table_name, table):
         """
