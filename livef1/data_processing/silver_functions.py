@@ -378,7 +378,7 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
 
     return lap_df
 
-def generate_laps_table(session, df_exp, df_rcm, df_pit, df_tyre):
+def generate_laps_table(session, df_exp, df_rcm, df_tyre):
 
     def delete_laps(laps_df, df_rcm):
         laps_df["IsDeleted"] = False
@@ -420,9 +420,6 @@ def generate_laps_table(session, df_exp, df_rcm, df_pit, df_tyre):
 
     # Get Timing Data
     # Get Race Control Messages
-    # Get Pit Stop Data
-    df_pit = df_pit[["RacingNumber", "PitStopTime", "PitLaneTime", "Lap"]].rename(columns={"RacingNumber": "DriverNo", "Lap":"LapNo", "PitStopTime": "PitStopDuration", "PitLaneTime":"PitLaneDuration"})
-    df_pit["LapNo"] = df_pit["LapNo"].astype(int)
     # Get Tyre Stint Data
     df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
     # Get Session Data
@@ -590,8 +587,15 @@ def generate_laps_table(session, df_exp, df_rcm, df_pit, df_tyre):
     all_laps_df["SessionKey"] = sessionKey
     # Add driver data
     all_laps_df["Driver"] = all_laps_df["DriverNo"].map(session.drivers)
+
     # Add pit data
-    all_laps_df = all_laps_df.set_index(["DriverNo", "LapNo"]).join(df_pit.set_index(["DriverNo", "LapNo"])).reset_index()
+    if session.check_data_name("PitStopSeries"):
+        # Get Pit Stop Data
+        df_pit = session.get_data("PitStopSeries", level="bronze")
+        df_pit = df_pit[["RacingNumber", "PitStopTime", "PitLaneTime", "Lap"]].rename(columns={"RacingNumber": "DriverNo", "Lap":"LapNo", "PitStopTime": "PitStopDuration", "PitLaneTime":"PitLaneDuration"})
+        df_pit["LapNo"] = df_pit["LapNo"].astype(int)
+        all_laps_df = all_laps_df.set_index(["DriverNo", "LapNo"]).join(df_pit.set_index(["DriverNo", "LapNo"])).reset_index()
+    
     # Add tyre data
     all_laps_df["LapEndTime"] = all_laps_df["LapStartTime"] + all_laps_df["LapTime"]
     all_laps_df = all_laps_df.set_index(["DriverNo", "LapEndTime"]).join(
@@ -600,6 +604,10 @@ def generate_laps_table(session, df_exp, df_rcm, df_pit, df_tyre):
     )
     all_laps_df[["Compound","New","TyreAge"]] = all_laps_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
     all_laps_df = all_laps_df.reset_index().dropna(subset = "SessionKey")
+
+    for col in silver_laps_col_order:
+        if col not in all_laps_df.columns:
+            all_laps_df[col] = None
 
     return all_laps_df[silver_laps_col_order]
 

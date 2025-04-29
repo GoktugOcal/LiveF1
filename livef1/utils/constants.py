@@ -376,7 +376,7 @@ TABLE_GENERATION_FUNCTIONS = {
 }
 
 TABLE_REQUIREMENTS = {
-    "laps": ["TimingData", "RaceControlMessages", "PitStopSeries", "TyreStintSeries"],
+    "laps": ["TimingData", "RaceControlMessages", "TyreStintSeries"],
     "carTelemetry": ["CarData.z", "Position.z", "TyreStintSeries", "laps"]
 }
 
