@@ -219,16 +219,15 @@ from .data_models import *
 #         else:
 #             raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")
 
-
-class BronzeLake:
-
-    def __init__(self, session, great_lake):
+class SimpleLake:
+    def __init__(self, great_lake):
         self.great_lake = great_lake
         self.lake = {}
-
+        self.lake_type = None
+    
     def put(self, table_name, table):
         """
-        Store the data in the BronzeLake.
+        Store the data in the Lake.
 
         Parameters
         ----------
@@ -241,13 +240,13 @@ class BronzeLake:
         self.lake[table_name] = table
         self.great_lake.update_metadata(
             table_name = table_name,
-            level = "bronze",
+            level = self.lake_type,
             created_at = datetime.now()
             )
 
     def get(self, table_name):
         """
-        Retrieve the data from the BronzeLake.
+        Retrieve the data from the Lake.
 
         Parameters
         ----------
@@ -267,7 +266,7 @@ class BronzeLake:
 
     def has_data(self, table_name):
         """
-        Check if the data exists in the BronzeLake.
+        Check if the data exists in the Lake.
 
         Parameters
         ----------
@@ -280,132 +279,22 @@ class BronzeLake:
             True if the data exists, False otherwise.
         """
         return table_name in self.lake
+            
 
+class BronzeLake(SimpleLake):
+    def __init__(self, great_lake):
+        super().__init__(great_lake)
+        self.lake_type = "bronze"
 
-class SilverLake:
-    def __init__(self, great_lake, bronze_lake):
-        self.great_lake = great_lake
-        self.bronze_lake = bronze_lake
-        self.lake = {}
+class SilverLake(SimpleLake):
+    def __init__(self, great_lake):
+        super().__init__(great_lake)
+        self.lake_type = "silver"
 
-    def put(self, table_name, table):
-        """
-        Store the data in the BronzeLake.
-
-        Parameters
-        ----------
-        data_name : str
-            The name of the data to store.
-        bronze_table : object
-            The data to store.
-        """
-        table.data_lake = self.great_lake
-        self.lake[table_name] = table
-        self.great_lake.update_metadata(
-            table_name,
-            "silver"
-            )
-
-    def get(self, data_name):
-        """
-        Retrieve the data from the SilverLake.
-
-        Parameters
-        ----------
-        data_name : str
-            The name of the data to retrieve.
-
-        Returns
-        -------
-        object
-            The requested data or None if it does not exist.
-        """
-        if self.has_data(data_name):
-            return self.lake[data_name]
-        else:
-            logger.info(f"Data '{data_name}' is not present in SilverLake.")
-            return None
-
-    def clean_data(self, data):
-        cleaned_data = []
-        for record in data:
-            cleaned_record = record  # Placeholder for actual cleaning logic
-            cleaned_data.append(cleaned_record)
-        return cleaned_data
-    
-    def has_data(self, table_name):
-        """
-        Check if the data exists in the BronzeLake.
-
-        Parameters
-        ----------
-        data_name : str
-            The name of the data to check.
-
-        Returns
-        -------
-        bool
-            True if the data exists, False otherwise.
-        """
-        return table_name in self.lake
-
-    # def generate_table(self, table_name):
-    #     """
-    #     Generate a table using the corresponding function from silver_functions.py.
-
-    #     Parameters
-    #     ----------
-    #     table_name : str
-    #         The name of the table to generate.
-
-    #     Returns
-    #     -------
-    #     DataFrame
-    #         The generated table as a pandas DataFrame.
-    #     """
-    #     if table_name in TABLE_GENERATION_FUNCTIONS:
-    #         required_data = TABLE_REQUIREMENTS[table_name]
-    #         for data_name in required_data:
-    #             if not self.bronze_lake.has_data(data_name):
-    #                 self.great_lake.session.get_data(data_name)
-    #         function_name = TABLE_GENERATION_FUNCTIONS[table_name]
-    #         return globals()[function_name](self.bronze_lake)
-    #     else:
-    #         raise ValueError(f"No generation function found for table: {table_name}")
-
-
-class GoldLake:
-    def __init__(self, great_lake, silver_lake):
-        self.great_lake = great_lake
-        self.silver_lake = silver_lake
-        self.lake = {}
-
-    def get(self, data_name):
-        """
-        Retrieve the data from the GoldLake.
-
-        Parameters
-        ----------
-        data_name : str
-            The name of the data to retrieve.
-
-        Returns
-        -------
-        object
-            The requested data or None if it does not exist.
-        """
-        if self.has_data(data_name):
-            return self.lake[data_name]
-        else:
-            logger.info(f"Data '{data_name}' is not present in GoldLake.")
-            return None
-
-    def aggregate_data(self, data):
-        aggregated_data = []
-        for record in data:
-            aggregated_record = record  # Placeholder for actual aggregation logic
-            aggregated_data.append(aggregated_record)
-        return aggregated_data
+class GoldLake(SimpleLake):
+    def __init__(self, great_lake):
+        super().__init__(great_lake)
+        self.lake_type = "gold"
 
 
 class DataLake:
@@ -413,9 +302,9 @@ class DataLake:
         self.session = session
         self.metadata = {}
 
-        self.bronze = BronzeLake(session=session, great_lake=self)
-        self.silver = SilverLake(great_lake=self, bronze_lake=self.bronze)
-        self.gold = GoldLake(great_lake=self, silver_lake=self.silver)
+        self.bronze = BronzeLake(great_lake=self)
+        self.silver = SilverLake(great_lake=self)
+        self.gold = GoldLake(great_lake=self)
     
     def update_metadata(
         self,
@@ -456,7 +345,7 @@ class DataLake:
         elif level == "silver":
             self.silver.put(table_name, table)
         elif level == "gold":
-            pass
+            self.gold.put(table_name, table)
         else:
             raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")
     
@@ -530,21 +419,83 @@ class DataLake:
                 parsed_data=parsed_data
             )
         )
+    
+    def _identify_table_level(self, table_name):
+        """
+        Identify the level of a table
+        """
+        if table_name in self.metadata:
+            return self.metadata[table_name]["table_type"]
+        else:
+            table_level = self.session._identify_data_level(table_name)
+            if table_level:
+                return table_level
+            else:
+                return None
+            
 
-    # def create_silver_table(self, table_name, source_tables):
+    def _check_circular_dependencies(self):
+        """
+        Check for circular dependencies in the tables across different levels.
+        
+        This method detects cycles in the dependency graph of tables, which would
+        make it impossible to generate tables in a valid order.
+        
+        Returns
+        -------
+        bool
+            True if no circular dependencies exist, False otherwise.
+        
+        Raises
+        ------
+        ValueError
+            If circular dependencies are detected, with details about the cycle.
+        """
+        # Track visited tables and current path during DFS
+        visited = set()
+        path = set()
+        path_list = []
+        
+        def dfs(table):
+            """Depth-first search to detect cycles in the dependency graph."""
+            # If we've already fully explored this node, no need to check again
+            if table in visited:
+                return True
+            
+            # If we encounter a table already in our current path, we have a cycle
+            table_name = table.table_name
+            if table_name in path:
+                cycle_start = path_list.index(table_name)
+                cycle = path_list[cycle_start:] + [table_name]
+                raise ValueError(f"Circular dependency detected: {' -> '.join(cycle)}")
+            
+            # Add current table to path
+            path.add(table_name)
+            path_list.append(table_name)
+            
+            # If table has dependency_tables attribute, check those too
+            if hasattr(table, 'dependency_tables') and table.dependency_tables:
+                for dep_table in table.dependency_tables:
+                    # dependency_tables contains actual table objects
+                    dep_table_name = dep_table.table_name
+                    if not dfs(dep_table):
+                        return False
+            
+            # Remove from current path and mark as visited
+            path.remove(table_name)
+            path_list.pop()
+            visited.add(table_name)
+            return True
+        
+        # Start DFS from all tables in the metadata
+        for table_name, info in self.metadata.items():
+            if info["table_type"] in ["silver", "gold"] and table_name not in visited:
+                table = self.get(info["table_type"], table_name)
+                if not dfs(table):
+                    return False
+        
+        return True
 
-    #     silver_table = SilverTable(
-    #         table_name=table_name,
-    #         sources=source_tables
-    #     )
-
-    #     self.put(
-    #         level="silver",
-    #         table_name=table_name,
-    #         table=silver_table
-    #     )
-
-    #     return silver_table
 
     def generate_silver_table(self, table_name):
         """

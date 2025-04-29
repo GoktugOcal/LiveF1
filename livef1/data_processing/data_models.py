@@ -136,13 +136,46 @@ class BronzeTable(Table):
         )
 
 class SilverTable(Table):
-    def __init__(self, table_name, sources, data_lake = None):
+    def __init__(self, table_name, sources, source_tables = {"bronze": [], "silver": [], "gold": []}, data_lake = None):
         super().__init__(table_name, data_lake)
         self.sources = sources
+        self.source_tables = source_tables
         self.df = None
+        self.dependency_tables = []
+
+    def refine_sources(self):
+        for source in self.sources:
+            level = self.data_lake._identify_table_level(source)
+            if level:
+                self.source_tables[level].append(source)
+                if level in ["silver", "gold"]:
+                    dependency_table = self.data_lake.get(level = level, table_name = source)
+                    if dependency_table:
+                        self.dependency_tables.append(dependency_table)
+                    else:
+                        raise ValueError(f"Source table '{source}' not found in data lake.")
+            else:
+                raise ValueError(f"Source table '{source}' not found in data lake.")
 
 class GoldTable(Table):
-    def __init__(self, table_name, sources, data_lake = None):
+    def __init__(self, table_name, sources, source_tables = {"bronze": [], "silver": [], "gold": []}, data_lake = None):
         super().__init__(table_name, data_lake)
         self.sources = sources
+        self.source_tables = source_tables
         self.df = None
+        self.dependency_tables = []
+
+
+    def refine_sources(self):
+        for source in self.sources:
+            level = self.data_lake._identify_table_level(source)
+            if level:
+                self.source_tables[level].append(source)
+                if level in ["silver", "gold"]:
+                    dependency_table = self.data_lake.get(level = level, table_name = source)
+                    if dependency_table:
+                        self.dependency_tables.append(dependency_table)
+                    else:
+                        raise ValueError(f"Source table '{source}' not found in data lake.")
+            else:
+                raise ValueError(f"Source table '{source}' not found in data lake.")

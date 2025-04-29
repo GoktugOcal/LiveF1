@@ -445,7 +445,7 @@ class Session:
             # Return single result if single input, otherwise return dictionary
             return results[validated_names[0]] if single_input else results
         
-        elif level == "silver":
+        else:
             # Handle single data name case
             single_input = isinstance(dataNames, str)
             dataNames = [dataNames] if single_input else dataNames
@@ -455,11 +455,11 @@ class Session:
                 if name in self.data_lake.metadata:
                     if self.data_lake.metadata[name]["generated"]:
                         logger.debug(f"'{name}' has been created and generated.")
-                        results[name] = self.data_lake.get(level="silver", table_name=name)
+                        results[name] = self.data_lake.get(level=level, table_name=name)
                     else:
                         logger.debug(f"'{name}' has been created but not generated yet. It is being generated...")
-                        self.data_lake.get(level="silver", table_name=name).generate_table()
-                        results[name] = self.data_lake.get(level="silver", table_name=name)
+                        self.data_lake.get(level=level, table_name=name).generate_table()
+                        results[name] = self.data_lake.get(level=level, table_name=name)
             
             return results[dataNames[0]] if single_input else results
 
@@ -492,8 +492,10 @@ class Session:
             if (self.topic_names_info[topic]["key"].lower() == dataName.lower()) or (topic.lower() == dataName.lower()):
                 dataName = topic
                 return dataName
+        
+        return None
 
-        raise TopicNotFoundError(f"The topic name you provided '{dataName}' is not included in the topics.")
+        # raise TopicNotFoundError(f"The topic name you provided '{dataName}' is not included in the topics.")
     
     # def normalize_topic_name(self, topicName):
     #     """
@@ -512,14 +514,13 @@ class Session:
 
     def _identify_data_level(self, dataName):
 
-        try:
-            corrected_data_name = self.check_data_name(dataName)
-            return "bronze"
-        except:
+        corrected_data_name = self.check_data_name(dataName)
+        if corrected_data_name: return "bronze"
+        else:
             for table_name, info in self.data_lake.metadata.items():
                 if dataName == table_name: return info["table_type"]
-
-        raise TopicNotFoundError(f"The topic name you provided '{dataName}' is not included in any level.")
+        
+        return None
 
     def get_laps(self):
         """
@@ -631,9 +632,19 @@ class Session:
         if silver:
             self._load_default_silver_tables()
             silver_tables_to_generate = [self.data_lake.get("silver", table_name) for table_name, info in self.data_lake.metadata.items() if info["table_type"] == "silver"]
-            for silver_table in silver_tables_to_generate:
-                required_data.update(set(silver_table.sources["bronze"]))
             tables_to_generate.update(silver_tables_to_generate)
+            # refine sources for each silver table
+            for silver_table in silver_tables_to_generate:
+                silver_table.refine_sources()
+                required_data.update(set(silver_table.source_tables["bronze"]))
+        
+        if gold:
+            gold_tables_to_generate = [self.data_lake.get("gold", table_name) for table_name, info in self.data_lake.metadata.items() if info["table_type"] == "gold"]
+            tables_to_generate.update(gold_tables_to_generate)
+            # refine sources for each gold table
+            for gold_table in gold_tables_to_generate:
+                gold_table.refine_sources()
+                required_data.update(set(gold_table.source_tables["bronze"]))
 
         # Use the unified get_data method instead of get_data_parallel
         logger.info(f"Topics to be loaded : {list(required_data)}")
@@ -642,17 +653,24 @@ class Session:
         self.first_datetime = self._get_first_datetime()
         self.session_start_datetime = self._get_session_start_datetime()
 
-        if silver:
-            logger.info(f"Silver tables are being generated.")
-            for silver_table in silver_tables_to_generate:
-                table_name = silver_table.table_name
-                silver_table.generate_table()
-                setattr(self, table_name, self.get_data(dataNames = table_name, level = "silver"))
-                logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
-        
-        if gold:
-            logger.info("Gold tables are not implemented yet.")
-            pass
+        if self.data_lake._check_circular_dependencies():
+            if silver:
+                logger.info(f"Silver tables are being generated.")
+                for silver_table in silver_tables_to_generate:
+                    table_name = silver_table.table_name
+                    silver_table.generate_table()
+                    setattr(self, table_name, self.get_data(dataNames = table_name, level = "silver"))
+                    logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
+            
+            if gold:
+                logger.info("Gold tables are being generated.")
+                for gold_table in gold_tables_to_generate:
+                    table_name = gold_table.table_name
+                    gold_table.generate_table()
+                    setattr(self, table_name, self.get_data(dataNames = table_name, level = "gold"))
+                    logger.info(f"'{table_name}' has been generated and saved to the gold lake. You can access it from 'session.{table_name}'.")
+        else:
+            logger.error("Circular dependencies detected. Please check your table dependencies.")
 
 
     def _create_table(self, level, table_name, source_tables, include_session=False):
@@ -673,63 +691,87 @@ class Session:
         
        
         if level == "silver":
-            table_sources = {
+            source_dict = {
                 "bronze" : [],
                 "silver" : [],
+                "unknown" : []
             }
 
         elif level == "gold":
-            table_sources = {
+            source_dict = {
                 "bronze" : [],
                 "silver" : [],
-                "gold" : []
+                "gold" : [],
+                "unknown" : []
             }
         
         def decorator(callback_func):
 
+            # Inspect the function signature to get parameter names
+            sig = inspect.signature(callback_func)
+            param_names = list(sig.parameters.keys())
+            
+            # Create mapping from source tables to parameter names
+            if len(param_names) != len(param_table):
+                raise ValueError(f"Function {callback_func.__name__} has {len(param_names)} parameters, but {len(param_table)} source tables were specified.\nRequired parameters: {param_table}")
+            param_mapping = dict(zip(param_table, param_names))
+
+            # # Check if the table is a topic name and if it is, add it to the source_dict
+            # for table, param_name in param_mapping.items():
+            #     if table == "_session": continue
+            #     else:
+            #         table_level = self._identify_data_level(table)
+            #         print(table, "-", table_level)
+            #         if table_level: source_dict[table_level].append(table)
+            #         else:
+            #             # source_dict["unknown"].append(table)
+            #             # logger.info(f"The table name you provided '{table}' is not loaded yet, it is expected to be loaded in the future. PLEASE MAKE SURE IT IS GOING TO BE CREATED.")
+            #             raise TopicNotFoundError(f"The table name you provided '{table}' is not a topic name.\nIf it is a table name from another level, SOURCE TABLES FROM ANOTHER LEVELS ARE NOT SUPPORTED YET.\nPlease call the table by `session.get_data('{table}')` inside the callback you are decorating.")
+
+            # source_objs = [] # TODO: Add sources from different levels
+
             @functools.wraps(callback_func)
             def wrapped_callback(*args, **kwargs):
-
-                # Inspect the function signature to get parameter names
-                sig = inspect.signature(callback_func)
-                param_names = list(sig.parameters.keys())
-                
-                # Create mapping from source tables to parameter names
-                if len(param_names) != len(param_table):
-                    raise ValueError(f"Function {callback_func.__name__} has {len(param_names)} parameters, but {len(param_table)} source tables were specified.\nRequired parameters: {param_table}")
-
-                param_mapping = dict(zip(param_table, param_names))
-
                 # Get the source tables from bronze lake
                 source_data = {}
                 for table, param_name in param_mapping.items():
                     if table == "_session": 
                         source_data[param_name] = self
                     else:
-                        level = self._identify_data_level(table)
-                        table_sources[level].append(table)
-                        if level == "bronze":
+                        # TODO: Add sources from different levels
+                        table_level = self.data_lake._identify_table_level(table)
+                        # source_dict[table_level].append(table)
+                        if table_level == None: raise TopicNotFoundError(f"The topic name you provided '{table}' is not included in any level.")
+                        elif table_level == "bronze":
                             topic_name = self.check_data_name(table)
                         else: topic_name = table
-                        bronze_table = self.get_data(topic_name, level=level)
-                        source_data[param_name] = bronze_table
-                
+
+                        # table_level = "bronze"
+                        # topic_name = self.check_data_name(table)
+
+                        temp_table = self.get_table(topic_name, level=table_level)
+                        source_data[param_name] = temp_table.df
+                        # source_objs.append(temp_table) # TODO: Add sources from different levels
+
                 # Call the original function with source data as parameters
                 result = callback_func(**source_data)
                 return result
             
+            # if include_session:
+            #     source_dict["bronze"].append("_session")
+
             if level == "silver":
                 # Create a new SilverTable instance
-                silver_table = SilverTable(table_name=table_name, sources=table_sources)
-                silver_table.callback = wrapped_callback
+                new_table = SilverTable(table_name=table_name, sources=source_tables)
+                new_table.callback = wrapped_callback
             
             elif level == "gold":
                 # Create a new SilverTable instance
-                gold_table = GoldTable(table_name=table_name, sources=source_tables)
-                gold_table.callback = wrapped_callback
+                new_table = GoldTable(table_name=table_name, sources=source_tables)
+                new_table.callback = wrapped_callback
 
             # Store the table in the selected lake
-            self.data_lake.put(level=level, table_name=table_name, table=silver_table)
+            self.data_lake.put(level=level, table_name=table_name, table=new_table)
             
             # Return the original function for documentation purposes
             return callback_func
@@ -737,7 +779,6 @@ class Session:
         logger.info(f"The callback function for the SILVER table '{table_name}' was set.")
 
         return decorator
-
 
     def create_silver_table(self, table_name, source_tables, include_session=False):
 
@@ -748,8 +789,14 @@ class Session:
             include_session = include_session
             )
         
-
-    # def create_gold_table(self, table_name, source_tables, include_session=False):
+    def create_gold_table(self, table_name, source_tables, include_session=False):
+        
+        return self._create_table(
+            level = "gold",
+            table_name = table_name,
+            source_tables = source_tables,
+            include_session = include_session
+            )
 
 def load_single_data(dataName, session, stream):
 

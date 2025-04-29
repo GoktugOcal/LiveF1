@@ -603,7 +603,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_pit, df_tyre):
 
     return all_laps_df[silver_laps_col_order]
 
-def generate_car_telemetry_table(session, df_car, df_pos, df_tyre):
+def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps):
     """
     Generates a telemetry table for car data by combining and processing position and car data
     from the provided BronzeLake object. The function interpolates missing data, aligns it with
@@ -645,7 +645,9 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre):
     all_drivers_data = []
 
     for driver_no in df["DriverNo"].unique():
+        
         df_driver = df[df["DriverNo"] == driver_no].set_index("Utc")
+
         laps = session.data_lake.silver.lake["laps"].df
         laps_driver = laps[laps["DriverNo"] == driver_no]
 
