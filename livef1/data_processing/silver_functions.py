@@ -378,7 +378,26 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
 
     return lap_df
 
-def generate_laps_table(session, df_exp, df_rcm, df_tyre):
+def add_track_status(laps_df, df_track):
+    temp_df = laps_df.copy()
+    temp_df = temp_df.set_index("LapStartTime").join(df_track.set_index("timestamp")[["Status","Message"]], how="outer")
+    temp_df.LapNo = temp_df.LapNo.ffill()
+
+    temp_df.Status = temp_df.Status.ffill()
+    laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Status.unique().apply(lambda x: ",".join(x))).reset_index().rename(columns={"Status":"TrackStatus"})
+    # temp_df.Message = temp_df.Message.ffill()
+    # laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Message.unique().apply(lambda x: ",".join(x))).reset_index()
+
+    return laps_df
+
+def add_track_status_telemetry(telemetry_df, df_track):
+
+    telemetry_df = telemetry_df.set_index("timestamp").join(df_track.set_index("timestamp")[["Status"]]).rename(columns={"Status":"TrackStatus"})
+    telemetry_df.TrackStatus = telemetry_df.TrackStatus.ffill()
+    return telemetry_df.dropna(subset="SessionKey").reset_index()
+
+
+def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
 
     def delete_laps(laps_df, df_rcm):
         laps_df["IsDeleted"] = False
@@ -566,11 +585,11 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre):
                             elif len(laps) > 0:
                                 laps[-1][f"Sector{str(sc_no + 1)}_Time"] = sc_value
                                 last_record_ts = ts
-                    
-                
 
+        # Aggregate all laps data of the driver
         laps_df = pd.DataFrame(laps)    
         laps_df["DriverNo"] = driver_no
+        if "LapStartTime" in laps_df.columns: laps_df = add_track_status(laps_df, df_track)
         all_laps.append(laps_df)
 
     all_laps_df = pd.concat(all_laps, ignore_index=True)
@@ -611,7 +630,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre):
 
     return all_laps_df[silver_laps_col_order]
 
-def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps):
+def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_track):
     """
     Generates a telemetry table for car data by combining and processing position and car data
     from the provided BronzeLake object. The function interpolates missing data, aligns it with
@@ -647,8 +666,8 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps):
     df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
 
     # Join car and position data
-    df = df_car.set_index(["DriverNo", "Utc"]).join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer").reset_index().sort_values(["DriverNo", "Utc"])
-    df["Status"] = df["Status"].ffill()
+    df = df_car.set_index(["DriverNo", "Utc"]).join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer").reset_index().sort_values(["DriverNo", "Utc"]).rename(columns={"Status":"CarStatus"})
+    df["CarStatus"] = df["CarStatus"].ffill()
 
     all_drivers_data = []
 
@@ -693,7 +712,8 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps):
                 )
                         
             df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
-
+        
+        df_driver = add_track_status_telemetry(df_driver, df_track)
         all_drivers_data.append(df_driver)
 
     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)

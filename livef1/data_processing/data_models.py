@@ -134,6 +134,8 @@ class BronzeTable(Table):
         self.df = pd.DataFrame(parsed_data).rename(
             columns = column_mapping
         )
+        if "timestamp" in self.df.columns:
+            self.df.timestamp = pd.to_timedelta(self.df.timestamp)
 
 class SilverTable(Table):
     def __init__(self, table_name, sources, source_tables = {"bronze": [], "silver": [], "gold": []}, data_lake = None):
