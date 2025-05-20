@@ -383,7 +383,7 @@ def add_track_status(laps_df, df_track):
     temp_df = temp_df.set_index("LapStartTime").join(df_track.set_index("timestamp")[["Status","Message"]], how="outer")
     temp_df.LapNo = temp_df.LapNo.ffill()
 
-    temp_df.Status = temp_df.Status.ffill()
+    temp_df.Status = temp_df.Status.ffill().bfill()
     laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Status.unique().apply(lambda x: ",".join(x))).reset_index().rename(columns={"Status":"TrackStatus"})
     # temp_df.Message = temp_df.Message.ffill()
     # laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Message.unique().apply(lambda x: ",".join(x))).reset_index()
