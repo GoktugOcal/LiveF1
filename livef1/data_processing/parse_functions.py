@@ -20,7 +20,7 @@ def parse_tyre_stint_series(data, sessionKey):
     for key, value in data:
     #data.items()::
         for driver_no, stint in value["Stints"].items():
-            if stint:
+            if isinstance(stint, dict):
                 for pit_count, current_info in stint.items():
                     record = {
                         "session_key": sessionKey,
