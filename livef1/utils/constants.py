@@ -377,7 +377,7 @@ TABLE_GENERATION_FUNCTIONS = {
 
 TABLE_REQUIREMENTS = {
     "laps": ["TimingData", "RaceControlMessages", "TyreStintSeries","TrackStatus"],
-    "carTelemetry": ["CarData.z", "Position.z", "TyreStintSeries", "laps", "TrackStatus"]
+    "carTelemetry": ["CarData.z", "Position.z", "TyreStintSeries", "laps", "TrackStatus", "TimingData"]
 }
 
 column_mapping = {
@@ -395,6 +395,7 @@ silver_cartel_col_order = [
   'Utc',
   'timestamp',
   'LapNo',
+  'Position',
   'RPM',
   'Speed',
   'GearNo',
@@ -416,12 +417,15 @@ silver_laps_col_order = [
   'DriverNo',
   'LapNo',
   'LapTime',
+  'Position',
   'NoPits',
   'PitIn',
   'PitOut',
   'PitStopDuration',
   'Compound',
   'TyreAge',
+  'GapToLeader',
+  'IntervalToPositionAhead',
   'Sector1_Time',
   'Sector2_Time',
   'Sector3_Time',

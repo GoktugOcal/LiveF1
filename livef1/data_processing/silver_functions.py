@@ -396,6 +396,13 @@ def add_track_status_telemetry(telemetry_df, df_track):
     telemetry_df.TrackStatus = telemetry_df.TrackStatus.ffill()
     return telemetry_df.dropna(subset="SessionKey").reset_index()
 
+def add_lineposition(telemetry_df, df_tmg):
+    telemetry_df = telemetry_df.set_index("timestamp").join(df_tmg.set_index("timestamp")[["Position"]], how="outer")
+    telemetry_df.Position = telemetry_df.Position.ffill()
+    return telemetry_df.reset_index()
+
+
+
 
 def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
 
@@ -474,6 +481,12 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         "LastLapTime_Value": "LapTime"
     }
 
+    misc_cols = {
+        "Position": "Position",
+        "GapToLeader": "GapToLeader",
+        "IntervalToPositionAhead_Value": "IntervalToPositionAhead"
+    }
+
     extra_cols = [
         "NoPits",
         "sector1_finish_timestamp",
@@ -482,9 +495,9 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         ]
     extra_raw_cols = ["RacingNumber","Stopped","_deleted"]
 
-    col_map = {**base_cols, **pit_cols, **sector_cols, **speedTrap_cols}
-    cols = list(base_cols.values()) + list(pit_cols.values()) + list(sector_cols.values()) + list(speedTrap_cols.values())
-    raw_cols = list(base_cols.keys()) + list(pit_cols.keys()) + list(sector_cols.keys()) + list(speedTrap_cols.keys()) + extra_raw_cols
+    col_map = {**base_cols, **pit_cols, **sector_cols, **speedTrap_cols, **misc_cols}
+    cols = list(base_cols.values()) + list(pit_cols.values()) + list(sector_cols.values()) + list(speedTrap_cols.values()) + list(misc_cols.values())
+    raw_cols = list(base_cols.keys()) + list(pit_cols.keys()) + list(sector_cols.keys()) + list(speedTrap_cols.keys()) + list(misc_cols.keys()) + extra_raw_cols
 
     def str_timedelta(x):
         if isinstance(x, str):
@@ -509,10 +522,12 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         if (record["LapTime"] is None) & ((record["Sector1_Time"] != None) and (record["Sector2_Time"] != None) and (record["Sector3_Time"] != None)):
             record["LapTime"] = record["Sector1_Time"] + record["Sector2_Time"] + record["Sector3_Time"]
 
+        last_position = record["Position"]
         laps.append(record)
         NoPits = record["NoPits"]
         record = {key: None if key != "LapNo" else val + 1 for key, val in record.items()}
         record["NoPits"] = NoPits
+        record["Position"] = last_position
 
         return laps, record
 
@@ -549,7 +564,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
                 elif not pd.isna(sc_value):
                     
                     if sc_key in speedTrap_cols:
-                        record[col_map[sc_key]] = sc_value
+                        record[col_map[sc_key]] = float(sc_value)
                     
                     elif sc_key in pit_cols:
                         if sc_key == "InPit":
@@ -559,6 +574,33 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
                             if sc_value == True:
                                 record[col_map[sc_key]] = ts
                                 record["NoPits"] += 1
+                    
+
+                    elif sc_key in misc_cols:
+                        if sc_key == "Position":
+                            if sc_value is not None:
+                                record[col_map[sc_key]] = sc_value
+                        elif sc_key == "GapToLeader":
+                            if sc_value is not None:
+                                if "LAP" in sc_value:
+                                    record[col_map[sc_key]] = float(0)
+                                elif "L" in sc_value:
+                                    record[col_map[sc_key]] = None
+                                elif sc_value == "":
+                                    record[col_map[sc_key]] = None
+                                else:
+                                    record[col_map[sc_key]] = float(sc_value)
+                        elif sc_key == "IntervalToPositionAhead_Value":
+                            if sc_value is not None:
+                                if "LAP" in sc_value:
+                                    record[col_map[sc_key]] = float(0)
+                                elif "L" in sc_value:
+                                    record[col_map[sc_key]] = None
+                                elif sc_value == "":
+                                    record[col_map[sc_key]] = None
+                                else:
+                                    record[col_map[sc_key]] = float(sc_value)
+
                     elif sc_key in sector_cols:
                         sc_no = int(sc_key.split("_")[1])
                         key_type = sc_key.split("_")[2]
@@ -630,7 +672,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
 
     return all_laps_df[silver_laps_col_order]
 
-def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_track):
+def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_track, df_tmg):
     """
     Generates a telemetry table for car data by combining and processing position and car data
     from the provided BronzeLake object. The function interpolates missing data, aligns it with
@@ -714,6 +756,7 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
             df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
         
         df_driver = add_track_status_telemetry(df_driver, df_track)
+        df_driver = add_lineposition(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
         all_drivers_data.append(df_driver)
 
     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
