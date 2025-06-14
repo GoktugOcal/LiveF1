@@ -120,6 +120,7 @@ class Season:
                 {
                     "meeting_code": "first",
                     "meeting_name": "first",
+                    "meeting_offname": "first",
                     "meeting_circuit_shortname": "first",
                     "session_name": "count"
                 }
@@ -138,6 +139,8 @@ class Season:
                     }
                 }
             )
+
+        self.season_table = self.season_table.rename(columns = SESSIONS_COLUMN_MAP)
 
 
     def __repr__(self):

@@ -311,10 +311,6 @@ def find_most_similar_vectorized(df, target):
 
 
     if jaccard_score:
-        # found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index(drop=True).columns])
-        # logger.info(f"Found at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}' as '{most_similar}'.")
-        # logger.info(f"""Selected meeting/session is:\n{found_info}""")
-
         return {
             "isFound": 1,
             "how" : "jaccard",
@@ -332,9 +328,7 @@ def find_most_similar_vectorized(df, target):
         if jaro_score >= 0.9:
             row, col = divmod(jaro_df.values.argmax(), jaro_df.shape[1])
             most_similar = df.iloc[row, col]
-            logger.info(f"The identifier is very close to '{most_similar}' at column '{(SESSIONS_COLUMN_MAP[df.columns[col]]).upper()}'")
-            # found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {df.reset_index().loc[row, col]}" for col in df.reset_index(drop=True).columns])
-            # logger.info(f"""Selected meeting/session is:\n{found_info}""")
+            logger.info(f"The identifier is very close to '{most_similar}' at column '{(df.columns[col]).upper()}'")
 
             return {
                 "isFound": 1,
@@ -352,7 +346,7 @@ def find_most_similar_vectorized(df, target):
             err_text = f"\nThe searched query '{target}' not found in the table. Did you mean one of these :\n\n"
             for idx, prow in possible_df.iterrows():
                 for col in possible_df.columns:
-                    err_text += f"\t{SESSIONS_COLUMN_MAP[col]} : {prow[col]}\n"
+                    err_text += f"\t{col} : {prow[col]}\n"
                 # err_text += f"\t> Suggested search queries : {identifer_text_format(prow.meeting_name) + identifer_text_format(prow.meeting_circuit_shortname)}\n\n"
                 err_text += f"\t> Suggested search queries : {[identifer_text_format(prow[col])for col in possible_df.columns if not col in EXCLUDED_COLUMNS_FOR_SEARCH_SUGGESTION]}\n\n"
             raise LiveF1Error(err_text)
@@ -368,7 +362,7 @@ def find_most_similar_vectorized(df, target):
 
 def print_found_model(df, key, cols):
     found_meeting_info = df.loc[[key], cols].drop_duplicates().iloc[0]
-    found_info = "\n".join([f"\t{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in cols])
+    found_info = "\n".join([f"\t{col} : {found_meeting_info[col]}" for col in cols])
     logger.info(f"""Selected meeting/session is:\n{found_info}""")
 
 

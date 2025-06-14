@@ -81,14 +81,13 @@ def get_meeting(
             raise
 
     season_obj = get_season(season=season)
-    required_cols = ["meeting_offname","meeting_name","meeting_circuit_shortname"]
-    search_df_season = season_obj.season_table.reset_index()[required_cols].drop_duplicates()
+    required_cols = ["Meeting Offname","Meeting Name","Meeting Circuit Shortname"]
+    search_df_season = season_obj.meetings_table.reset_index()[required_cols].drop_duplicates()
 
     if meeting_identifier:
         logger.debug("Getting meeting by meeting identifier.")
         result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
-        meeting_key = season_obj.season_table.iloc[result_meeting["row"]].name
-    
+        meeting_key = season_obj.meetings_table.iloc[result_meeting["row"]]["Meeting Key"]
     elif meeting_key:
         logger.debug("Getting meeting by meeting key.")
         pass

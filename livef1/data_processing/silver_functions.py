@@ -402,8 +402,6 @@ def add_lineposition(telemetry_df, df_tmg):
     return telemetry_df.reset_index()
 
 
-
-
 def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
 
     def delete_laps(laps_df, df_rcm):
@@ -443,12 +441,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         
         return laps_df
 
-
-    # Get Timing Data
-    # Get Race Control Messages
-    # Get Tyre Stint Data
     df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
-    # Get Session Data
     sessionKey = df_exp["SessionKey"].values[0]
 
     if "_deleted" not in df_exp.columns:
@@ -482,10 +475,11 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     }
 
     misc_cols = {
-        "Position": "Position",
-        "GapToLeader": "GapToLeader",
-        "IntervalToPositionAhead_Value": "IntervalToPositionAhead"
+        "Position": "Position"
     }
+    if session.type == "Race":
+        misc_cols["GapToLeader"] = "GapToLeader"
+        misc_cols["IntervalToPositionAhead_Value"] = "IntervalToPositionAhead"
 
     extra_cols = [
         "NoPits",
