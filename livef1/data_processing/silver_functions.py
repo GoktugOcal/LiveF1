@@ -751,6 +751,19 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
         
         df_driver = add_track_status_telemetry(df_driver, df_track)
         df_driver = add_lineposition(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
+
+        ## TODO: Add race distance
+        # if len(df_driver) > 0:
+        #     race_distance = add_distance_to_lap(
+        #         df_driver.copy(),
+        #         session.meeting.circuit.start_coordinates[0],
+        #         session.meeting.circuit.start_coordinates[1],
+        #         session.meeting.circuit.start_direction[0],
+        #         session.meeting.circuit.start_direction[1]
+        #     )["Distance"].values
+        #     df_driver["RaceDistance"] = race_distance
+        #     print("added race distance :", driver_no, race_distance)
+
         all_drivers_data.append(df_driver)
 
     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
