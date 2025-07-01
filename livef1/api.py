@@ -41,7 +41,8 @@ def get_season(season: int) -> Season:
 def get_meeting(
     season: int,
     meeting_identifier: str = None,
-    meeting_key: int = None
+    meeting_key: int = None,
+    meeting_offname: str = None,
     ) -> Meeting:
     """
     Retrieve data for a specific meeting in a given season.
@@ -73,31 +74,36 @@ def get_meeting(
     """
 
     # Check if sufficient arguments have been provided
-    if (meeting_identifier == None) and (meeting_key == None):
+    if (meeting_identifier == None) and (meeting_key == None) and (meeting_offname == None):
         try:
-            raise ArgumentError(f"One of the following arguments needs to be defined: 'meeting_identifier', 'meeting_key'.")
+            raise ArgumentError(f"One of the following arguments needs to be defined: 'meeting_identifier', 'meeting_key', 'meeting_offname'.")
         except ArgumentError as e:
             logger.error(f"An error occured {e}")
-            raise
-
+    
     season_obj = get_season(season=season)
     required_cols = ["Meeting Offname","Meeting Name","Meeting Circuit Shortname"]
-    search_df_season = season_obj.meetings_table.reset_index()[required_cols].drop_duplicates()
 
-    if meeting_identifier:
-        logger.debug("Getting meeting by meeting identifier.")
-        result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
-        meeting_key = season_obj.meetings_table.iloc[result_meeting["row"]]["Meeting Key"]
-    elif meeting_key:
-        logger.debug("Getting meeting by meeting key.")
-        pass
+    if meeting_offname != None:
+        found_meetings = [meeting for meeting in season_obj.meetings if meeting.officialname == meeting_offname]
 
-    meeting_obj = [meeting for meeting in season_obj.meetings if meeting.key == meeting_key][0]
+        if len(found_meetings) > 0:
+            meeting_obj = found_meetings[0]
+            meeting_key = meeting_obj.key
+        else:
+            raise LiveF1Error(f"The meeting with official name '{meeting_offname}' could not be found in the season {season}.")
 
-    # found_meeting_info = season_obj.season_table.loc[[meeting_key], required_cols].drop_duplicates().iloc[0]
-    # found_info = "\n".join([f"{SESSIONS_COLUMN_MAP[col]} : {found_meeting_info[col]}" for col in required_cols])
-    # logger.info(f"""Selected meeting/session is:\n{found_info}""")
+    else:
+        search_df_season = season_obj.meetings_table.reset_index()[required_cols].drop_duplicates()
+        if meeting_identifier:
+            logger.debug("Getting meeting by meeting identifier.")
+            result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
+            meeting_key = season_obj.meetings_table.iloc[result_meeting["row"]]["Meeting Key"]
+        elif meeting_key:
+            logger.debug("Getting meeting by meeting key.")
+            pass
 
+        meeting_obj = [meeting for meeting in season_obj.meetings if meeting.key == meeting_key][0]
+    
     print_found_model(
         df = season_obj.season_table,
         key = meeting_key,

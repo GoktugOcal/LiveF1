@@ -9,6 +9,8 @@ import pandas as pd
 
 # Internal Project Imports
 from ..adapters import download_data
+from ..adapters.other import parse_schedule_from_f1com
+
 from ..models.meeting import Meeting
 from ..utils.helper import json_parser_for_objects, build_session_endpoint
 from ..utils.constants import SESSIONS_COLUMN_MAP
@@ -142,6 +144,9 @@ class Season:
 
         self.season_table = self.season_table.rename(columns = SESSIONS_COLUMN_MAP)
 
+    def get_schedule(self):
+        self.schedule = parse_schedule_from_f1com(self.year)  # Parse the schedule from F1.com for the season.
+        return self.schedule
 
     def __repr__(self):
         """
