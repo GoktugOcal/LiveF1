@@ -94,6 +94,12 @@ class Session:
         for table_name in SILVER_SESSION_TABLES:
             self.create_silver_table(table_name, TABLE_REQUIREMENTS[table_name], include_session=True)(globals()[TABLE_GENERATION_FUNCTIONS[table_name]])
     
+
+    def _load_circuit_data(self):
+        circuit = self.meeting.circuit
+        circuit._load_circuit_data()
+        self.data_lake.create_bronze_table(table_name="track_regions", raw_data=circuit._raw_circuit_data, parsed_data=circuit.track_regions)
+
     def load_session_data(self):
         """
         Load the session data.
@@ -493,7 +499,7 @@ class Session:
                 dataName = topic
                 return dataName
         
-        return None
+        return dataName
 
         # raise TopicNotFoundError(f"The topic name you provided '{dataName}' is not included in the topics.")
     
@@ -626,6 +632,10 @@ class Session:
         return first_date
 
     def generate(self, silver=True, gold=False):
+
+        
+        print("circuit.")
+        self._load_circuit_data()
 
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])
         tables_to_generate = set()

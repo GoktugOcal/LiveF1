@@ -666,7 +666,21 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
 
     return all_laps_df[silver_laps_col_order]
 
-def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_track, df_tmg):
+
+def assign_regions(tel_cor, df_corners):
+
+    # Example: same bins_df as above
+    conditions = [
+        (tel_cor["Distance"] >= row['corner_start']) & (tel_cor["Distance"] < row['corner_end']) if row["corner_end"] > row["corner_start"]
+        else (tel_cor["Distance"] >= row['corner_start']) | (tel_cor["Distance"] < row['corner_end'])
+        for _, row in df_corners.iterrows()
+    ]
+    choices = df_corners['name'].tolist()
+
+    return np.select(conditions, choices, default='unknown')
+
+
+def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_track, df_tmg, df_circuits):
     """
     Generates a telemetry table for car data by combining and processing position and car data
     from the provided BronzeLake object. The function interpolates missing data, aligns it with
@@ -775,5 +789,6 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
     )
     all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
     all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
-    
+    all_drivers_df["TrackRegion"] = assign_regions(all_drivers_df, df_circuits)
+
     return all_drivers_df[silver_cartel_col_order]
