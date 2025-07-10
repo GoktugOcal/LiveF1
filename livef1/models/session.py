@@ -632,9 +632,7 @@ class Session:
         return first_date
 
     def generate(self, silver=True, gold=False):
-
         
-        print("circuit.")
         self._load_circuit_data()
 
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])

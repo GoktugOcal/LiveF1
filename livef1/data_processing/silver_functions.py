@@ -672,13 +672,13 @@ def assign_regions(tel_cor, df_corners):
 
     # Example: same bins_df as above
     conditions = [
-        (tel_cor["Distance"] >= row['corner_start']) & (tel_cor["Distance"] < row['corner_end']) if row["corner_end"] > row["corner_start"]
+        (tel_cor["Distance"] >= row['corner_start']) & (tel_cor["Distance"] < row['corner_end']) if row["corner_end"] >= row["corner_start"]
         else (tel_cor["Distance"] >= row['corner_start']) | (tel_cor["Distance"] < row['corner_end'])
         for _, row in df_corners.iterrows()
     ]
     choices = df_corners['name'].tolist()
 
-    return np.select(conditions, choices, default='unknown')
+    return np.select(conditions, choices, default=None)
 
 
 def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_track, df_tmg, df_circuits):
