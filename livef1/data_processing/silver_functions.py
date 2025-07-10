@@ -644,7 +644,8 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     all_laps_df["Driver"] = all_laps_df["DriverNo"].map(session.drivers)
 
     # Add pit data
-    if session.check_data_name("PitStopSeries"):
+    # if session.check_data_name("PitStopSeries"):
+    if "PitStopSeries" in session.topic_names_info:
         # Get Pit Stop Data
         df_pit = session.get_data("PitStopSeries", level="bronze")
         df_pit = df_pit[["RacingNumber", "PitStopTime", "PitLaneTime", "Lap"]].rename(columns={"RacingNumber": "DriverNo", "Lap":"LapNo", "PitStopTime": "PitStopDuration", "PitLaneTime":"PitLaneDuration"})
