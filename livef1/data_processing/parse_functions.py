@@ -101,8 +101,14 @@ def parse_driver_list(data, sessionKey):
         dict :
             A record containing the session key, driver number, and driver-related info.
     """
-    for driver_no, info in data.items():
-        yield info
+    if isinstance(data, dict): # If received data is not in Streaming format
+        for driver_no, info in data.items():
+            yield info
+
+    elif isinstance(data,list): # received data is in Streaming format
+        for driver_no, info in data[0][1].items():
+            yield info
+            
     # for driver_no, info in data:
     # #data.items()::
     #     record = {
