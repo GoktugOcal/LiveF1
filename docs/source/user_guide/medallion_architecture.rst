@@ -57,7 +57,7 @@ Layer Details
 Bronze Layer (Raw Data)
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The Bronze layer stores data in its original format, serving as the foundation of our data lake.
+The Bronze layer stores the data coming from official F1 API or other sources in its original format, serving as the foundation of our data lake. Generally; more complex, refined, or useful data tables are sourced from Bronze Lake.
 
 .. code-block:: python
    :caption: Example: Loading Raw Data
@@ -69,14 +69,14 @@ The Bronze layer stores data in its original format, serving as the foundation o
     raw_data = session.get_data("TimingData")  # Loads to Bronze lake
     print(raw_data.head())
 
-.. admonition:: Key Features
-   :class: note
+.. .. admonition:: Key Features
+..    :class: note
 
-   - Unmodified source data
-   - Complete data history
-   - Audit trail support
-   - Quick ingestion
-   - Schema-on-read
+..    - Unmodified source data
+..    - Complete data history
+..    - Audit trail support
+..    - Quick ingestion
+..    - Schema-on-read
 
 Silver Layer (Refined Data) 
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,7 +84,7 @@ Silver Layer (Refined Data)
 The Silver layer contains cleaned, validated, and enriched data ready for analysis.
 
 .. code-block:: python
-   :caption: Example: Generating Silver Tables
+   :caption: Example: Generating Registered Silver Tables
    :emphasize-lines: 4,7
 
     # Generate silver layer tables
@@ -96,14 +96,19 @@ The Silver layer contains cleaned, validated, and enriched data ready for analys
     laps_data = session.get_laps()  # Get from Silver lake
     print(laps_data.head())
 
-.. admonition:: Data Quality Checks
-   :class: tip
+In the example above, LiveF1 generates the silver tables that are already registered as defauls such as laps, carTelemetry etc. But what is the registered tables? Registered tables are the tables where their ETL function is already been set. There are some default ones that is registered inside LiveF1, and also new tables can be registered as well. So how to register new tables?
 
-   - Data type validation
-   - Duplicate removal
-   - Missing value handling
-   - Format standardization
-   - Cross-reference validation
+.. code-block:: python
+   :caption: Example: Generating Registered Silver Tables
+   :emphasize-lines: 4,7
+   import livef1
+   
+   # Generate silver layer tables
+   session = livef1.get_session(2024, "Spa", "Race")
+
+   
+   
+   session.generate() # Generate registered Silver lake
 
 Gold Layer (Analytics Ready)
 ^^^^^^^^^^^^^^^^^^^^^^^^

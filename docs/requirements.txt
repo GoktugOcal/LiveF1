@@ -7,3 +7,8 @@ shibuya
 sphinx-tabs
 sphinx_design
 sphinx_sitemap
+scipy
+ujson
+numpy
+pandas
+beautifulsoup4
