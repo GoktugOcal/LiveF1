@@ -61,7 +61,7 @@ class livef1SessionETL:
         try:
             # Perform the parsing
             logger.debug(f"Using parser function for title: {title}")
-            parsed_data = self.function_map[title](data, self.session.key)
+            parsed_data = self.function_map[title](data, self.session.key, session_path = self.session.path)
             logger.debug(f"Parsing successful for title: {title}")
             return parsed_data
         except Exception as e:

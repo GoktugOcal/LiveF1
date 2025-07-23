@@ -1,7 +1,8 @@
 from ..utils.helper import *
 from ..utils.constants import channel_name_map
+import urllib
 
-def parse_tyre_stint_series(data, sessionKey):
+def parse_tyre_stint_series(data, sessionKey, **kwargs):
     """
     Parses the tyre stint series data, generating records for each stint.
 
@@ -31,7 +32,7 @@ def parse_tyre_stint_series(data, sessionKey):
                     }
                     yield record
 
-def parse_driver_race_info(data, sessionKey):
+def parse_driver_race_info(data, sessionKey, **kwargs):
     """
     Parses driver race info data.
 
@@ -58,7 +59,7 @@ def parse_driver_race_info(data, sessionKey):
             }
             yield record
 
-def parse_current_tyres(data, sessionKey):
+def parse_current_tyres(data, sessionKey, **kwargs):
     """
     Parses current tyre data for each driver.
 
@@ -85,7 +86,7 @@ def parse_current_tyres(data, sessionKey):
             }
             yield record
 
-def parse_driver_list(data, sessionKey):
+def parse_driver_list(data, sessionKey, **kwargs):
     """
     Parses the driver list data.
 
@@ -118,7 +119,7 @@ def parse_driver_list(data, sessionKey):
     #     }
     #     yield record
 
-def parse_session_data(data, sessionKey):
+def parse_session_data(data, sessionKey, **kwargs):
     """
     Parses session data for each driver.
 
@@ -146,7 +147,7 @@ def parse_session_data(data, sessionKey):
             except Exception as e:
                 pass
 
-def parse_extrapolated_clock(data, sessionKey):
+def parse_extrapolated_clock(data, sessionKey, **kwargs):
     """
     Parses extrapolated clock data.
 
@@ -171,7 +172,7 @@ def parse_extrapolated_clock(data, sessionKey):
         }
         yield record
 
-def parse_timing_data(data, sessionKey):
+def parse_timing_data(data, sessionKey, **kwargs):
     """
     Parses timing data for each driver.
 
@@ -219,7 +220,7 @@ def parse_timing_data(data, sessionKey):
                 record = parse_helper(info, record)
                 yield record
 
-def parse_lap_series(data, sessionKey):
+def parse_lap_series(data, sessionKey, **kwargs):
     """
     Parses lap series data for each driver.
 
@@ -259,7 +260,7 @@ def parse_lap_series(data, sessionKey):
                     }
                     yield record
 
-def parse_top_three(data, sessionKey):
+def parse_top_three(data, sessionKey, **kwargs):
     """
     Parses the top three drivers' data.
 
@@ -289,7 +290,7 @@ def parse_top_three(data, sessionKey):
             }
             yield record
 
-def parse_session_status(data, sessionKey):
+def parse_session_status(data, sessionKey, **kwargs):
     """
     Parses the session status data.
 
@@ -314,7 +315,7 @@ def parse_session_status(data, sessionKey):
         }
         yield record
 
-def parse_hearthbeat(data, sessionKey):
+def parse_hearthbeat(data, sessionKey, **kwargs):
     """
     Parses the heartbeat data.
 
@@ -339,7 +340,7 @@ def parse_hearthbeat(data, sessionKey):
         }
         yield record
 
-def parse_weather_data(data, sessionKey):
+def parse_weather_data(data, sessionKey, **kwargs):
     """
     Parses weather data for the session.
 
@@ -364,7 +365,7 @@ def parse_weather_data(data, sessionKey):
         }
         yield record
 
-def parse_team_radio(data, sessionKey):
+def parse_team_radio(data, sessionKey, **kwargs):
     """
     Parses team radio data.
 
@@ -393,6 +394,8 @@ def parse_team_radio(data, sessionKey):
                     **record,
                     **capture
                 }
+                capture_record["Path"] = urllib.parse.urljoin(build_session_endpoint(kwargs["session_path"]), capture_record["Path"])
+                print(capture_record)
                 yield capture_record
         elif isinstance(ts_value["Captures"], dict):
             for capture in ts_value["Captures"].values():
@@ -400,9 +403,10 @@ def parse_team_radio(data, sessionKey):
                     **record,
                     **capture
                 }
+                capture_record["Path"] = urllib.parse.urljoin(build_session_endpoint(kwargs["session_path"]), capture_record["Path"])
                 yield capture_record
 
-def parse_tlarcm(data, sessionKey):
+def parse_tlarcm(data, sessionKey, **kwargs):
     """
     Parses TLA RCM (Track Location Allocation Race Control Messages) data.
 
@@ -427,7 +431,7 @@ def parse_tlarcm(data, sessionKey):
         }
         yield record
 
-def parse_race_control_messages(data, sessionKey):
+def parse_race_control_messages(data, sessionKey, **kwargs):
     """
     Parses race control messages.
 
@@ -465,7 +469,7 @@ def parse_race_control_messages(data, sessionKey):
                 }
                 yield capture_record
 
-def parse_session_info(data, sessionKey):
+def parse_session_info(data, sessionKey, **kwargs):
     """
     Parses general session information.
 
@@ -496,7 +500,7 @@ def parse_session_info(data, sessionKey):
         record = parse_helper_for_nested_dict(value, record)
         yield record
 
-def parse_position_z(data, sessionKey):
+def parse_position_z(data, sessionKey, **kwargs):
     """
     Parses driver position (z-axis) data.
 
@@ -527,7 +531,7 @@ def parse_position_z(data, sessionKey):
                 }
                 yield record
 
-def parse_car_data_z(data, sessionKey):
+def parse_car_data_z(data, sessionKey, **kwargs):
     """
     Parses car data (z-axis) for each driver.
 
@@ -574,7 +578,7 @@ def parse_car_data_z(data, sessionKey):
                 }
                 yield record
 
-def parse_pit_lane_time(data, sessionKey):
+def parse_pit_lane_time(data, sessionKey, **kwargs):
 
     for key, value in data:
     #data.items()::
@@ -597,7 +601,7 @@ def parse_pit_lane_time(data, sessionKey):
                 yield record
 
 
-def parse_pit_stop_series(data, sessionKey):
+def parse_pit_stop_series(data, sessionKey, **kwargs):
 
     for ts, value in data:
         for driver_no, driver_pits in value["PitTimes"].items():
@@ -629,11 +633,11 @@ def parse_pit_stop_series(data, sessionKey):
                     yield record
 
                     
-def parse_printer(data, sessionKey):
+def parse_printer(data, sessionKey, **kwargs):
     print(data)
 
 
-def parse_basic(data, sessionKey):
+def parse_basic(data, sessionKey, **kwargs):
     for key, info in data:
     #data.items()::
         record = {
