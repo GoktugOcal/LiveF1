@@ -1,3 +1,5 @@
+.. _quick_start:
+
 ********************************
 Quick Start
 ********************************
@@ -203,7 +205,7 @@ This method processes the raw data in the Bronze layer and creates cleaned and e
 
 .. code-block:: python
 
-   laps_data = session.get_laps()
+   laps_data = session.laps
    print(laps_data)
 
 .. rst-class:: sphx-glr-script-out
@@ -242,7 +244,7 @@ Let's create a complete example that analyzes lap times for a race session:
    session.generate(silver=True)
 
    # Get lap times data
-   df = session.get_laps()
+   df = session.laps
 
    # Calculate average lap times per driver
    avg_lap_times = df.groupby('DriverNo')['lap_time'].mean()

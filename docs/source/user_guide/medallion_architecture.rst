@@ -98,6 +98,7 @@ The Gold layer provides optimized, aggregated data ready for business intelligen
       # Generate all tables
       session.generate(gold=True) # We should set gold as True.
 
+.. _registering_custom_tables:
 
 Registering Custom Tables
 -------------------------

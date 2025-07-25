@@ -32,8 +32,8 @@ Loading Race Data
     race.generate(silver=True)
 
     # Load different data types
-    laps = race.get_laps()
-    telemetry = race.get_car_telemetry()
+    laps = race.laps
+    telemetry = race.carTelemetry
     weather = race.get_weather()
     timing = race.get_timing()
 
@@ -109,8 +109,8 @@ Here's how to combine all analyses into a complete pipeline:
         session.generate(silver=True)
         
         # Load data
-        laps = session.get_laps()
-        telemetry = session.get_car_telemetry()
+        laps = session.laps
+        telemetry = session.carTelemetry
         
         # Run analyses
         lap_analysis = analyze_lap_times(laps)

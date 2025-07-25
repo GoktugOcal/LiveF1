@@ -21,17 +21,20 @@ Core Concepts
 Before diving into specific features, it's important to understand these key concepts:
 
 1. **Data Organization**
+
    - Seasons contain multiple race meetings
    - Meetings contain multiple sessions (Practice, Qualifying, Race)
    - Sessions contain various data feeds (telemetry, timing, weather, etc.)
 
 2. **Data Access Patterns**
+
    - Historical data access for past races
    - Real-time data streaming for live sessions
    - Data transformation through the medallion architecture
 
 3. **Data Types**
-   Each session provides multiple data feeds, organized by topics like car telemetry, position data, and timing information.
+
+   - Each session provides multiple data feeds, organized by topics like car telemetry, position data, and timing information.
 
 .. tip::
    Browse available data topics and their descriptions in :ref:`data_topics`.
@@ -49,7 +52,7 @@ Once you have a session object, you can:
 
 - Load raw data using ``get_data()``
 - Generate processed tables using ``generate()``
-- Access specific data types through helper methods like ``get_laps()``, ``get_car_telemetry()``, etc.
+- Access specific data types through attributes like ``laps``, ``carTelemetry``, etc. The attribute names are defined while registering tables; have a look at :ref:`registering_custom_tables`.
 
 Examples and Use Cases
 ---------------------

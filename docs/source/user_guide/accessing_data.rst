@@ -41,8 +41,8 @@ Example:
 
 .. code-block:: python
 
-    laps_data = session.get_laps()
-    car_telemetry_data = session.get_car_telemetry()
+    laps_data = session.laps
+    car_telemetry_data = session.carTelemetry
     weather_data = session.get_weather()
     timing_data = session.get_timing()
 

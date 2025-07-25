@@ -1,3 +1,5 @@
+.. _historical_data:
+
 Historical Data
 ==============
 
@@ -85,8 +87,8 @@ Generate processed data tables using the medallion architecture:
     race.generate()
     
     # Access processed data
-    laps = race.get_laps()
-    telemetry = race.get_car_telemetry()
+    laps = race.laps
+    telemetry = race.carTelemetry
 
     display(laps.head())
 
@@ -123,8 +125,8 @@ Here's a complete example showing how to access and analyze historical race data
     race.generate()
     
     # Get lap times and telemetry
-    laps_data = race.get_laps()
-    telemetry = race.get_car_telemetry()
+    laps_data = race.laps
+    telemetry = race.carTelemetry
     
     # Analyze fastest laps
     fastest_laps = laps_data.sort_values('LapTime').groupby('DriverNumber').first()

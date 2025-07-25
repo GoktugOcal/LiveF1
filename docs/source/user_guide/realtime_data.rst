@@ -1,3 +1,5 @@
+.. _realtime_data:
+
 Real-Time Data
 =============
 

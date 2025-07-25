@@ -78,8 +78,8 @@ Example:
     session.generate(silver=True, gold=False)
 
     # Access the generated data
-    laps = session.get_laps()
-    telemetry = session.get_car_telemetry()
+    laps = session.laps
+    telemetry = session.carTelemetry
     weather = session.get_weather()
     timing = session.get_timing()
 

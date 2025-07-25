@@ -10,6 +10,8 @@ Models - :mod:`livef1.models`
       Season
       Meeting
       Session
+      Circuit
+      Driver
 
 .. .. Season
 .. .. -------

@@ -1,6 +1,16 @@
 Data Models
 ==========
 
+.. automodule:: livef1.models
+
+   .. rubric:: Classes
+   .. autosummary::
+      Season
+      Meeting
+      Session
+      Circuit
+      Driver
+
 Season
 ------
 The Season model is the top-level container for Formula 1 data. It manages all meetings and sessions for a specific year.
@@ -97,9 +107,9 @@ The Session model represents individual F1 sessions (Practice, Qualifying, Race)
 
 - ``generate()``: Create processed tables
 
-- ``get_laps()``: Access lap data
+- ``laps``: Access lap data
 
-- ``get_car_telemetry()``: Access telemetry data
+- ``carTelemetry``: Access telemetry data
 
 **Example Usage:**
 
@@ -119,8 +129,8 @@ The Session model represents individual F1 sessions (Practice, Qualifying, Race)
     session.generate(silver=True)
     
     # Access processed data
-    laps = session.get_laps()
-    telemetry = session.get_car_telemetry()
+    laps = session.laps
+    telemetry = session.carTelemetry
 
 Data Flow
 ---------
@@ -143,33 +153,38 @@ The models work together in a hierarchical structure:
 Each level provides specific functionality:
 
 1. **Season Level**
+
    - Season-wide data access
    - Meeting management
-   - High-level data organization
 
 2. **Meeting Level**
+
    - Session management
    - Meeting-specific data
    - Circuit information
 
 3. **Session Level**
+
    - Raw data access
    - Data processing
-   - Medallion architecture implementation
+   - DataLake architecture implementation
 
 Best Practices
 -------------
 1. **Data Access**
+   
    - Use high-level functions (``get_season()``, ``get_meeting()``, ``get_session()``)
    - Access objects through their parent when possible
    - Use data frames for bulk data analysis
 
 2. **Data Processing**
+   
    - Generate silver tables before accessing processed data
    - Use parallel processing for multiple data topics
    - Cache frequently accessed data
 
 3. **Memory Management**
+   
    - Load data only when needed
    - Use data lake for persistent storage
    - Clear unused data from memory
@@ -177,3 +192,5 @@ Best Practices
 .. seealso::
    - For more details on data processing, see :ref:`medallion_architecture`
    - For API documentation, see :ref:`api_reference`
+
+
