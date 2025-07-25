@@ -2,6 +2,8 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from string import digits
+
 
 def _parse_tables_from_wikipedia(url):
     
@@ -39,7 +41,6 @@ def get_table_from_wikipedia(url, table_name):
     except:
         return None
 
-
 def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
     """Parse the schedule for the given season from the official Formula 1 website.
     Args:
@@ -69,6 +70,9 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
 
         sub_resp = requests.get(meeting_url)
         sub_soup = BeautifulSoup(sub_resp.content, 'html.parser')
+
+        remove_digits = str.maketrans('', '', digits)
+        print(sub_soup.title.text.split(" - ")[0].translate(remove_digits).strip())
 
         ul = sub_soup.find('ul', class_="contents")
         items = [li for li in ul.find_all('li')]
