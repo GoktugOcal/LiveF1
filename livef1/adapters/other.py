@@ -64,15 +64,14 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
     meetings = []
     for meeting_obj in soup.find_all('a', class_='group'):
 
-        short_name = meeting_obj.find(class_="typography-module_display-xl-bold__Gyl5W").text
+        # short_name = meeting_obj.find(class_="typography-module_display-xl-bold__Gyl5W").text
         offname = meeting_obj.find(class_="typography-module_body-xs-semibold__Fyfwn").text
         meeting_url = BASE_URL + meeting_obj["href"]
 
         sub_resp = requests.get(meeting_url)
         sub_soup = BeautifulSoup(sub_resp.content, 'html.parser')
+        short_name = sub_soup.title.text.split(" - ")[0].split("Grand Prix")[0].strip()
 
-        remove_digits = str.maketrans('', '', digits)
-        print(sub_soup.title.text.split(" - ")[0].translate(remove_digits).strip())
 
         ul = sub_soup.find('ul', class_="contents")
         items = [li for li in ul.find_all('li')]
@@ -131,5 +130,5 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
                     ]
             )
 
-    schedule_df = pd.DataFrame(row, columns=["Meeting Circuit Shortname", "Meeting Offname", "Session Name", "Start Date", "End Date"])
+    schedule_df = pd.DataFrame(row, columns=["Meeting Shortname", "Meeting Offname", "Session Name", "Start Date", "End Date"])
     return schedule_df
