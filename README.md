@@ -1,7 +1,11 @@
 # LiveF1 - An Open-Source Formula 1 Data Processing Toolkit
 
+![Written in Python](https://img.shields.io/static/v1?label=&message=Python&color=3C78A9&logo=python&logoColor=FFFFFF)
 [![PyPI version](https://badge.fury.io/py/livef1.svg)](https://badge.fury.io/py/livef1)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![View livef1 on GitHub](https://img.shields.io/github/stars/goktugocal/livef1?color=232323&label=livef1&logo=github&labelColor=232323)](https://github.com/goktugocal/livef1)
+[![Author goktugocal](https://img.shields.io/badge/goktugocal-b820f9?labelColor=b820f9&logo=githubsponsors&logoColor=fff)](https://github.com/goktugocal)
+
 
 LiveF1 is a powerful Python toolkit for accessing and analyzing Formula 1 data in real-time or from historical archives. It's designed for developers, analysts, and F1 fans building applications around Formula 1 insights.
 
