@@ -410,7 +410,8 @@ silver_cartel_col_order = [
   'TyreAge',
   'Distance',
   'CarStatus',
-  'TrackStatus'
+  'TrackStatus',
+  'tag'
   ]
 
 silver_laps_col_order = [
