@@ -179,7 +179,7 @@ def get_session(
         logger.debug("Getting session by key.")
         pass
 
-    session_obj = [session for session in meeting_obj.sessions if session.key == session_key][0]
+    session_obj = [session for name, session in meeting_obj.sessions.items() if session.key == session_key][0]
     print_found_model(
         df = meeting_obj.sessions_table,
         key = session_key,
