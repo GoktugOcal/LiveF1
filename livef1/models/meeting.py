@@ -123,7 +123,6 @@ class Meeting:
         .. note::
             This method populates the `sessions` attribute with `Session` objects derived from `sessions_json`.
         """
-        print(self.officialname)
         for session_data in self.sessions_json:
             if "Name" in session_data: k = session_data["Name"]
             else: k = session_data["Key"]
