@@ -77,7 +77,7 @@ class Meeting:
 
         if hasattr(self, "sessions"):
             self.sessions_json = self.sessions
-            self.sessions = []
+            self.sessions = {}
             self.set_sessions()
 
         self.parse_sessions()
@@ -124,12 +124,10 @@ class Meeting:
             This method populates the `sessions` attribute with `Session` objects derived from `sessions_json`.
         """
         for session_data in self.sessions_json:
-            self.sessions.append(
-                Session(
-                    season=self.season,
-                    meeting=self,
-                    **json_parser_for_objects(session_data)
-                )
+            self.sessions[session_data["Name"]] = Session(
+                season=self.season,
+                meeting=self,
+                **json_parser_for_objects(session_data)
             )
 
     def parse_sessions(self):
