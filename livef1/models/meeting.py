@@ -123,11 +123,14 @@ class Meeting:
         .. note::
             This method populates the `sessions` attribute with `Session` objects derived from `sessions_json`.
         """
+        print(self.officialname)
         for session_data in self.sessions_json:
-            self.sessions[session_data["Name"]] = Session(
+            if "Name" in session_data: k = session_data["Name"]
+            else: k = session_data["Key"]
+            self.sessions[k] = Session(
                 season=self.season,
                 meeting=self,
-                **json_parser_for_objects(session_data)
+                **json_parser_for_objects(session_data)    
             )
 
     def parse_sessions(self):
