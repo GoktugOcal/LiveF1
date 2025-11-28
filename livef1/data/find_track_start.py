@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 import numpy as np
 import json
+from livef1.utils.constants import TABLE_REQUIREMENTS, TABLE_GENERATION_FUNCTIONS
+from livef1.data_processing.silver_functions import *
 
 def get_circuit_data():
     HEADERS = {'User-Agent': 'LiveF1/trial'}
@@ -42,7 +44,7 @@ def collect_sessions_by_circuit(circuits_data):
 def find_starting_coordinates(session):
 
     car_tel = session.carTelemetry.copy()
-    sample = car_tel[car_tel["lap_number"] > 1].dropna(subset=["X", "Y"]).head(2)
+    sample = car_tel[car_tel["LapNo"] > 1].dropna(subset=["X", "Y"]).head(2)
 
     x_chng = sample.X.values[-1] - sample.X.values[0]
     y_chng = sample.Y.values[-1] - sample.Y.values[0]
@@ -51,12 +53,12 @@ def find_starting_coordinates(session):
 
     laps = session.laps
 
-    filtered_laps = laps[laps["in_pit"].isnull() & laps["pit_out"].isnull() & ~laps["isDeleted"]]
-    filter_tuples = list(zip(filtered_laps["DriverNo"], filtered_laps["lap_number"]))
-    session.carTelemetry["driver_lap_tuple"] = list(zip(session.carTelemetry["DriverNo"], session.carTelemetry["lap_number"]))
+    filtered_laps = laps[laps["PitIn"].isnull() & laps["PitOut"].isnull() & ~laps["IsDeleted"]]
+    filter_tuples = list(zip(filtered_laps["DriverNo"], filtered_laps["LapNo"]))
+    session.carTelemetry["driver_lap_tuple"] = list(zip(session.carTelemetry["DriverNo"], session.carTelemetry["LapNo"]))
     filtered_df = session.carTelemetry[session.carTelemetry["driver_lap_tuple"].isin(filter_tuples)]
 
-    last_points = filtered_df.groupby(["DriverNo", "lap_number"]).last().reset_index()
+    last_points = filtered_df.groupby(["DriverNo", "LapNo"]).last().reset_index()
 
     # Calculate IQR for X and Y
     Q1_X = last_points['X'].quantile(0.25)
@@ -80,7 +82,7 @@ def find_starting_coordinates(session):
         (last_points['Y'] >= lower_bound_Y) & (last_points['Y'] <= upper_bound_Y)
     ]
 
-    last_points = filtered_df.groupby(["DriverNo", "lap_number"]).last().reset_index()
+    last_points = filtered_df.groupby(["DriverNo", "LapNo"]).last().reset_index()
 
     limit = 95
     limit_x = 100 - limit if x_coeff < 0 else limit
@@ -111,10 +113,12 @@ if __name__ == "__main__":
                     session_identifier = "Race"
                     )
                 session.generate()
+                # session.create_silver_table("laps", TABLE_REQUIREMENTS["laps"], include_session=True)(globals()[TABLE_GENERATION_FUNCTIONS["laps"]])
+                # session.carTelemetry = session.get_data("CarData.z")
 
                 start_x, start_y, x_coeff, y_coeff = find_starting_coordinates(session)
 
-                coordinates[session.meeting.circuit["ShortName"]] = {
+                coordinates[session.meeting.circuit.short_name] = {
                     "start_coordinates": (start_x, start_y),
                     "start_direction": (x_coeff, y_coeff),
                 }
@@ -122,8 +126,11 @@ if __name__ == "__main__":
                 del session
 
                 break
-            except:
+            except Exception as e:
+                print(e)
+                import traceback; traceback.print_exc()
                 pass
+    
     
     with open("starting_coordinates.json", "w") as f:
         json.dump(coordinates, f, indent=4)

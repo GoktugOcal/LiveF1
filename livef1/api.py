@@ -97,7 +97,7 @@ def get_meeting(
         if meeting_identifier:
             logger.debug("Getting meeting by meeting identifier.")
             result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
-            meeting_key = season_obj.meetings_table.iloc[result_meeting["row"]]["Meeting Key"]
+            meeting_key = season_obj.meetings_table.iloc[result_meeting["row_index"]]["Meeting Key"]
         elif meeting_key:
             logger.debug("Getting meeting by meeting key.")
             pass
@@ -173,7 +173,7 @@ def get_session(
     if session_identifier:
         logger.debug("Getting session by identifier.")
         result_session = find_most_similar_vectorized(search_df_season, session_identifier)
-        session_key = meeting_obj.sessions_table.iloc[result_session["row"]].name
+        session_key = meeting_obj.sessions_table.iloc[result_session["row_index"]].name
 
     elif session_key:
         logger.debug("Getting session by key.")

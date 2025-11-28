@@ -238,23 +238,25 @@ def find_most_similar_vectorized(df, target):
         float
             The Jaccard similarity score.
         """
-        intersection_cardinality = len(
-            set.intersection(
-                *[
-                    set(identifer_text_format(target)),
-                    set(identifer_text_format(cell))
-                ]
+        if cell:
+            intersection_cardinality = len(
+                set.intersection(
+                    *[
+                        set(identifer_text_format(target)),
+                        set(identifer_text_format(cell))
+                    ]
+                )
             )
-        )
-        union_cardinality = len(
-            set.union(
-                *[
-                    set(identifer_text_format(target)),
-                    set(identifer_text_format(cell))
-                ]
+            union_cardinality = len(
+                set.union(
+                    *[
+                        set(identifer_text_format(target)),
+                        set(identifer_text_format(cell))
+                    ]
+                )
             )
-        )
-        return intersection_cardinality/float(union_cardinality)
+            return intersection_cardinality/float(union_cardinality)
+        else: return 0
 
     def jarow_similarity(cell):
         """
@@ -304,11 +306,13 @@ def find_most_similar_vectorized(df, target):
 
     logger.debug(f"Searching of identifier '{target}' has started.")
 
+    # df = df.reset_index(drop=True)
     similarity_df = df.map(jaccard_similarity)
     jaccard_score = similarity_df.max().max()
     row, col = divmod(similarity_df.values.argmax(), similarity_df.shape[1])
     most_similar = df.iloc[row, col]
 
+    row_index = df.index[row]
 
     if jaccard_score:
         return {
@@ -317,6 +321,7 @@ def find_most_similar_vectorized(df, target):
             "value": most_similar,
             "similarity": jaccard_score,
             "row": df.iloc[row].name,
+            "row_index": row_index,
             "column": df.columns[col]
         }
     else:
@@ -324,11 +329,12 @@ def find_most_similar_vectorized(df, target):
 
         jaro_df = df.map(jarow_similarity)
         jaro_score = jaro_df.max().max()
-
+        
         if jaro_score >= 0.9:
             row, col = divmod(jaro_df.values.argmax(), jaro_df.shape[1])
             most_similar = df.iloc[row, col]
             logger.info(f"The identifier is very close to '{most_similar}' at column '{(df.columns[col]).upper()}'")
+            row_index = df.index[row]
 
             return {
                 "isFound": 1,
@@ -336,6 +342,7 @@ def find_most_similar_vectorized(df, target):
                 "value": most_similar,
                 "similarity": jaro_score,
                 "row": row,
+                "row_index": row_index,
                 "column": df.columns[col]
             }
 

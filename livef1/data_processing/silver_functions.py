@@ -427,15 +427,18 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
         # covered during the lap based on speed and timestamp, adjusted for the starting line position.
         for lap_no in df_driver["LapNo"].unique():
             lap_df = df_driver[df_driver["LapNo"] == lap_no]
-            lap_df = add_distance_to_lap(
-                lap_df,
-                session.meeting.circuit.start_coordinates[0],
-                session.meeting.circuit.start_coordinates[1],
-                session.meeting.circuit.start_direction[0],
-                session.meeting.circuit.start_direction[1]
-                )
-                        
-            df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
+            if hasattr(session.meeting.circuit, "start_coordinates"):
+                lap_df = add_distance_to_lap(
+                    lap_df,
+                    session.meeting.circuit.start_coordinates[0],
+                    session.meeting.circuit.start_coordinates[1],
+                    session.meeting.circuit.start_direction[0],
+                    session.meeting.circuit.start_direction[1]
+                    )
+                            
+                df_driver.loc[lap_df.index, "Distance"] = lap_df["Distance"].values
+            else:
+                df_driver.loc[lap_df.index, "Distance"] = None
         
         df_driver = add_track_status_telemetry(df_driver, df_track)
         df_driver = add_lineposition(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
@@ -463,6 +466,10 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
     )
     all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
     all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
-    all_drivers_df["TrackRegion"] = assign_regions(all_drivers_df, df_circuits)
+
+    if hasattr(session.meeting.circuit, "start_coordinates"):
+        all_drivers_df["TrackRegion"] = assign_regions(all_drivers_df, df_circuits)
+    else:
+        all_drivers_df["TrackRegion"] = None
 
     return all_drivers_df[silver_cartel_col_order]
