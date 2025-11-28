@@ -360,6 +360,20 @@ def find_most_similar_vectorized(df, target):
                 "column": None
             }
 
+def string_match_ratio(s1: str, s2: str) -> float:
+    length = max(len(s1), len(s2))
+    if length == 0:
+        return 0.0
+    
+    matches = 0
+    for i in range(length):
+        c1 = s1[i] if i < len(s1) else None
+        c2 = s2[i] if i < len(s2) else None
+        if c1 == c2:
+            matches += 1
+    
+    return matches / length
+
 def print_found_model(df, key, cols):
     found_meeting_info = df.loc[[key], cols].drop_duplicates().iloc[0]
     found_info = "\n".join([f"\t{col} : {found_meeting_info[col]}" for col in cols])

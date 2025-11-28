@@ -4,6 +4,7 @@ import pandas as pd
 
 from livef1.utils.constants import START_COORDINATES_URL
 from livef1.utils.exceptions import livef1Exception
+from livef1.utils.helper import string_match_ratio
 
 
 class Circuit:
@@ -59,7 +60,15 @@ class Circuit:
         response = requests.get("https://api.multiviewer.app/api/v1/circuits", headers=HEADERS)
         circuits = response.json()
 
-        circuit_ref = next((v for v in circuits.values() if v.get('name').lower() == self.short_name.lower()), None)
+        circuit_ref = next(
+            (
+                v for v in circuits.values()
+                if
+                    (v.get('name').lower() == self.short_name.lower())
+                    | (string_match_ratio(v.get('name').lower(), self.short_name.lower()) > 0.8)
+                ),
+            None
+        )
         if circuit_ref == None:
             raise livef1Exception(f"Circut {self.short_name} couldn't be found in circuit api.")
 
