@@ -11,6 +11,8 @@ import re
 from string import punctuation
 import numpy as np
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 # Internal Project Imports
 from .constants import *
@@ -34,7 +36,6 @@ def build_session_endpoint(session_path):
     """
     return urljoin(urljoin(BASE_URL, STATIC_ENDPOINT), session_path)
 
-
 def json_parser_for_objects(data: Dict) -> Dict:
     """
     Converts the keys of a dictionary to lowercase.
@@ -50,7 +51,6 @@ def json_parser_for_objects(data: Dict) -> Dict:
         A new dictionary with all keys converted to lowercase.
     """
     return {key.lower(): value for key, value in data.items()}
-
 
 def get_data(path, stream):
     """
@@ -79,7 +79,6 @@ def get_data(path, stream):
     else:
         return res_text  # Return the full response text if not streaming.
 
-
 def get_car_data_stream(path):
     """
     Fetches car data from a specified endpoint and returns it as a dictionary.
@@ -101,7 +100,6 @@ def get_car_data_stream(path):
 
     tl = 12  # Length of the key in the response.
     return dict((r[:tl], r[12:]) for r in records)
-
 
 def parse(text: str, zipped: bool = False) -> Union[str, dict]:
     """
@@ -129,7 +127,6 @@ def parse(text: str, zipped: bool = False) -> Union[str, dict]:
         return parse(text.decode('utf-8-sig'))
     return text  # Return the text as is if it's not zipped.
 
-
 def parse_hash(hash_code):
     """
     Parses a hashed string and decompresses it.
@@ -146,7 +143,6 @@ def parse_hash(hash_code):
     """
     tl = 12  # Length of the key in the response.
     return parse(hash_code, zipped=True)
-
 
 def parse_helper_for_nested_dict(info, record, prefix=""):
     """
@@ -386,6 +382,49 @@ def print_found_model(df, key, cols):
     found_info = "\n".join([f"\t{col} : {found_meeting_info[col]}" for col in cols])
     logger.info(f"""Selected meeting/session is:\n{found_info}""")
 
+def scrape_f1_results(url):
+    # F1 website often requires a User-Agent header to allow requests
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        print(f"Failed to retrieve page: {response.status_code}")
+        return None
+
+    soup = BeautifulSoup(response.content, 'html.parser')
+    
+    # Locate the results table
+    # The F1 results pages typically use a standard 'resultsarchive-table' class
+    table = soup.find('table', class_='resultsarchive-table')
+    
+    if not table:
+        # Fallback for newer site layouts (2025 results)
+        table = soup.find('table')
+
+    if table:
+        # read_html returns a list of dataframes
+        df = pd.read_html(str(table))[0]
+        
+        # Data Cleaning:
+        # 1. Remove empty columns (often used for spacing on the F1 site)
+        df = df.dropna(axis=1, how='all')
+        
+        # 2. The 'Driver' column often contains the name + abbreviation (e.g., 'Max VerstappenVER')
+        # We can clean this if needed, but the raw text is usually provided.
+        
+        return df
+    else:
+        print("Could not find the results table on the page.")
+        return None
+
+def get_circuit_keys():
+    response = requests.get(CIRCUIT_KEYS_URL)
+    if response.status_code == 200:
+        return pd.read_csv(CIRCUIT_KEYS_URL)
+    else:
+        raise Exception(f"Failed to load circuit keys: {response.status_code}")
 
 def to_datetime(var):
     if isinstance(var, pd.Series):

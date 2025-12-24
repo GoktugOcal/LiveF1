@@ -6,6 +6,9 @@ SIGNALR_ENDPOINT = "/signalr/"
 # Circuit Start Coordinates URL
 START_COORDINATES_URL = "https://raw.githubusercontent.com/GoktugOcal/LiveF1/refs/heads/main/livef1/data/starting_coordinates.json"
 
+# Circuit Keys URL
+CIRCUIT_KEYS_URL = "https://raw.githubusercontent.com/GoktugOcal/LiveF1/refs/heads/main/livef1/data/circuits_key.csv"
+
 DEFAULT_METHOD = "livef1"
 
 REALTIME_CALLBACK_DEFAULT_PARAMETERS = [
@@ -294,8 +297,18 @@ TOPICS_MAP = {
   "ChampionshipPrediction": {
     "key": "Championship_Prediction",
     "description": "Predictions for championship outcomes.",
-    "default_is_stream": True
+    "default_is_stream": False
   },
+  # "ChampionshipPredictionTeams": {
+  #   "key": "Championship_Prediction_Teams",
+  #   "description": "Predictions for championship outcomes.",
+  #   "default_is_stream": True
+  # },
+  # "ChampionshipPredictionDrivers": {
+  #   "key": "Championship_Prediction_Drivers",
+  #   "description": "Predictions for championship outcomes.",
+  #   "default_is_stream": True
+  # },
   "OvertakeSeries": {
     "key": "Overtake_Series",
     "description": "Data series tracking overtakes.",
@@ -367,17 +380,202 @@ interpolation_map = {
   # "Distance" : "quadratic"
   }
 
-SILVER_SESSION_TABLES = ["laps", "carTelemetry"]
+
+FIA_CATEGORY_SCOPE_RULES = {
+    "Penalty": {
+        "Time penalty": [
+            "TIME PENALTY",
+            "5 SECOND PENALTY",
+            "10 SECOND PENALTY"
+        ],
+        "Drive through": [
+            "DRIVE THROUGH"
+        ],
+        "Stop and go": [
+            "STOP/GO"
+        ],
+        "Grid penalty": [
+            "GRID PENALTY"
+        ],
+        "Disqualification": [
+            "BLACK FLAG",
+            "DISQUALIFIED"
+        ]
+    },
+
+    # "Impeding": {
+    #     "Impeding another driver": [
+    #         "IMPEDING"
+    #     ]
+    # },
+
+    "Administrative": {
+        "Informational": [
+            "NOTED",
+            "NO FURTHER ACTION",
+            "INVESTIGATION"
+            # "REVIEWED NO FURTHER INVESTIGATION"
+        ],
+        "Investigation opened": [
+            "UNDER INVESTIGATION",
+            "WILL BE INVESTIGATED"
+        ]
+    },
+
+    "Collision": {
+        "Causing collision": [
+            "CAUSING A COLLISION"
+        ],
+        "Forcing off track": [
+            "FORCING ANOTHER DRIVER OFF THE TRACK"
+        ],
+        "Moving under braking": [
+            "MOVING UNDER BRAKING"
+        ]
+    },
+
+    "Track Limits": {
+        "Gaining advantage": [
+            "LEAVING THE TRACK",
+            "GAINING AN ADVANTAGE",
+            "TRACK LIMITS"
+        ],
+        "Unsafe rejoin": [
+            "REJOINING UNSAFELY"
+        ]
+    },
+
+    "Pit Lane": {
+        # "Speeding": [
+        #     "SPEEDING IN THE PIT LANE"
+        # ],
+        # "Unsafe release": [
+        #     "UNSAFE RELEASE",
+        #     "RELEASING IN UNSAFE CONDITION"
+        # ],
+        "Procedural infringement": [
+            "PIT LANE INFRINGEMENT",
+            "PIT ENTRY",
+            "PIT EXIT"
+        ]
+    },
+
+    "Race Director Instructions": {
+        "Delta time violation": [
+            "MAXIMUM DELTA TIME"
+        ],
+        "Yellow flag violation": [
+            "FAILING TO SLOW UNDER YELLOW FLAGS",
+            "OVERTAKING UNDER YELLOW FLAGS"
+        ],
+        "Instruction breach": [
+            "FAILING TO FOLLOW RACE DIRECTORS INSTRUCTIONS",
+            "ESCAPE ROAD INSTRUCTIONS"
+        ]
+    },
+
+    "Starting Procedure": {
+        "False start": [
+            "FALSE START"
+        ],
+        "Practice start infringement": [
+            "PRACTICE START INFRINGEMENT"
+        ],
+        "Starting procedure infringement": [
+            "STARTING PROCEDURE INFRINGEMENT"
+        ]
+    },
+
+    "Safety Car": {
+        "Safety car infringement": [
+            "SAFETY CAR INFRINGEMENT"
+        ],
+        "Virtual safety car infringement": [
+            "VIRTUAL SAFETY CAR INFRINGEMENT"
+        ],
+        "Recovery Vehicle": [
+            "RECOVERY VEHICLE"
+        ],
+        "Medical Car": [
+            "MEDICAL CAR"
+        ],
+        "Lapped Cars": [
+            "LAPPED"
+        ]
+    },
+
+    "Weather": {
+        "Rain": [
+            "RAIN"
+        ],
+        "Temperature": [
+            "TEMPERATURE"
+        ],
+        "Informational": [
+            "CLIMATIC"
+        ]
+    },
+
+    "Drs": {
+        "ENABLED": [
+            "DRS ENABLED"
+        ],
+        "DISABLED": [
+            "DRS DISABLED"
+        ]
+    },
+
+    "Lap deleted": {
+        "Track limits": [
+            "TRACK LIMITS"
+        ],
+        "Double yellow": [
+            "DOUBLE YELLOW"
+        ]
+    },
+
+    "Session": {
+        "Informational": [
+            "SESSION",
+            "START",
+            "RESUME",
+            "FORMATION",
+            "RESUMPTION"
+        ]
+    },
+
+    "Pit": {
+        "Informational": [
+            "PIT"
+        ]
+    },
+
+    "Track": {
+        "Informational": [
+            "TRACK"
+        ]
+    }
+}
+
+penalty_types = [
+    "TIME PENALTY",
+    "DRIVE THROUGH PENALTY",
+    "STOP/GO PENALTY",
+]
+
+SILVER_SESSION_TABLES = ["laps", "carTelemetry", "raceControlMessages"]
 # SILVER_SESSION_TABLES = ["laps", "car_telemetry", "weather", "timing"]
 
 TABLE_GENERATION_FUNCTIONS = {
     "laps": "generate_laps_table",
-    "carTelemetry": "generate_car_telemetry_table"
+    "carTelemetry": "generate_car_telemetry_table",
+    "raceControlMessages": "generate_race_control_messages_table"
 }
 
 TABLE_REQUIREMENTS = {
     "laps": ["TimingData", "RaceControlMessages", "TyreStintSeries","TrackStatus"],
-    "carTelemetry": ["CarData.z", "Position.z", "TyreStintSeries", "laps", "TrackStatus", "TimingData", "track_regions"]
+    "carTelemetry": ["CarData.z", "Position.z", "TyreStintSeries", "laps", "TrackStatus", "TimingData", "track_regions"],
+    "raceControlMessages": ["RaceControlMessages"]
 }
 
 column_mapping = {

@@ -1,9 +1,16 @@
 import pandas as pd
 import numpy as np
 from datetime import timedelta
+import re
 
 from ..utils.helper import to_datetime
-from ..utils.constants import interpolation_map, silver_cartel_col_order, silver_laps_col_order
+from ..utils.constants import (
+    interpolation_map, 
+    silver_cartel_col_order, 
+    silver_laps_col_order, 
+    FIA_CATEGORY_SCOPE_RULES, 
+    penalty_types
+)
 
 def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
     """
@@ -473,3 +480,229 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
         all_drivers_df["TrackRegion"] = None
 
     return all_drivers_df[silver_cartel_col_order]
+
+def generate_race_control_messages_table(session, rcm_df):
+    """
+    Processes and generates a DataFrame of race control messages for a given session.
+
+    This function takes race control messages and session context, parses category and scope information,
+    and structures the data for analysis. It does not interpolate values or align events to lap distances,
+    but instead extracts and organizes categorical details (such as category, scope, flag, mode, and status)
+    found in race control messages.
+
+    Args:
+        session: The session object containing circuit and meeting information.
+        df_rcm (pd.DataFrame): DataFrame containing raw race control messages with at least the columns
+            ['Message', 'Category', 'Scope', 'Flag', 'Mode', 'Status'].
+
+    Returns:
+        pd.DataFrame: A DataFrame with processed race control message records, including extracted and clarified
+            category and scope values for each message, along with relevant timestamps and context fields.
+    """
+
+    def parse_cars_from_message(message):
+        """
+        Parse car numbers from race control messages.
+        Handles two distinct cases:
+        1. Messages with "CAR" (singular) - extracts single car numbers
+        2. Messages with "CARS" (plural) - extracts multiple car numbers
+        
+        Avoids extracting:
+        - Lap numbers (LAP 8, LAP 14)
+        - Timestamps (15:11:52, 16:05.442)
+        - Turn numbers (TURN 11, TURN 5)
+        - Lap times (1:12.542)
+        """
+        if pd.isna(message) or not message:
+            return None
+        
+        cars = []
+        message_upper = message.upper()
+        
+        # Helper function to check if a number is likely a car number (not lap, turn, timestamp, etc.)
+        def is_valid_car_number(num_str, context_before, context_after):
+            """Check if a number is a valid car number based on surrounding context."""
+            # Check if it's part of a timestamp pattern (HH:MM:SS or MM:SS)
+            if re.search(r'\d+\s*:\s*' + re.escape(num_str) + r'\s*:\s*\d+', context_before + num_str + context_after):
+                return False
+            if re.search(re.escape(num_str) + r'\s*:\s*\d+', context_after):
+                return False
+            
+            # Check if it's a lap number (LAP followed by number)
+            if re.search(r'LAP\s+' + re.escape(num_str) + r'\b', context_before + num_str + context_after, re.IGNORECASE):
+                return False
+            
+            # Check if it's a turn number (TURN followed by number)
+            if re.search(r'TURN\s+' + re.escape(num_str) + r'\b', context_before + num_str + context_after, re.IGNORECASE):
+                return False
+            
+            # Check if it's part of a lap time (like 1:12.542 or 16:05.442)
+            # Pattern: digit(s):digit(s).digit(s) or digit(s):digit(s):digit(s)
+            if re.search(r'\d+\s*:\s*' + re.escape(num_str) + r'\s*\.\s*\d+', context_before + num_str + context_after):
+                return False
+            
+            return True
+        
+        # Case 1: Handle "CAR" (singular) patterns
+        # Check if message contains "CAR " but not "CARS " (to avoid matching "CARS" as "CAR")
+        if re.search(r'\bCAR\s+', message_upper) and not re.search(r'\bCARS\s+', message_upper):
+            # Pattern: "CAR" followed by number, optionally followed by "(DRIVER_CODE)"
+            # Examples: "CAR 23 (ALB)", "CAR 55 (SAI) TIME", "INCIDENT INVOLVING CAR 55"
+            car_pattern = r'(?i)\bCAR\s+(\d+)'
+            matches = list(re.finditer(car_pattern, message))
+            
+            for match in matches:
+                car_num = match.group(1)
+                match_start = match.start()
+                match_end = match.end()
+                
+                # Get context around the match
+                context_before = message[max(0, match_start - 30):match_start]
+                context_after = message[match_end:min(len(message), match_end + 30)]
+                
+                # Check if this is a valid car number (not lap, turn, timestamp, etc.)
+                if is_valid_car_number(car_num, context_before, context_after):
+                    cars.append(int(car_num))
+        
+        # Case 2: Handle "CARS" (plural) patterns
+        elif re.search(r'\bCARS\s+', message_upper):
+            # Pattern: "CARS" followed by numbers with driver codes in parentheses
+            # Handles: "CARS 44 (HAM) AND 18 (STR)", "CARS 63 (RUS), 18 (STR), 2 (SAR)", etc.
+            # Match from "CARS" to the end of the car list (stops at keywords like "NOTED", "WILL", etc.)
+            # The pattern matches: number + (driver_code) + (comma or AND) + (repeat)
+            cars_pattern = r'(?i)\bCARS\s+((?:\d+\s*\([^)]+\)(?:\s*,\s*|\s+AND\s+)?)+?)(?=\s+(?:NOTED|WILL|REVIEWED|NO|FIA|$))'
+            cars_match = re.search(cars_pattern, message)
+            
+            if cars_match:
+                # Extract the section with car numbers
+                cars_section = cars_match.group(1)
+                # Extract all numbers that are followed by parentheses (driver codes)
+                # This ensures we only get car numbers, not other numbers in the message
+                car_numbers = re.findall(r'(\d+)\s*\([^)]+\)', cars_section)
+                
+                for num in car_numbers:
+                    cars.append(int(num))
+            else:
+                # Fallback: if the lookahead pattern doesn't match, try without it
+                cars_pattern_fallback = r'(?i)\bCARS\s+((?:\d+\s*\([^)]+\)(?:\s*,\s*|\s+AND\s+)?)+)'
+                cars_match = re.search(cars_pattern_fallback, message)
+                if cars_match:
+                    cars_section = cars_match.group(1)
+                    # Limit to reasonable length to avoid matching too much
+                    if len(cars_section) < 200:  # Reasonable limit for car list
+                        car_numbers = re.findall(r'(\d+)\s*\([^)]+\)', cars_section)
+                        for num in car_numbers:
+                            cars.append(int(num))
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_cars = []
+        for car in cars:
+            if car not in seen:
+                seen.add(car)
+                unique_cars.append(car)
+        
+        return unique_cars if unique_cars else None
+
+    def parse_category_scope(row):
+
+        message = row.Message.upper()
+        category = row.Category
+        scope = row.Scope
+        flag = row.Flag
+        if hasattr(row, "Mode"):
+            mode = row.Mode
+        else:
+            mode = None
+        status = row.Status
+
+        if pd.isna(message):
+            return "Unknown", "Unknown", None, None
+
+        if category == "Flag":
+            if scope == "Driver":
+                clean_message = message \
+                    .replace(flag,"") \
+                    .replace("WAVED","") \
+                    .replace("FLAG","") \
+                    .replace("FOR","") \
+                    .strip()
+                
+                if flag == "BLUE":
+                    info = clean_message.split(" ")[-1]
+                elif flag == "BLACK AND WHITE":
+                    info = clean_message.split("-")[-1].strip()
+            
+            elif scope == "Sector":
+                clean_message = message
+                sector = clean_message.split("SECTOR")[-1].strip()
+                info = f"SECTOR {sector}"
+
+            elif scope == "Track":
+                clean_message = message
+                info = clean_message.split("-")[-1].strip()
+            return category, scope, status, info
+
+        elif category == "Drs":
+            clean_message = message
+            scope = clean_message.split(" ")[-1].strip()
+            info = None
+            return category, scope, status, info
+        
+        elif category == "SafetyCar":
+            scope = mode
+            info = status
+            return category, scope, status, info
+        
+        elif category == "Other":
+            info = None
+            for category, scopes in FIA_CATEGORY_SCOPE_RULES.items():
+                for scope, keywords in scopes.items():
+                    if any(k in message for k in keywords):
+                        if "-" in message:
+                            info = message.split("-")[-1].strip()
+
+                        if category == "Penalty":
+                            penalty_type = None
+                            for pt in penalty_types:
+                                if pt in message:
+                                    penalty_type = pt
+                                    break
+                            
+                            if penalty_type == "TIME PENALTY":
+                                match = re.search(r'(\d{1,2})(?=\s*SECOND)', message)
+                                penalty_value = match.group(1) if match else None
+                            else: penalty_value = None
+                            
+                            if "PENALTY SERVED" in message: status = "Served"
+                            else: status = None
+
+                            info = penalty_value
+                            
+                        return category, scope, status, info
+
+        else:
+            return "Other", "Unclassified", None, None
+
+    rcm_df["RacingNumber"] = rcm_df.Message.apply(lambda x: parse_cars_from_message(x))
+
+    rcm_df[["Category", "Scope", "Status", "info"]] = (
+        rcm_df
+        .apply(lambda m: pd.Series(parse_category_scope(m)), axis=1)
+    )
+
+    return rcm_df[
+        [
+            "SessionKey", 
+            "timestamp", 
+            "Utc",
+            "Category", 
+            "Scope",
+            "Status", 
+            "Flag", 
+            "Message", 
+            "Lap",
+            "RacingNumber",
+            "info"
+        ]
+    ]

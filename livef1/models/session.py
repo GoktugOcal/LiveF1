@@ -94,7 +94,6 @@ class Session:
         for table_name in SILVER_SESSION_TABLES:
             self.create_silver_table(table_name, TABLE_REQUIREMENTS[table_name], include_session=True)(globals()[TABLE_GENERATION_FUNCTIONS[table_name]])
     
-
     def _load_circuit_data(self):
         circuit = self.meeting.circuit
         circuit._load_circuit_data()
@@ -286,7 +285,6 @@ class Session:
         if parallel and len(validated_names) > 1:
             # Parallel loading
             n_processes = max(1, multiprocessing.cpu_count() - 1)
-            print(validated_names)
             with Pool(processes=n_processes) as pool:
                 loaded_results = pool.starmap(
                     load_single_data, 
@@ -635,6 +633,11 @@ class Session:
         
         self._load_circuit_data()
 
+        try:
+            self.load_session_results()
+        except Exception as e:
+            logger.warning(f"Failed to load session results: {e}")
+
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])
         tables_to_generate = set()
         if silver:
@@ -665,18 +668,23 @@ class Session:
             if silver:
                 logger.info(f"Silver tables are being generated.")
                 for silver_table in silver_tables_to_generate:
-                    table_name = silver_table.table_name
-                    silver_table.generate_table()
-                    setattr(self, table_name, self.get_data(dataNames = table_name, level = "silver"))
-                    logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
-            
+                    try:
+                        table_name = silver_table.table_name
+                        silver_table.generate_table()
+                        setattr(self, table_name, self.get_data(dataNames = table_name, level = "silver"))
+                        logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
+                    except Exception as e:
+                        logger.error(f"Failed to generate silver table '{table_name}': {e}")
             if gold:
                 logger.info("Gold tables are being generated.")
                 for gold_table in gold_tables_to_generate:
-                    table_name = gold_table.table_name
-                    gold_table.generate_table()
-                    setattr(self, table_name, self.get_data(dataNames = table_name, level = "gold"))
-                    logger.info(f"'{table_name}' has been generated and saved to the gold lake. You can access it from 'session.{table_name}'.")
+                    try:
+                        table_name = gold_table.table_name
+                        gold_table.generate_table()
+                        setattr(self, table_name, self.get_data(dataNames = table_name, level = "gold"))
+                        logger.info(f"'{table_name}' has been generated and saved to the gold lake. You can access it from 'session.{table_name}'.")
+                    except Exception as e:
+                        logger.error(f"Failed to generate gold table '{table_name}': {e}")
         else:
             logger.error("Circular dependencies detected. Please check your table dependencies.")
 
@@ -805,6 +813,43 @@ class Session:
             source_tables = source_tables,
             include_session = include_session
             )
+    
+    def load_session_results(self):
+        """
+        Retrieve the session results.
+        """
+        meeting_keys = helper.get_circuit_keys()
+
+        season = self.season.year
+        meeting_key = self.meeting.key
+        circuit_identifier = meeting_keys.set_index("gp_name")["key"].to_dict()[self.meeting.name]
+        session_type = self.name.lower()
+
+        if "practice" in session_type:
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type.replace(" ","/")}"
+
+        elif "qualifying" in session_type:
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type.replace(" ","-")}"
+
+        elif "race" in session_type:
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type}-result"
+        
+        elif "sprint" in session_type:
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type}-results"
+
+        self.sessionResults = helper.scrape_f1_results(target_url)
+        logger.info(f"Session results have been loaded and saved to 'session.sessionResults'.")
+
+        if session_type == "race":
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/starting-grid"
+            self.startingGrid = helper.scrape_f1_results(target_url)
+            logger.info(f"Starting grid have been loaded and saved to 'session.startingGrid'.")
+        elif session_type == "sprint":
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/sprint-grid"
+            self.startingGrid = helper.scrape_f1_results(target_url)
+            logger.info(f"Starting grid have been loaded and saved to 'session.startingGrid'.")
+
+
 
 def load_single_data(dataName, session, stream):
 

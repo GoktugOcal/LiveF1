@@ -646,3 +646,38 @@ def parse_basic(data, sessionKey, **kwargs):
             **info
         }
         yield record
+
+def parse_championship_prediction(data, sessionKey, **kwargs):
+    """
+    Parses championship prediction data.
+
+    Parameters
+    ----------
+        data : :class:`dict`
+            The championship prediction data.
+        sessionKey : :class:`int`
+            The key of the current session.
+    """
+
+    print(data)
+    drivers = data["Drivers"]
+    # records_drivers = []
+    for driver in drivers.values():
+        record = {
+            "session_key": sessionKey,
+            **driver
+        }
+        # records_drivers.append(record)
+        yield record
+    
+    # teams = data["Teams"]
+    # records_teams = []
+
+    # for team in teams.values():
+    #     record = {
+    #         "session_key": sessionKey,
+    #         **team
+    #     }
+    #     records_teams.append(record)
+    
+    # return records_drivers#, records_teams
