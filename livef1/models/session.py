@@ -704,6 +704,8 @@ class Session:
 
         if include_session:
             param_table = ["_session"] + source_tables
+        else:
+            param_table = source_tables
         
        
         if level == "silver":
