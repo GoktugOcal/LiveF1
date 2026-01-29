@@ -828,10 +828,10 @@ class Session:
         session_type = self.name.lower()
 
         if "practice" in session_type:
-            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type.replace(" ","/")}"
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type.replace(' ','/')}"
 
         elif "qualifying" in session_type:
-            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type.replace(" ","-")}"
+            target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type.replace(' ','-')}"
 
         elif "race" in session_type:
             target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type}-result"
