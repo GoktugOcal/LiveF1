@@ -73,7 +73,7 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
         short_name = sub_soup.title.text.split(" - ")[0].split("Grand Prix")[0].strip()
 
 
-        ul = sub_soup.find('ul', class_="contents")
+        ul = sub_soup.find('ul', class_="grid")
         items = [li for li in ul.find_all('li')]
         sessions = {}
 
