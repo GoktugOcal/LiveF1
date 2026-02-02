@@ -41,6 +41,30 @@ def get_table_from_wikipedia(url, table_name):
     except:
         return None
 
+
+def get_image_url(soup):
+    # Locate the header container
+    header_div = soup.find("div", class_="PageHeader-module_pageheader__zKjLS")
+    if not header_div:
+        raise RuntimeError("PageHeader div not found")
+
+    # Find the <img> tag inside it (or background-image in the style)
+    img = header_div.find("img")
+    if img and img.get("src"):
+        image_url = img["src"]
+    else:
+        # If there’s no <img>, it might be a background-image in inline style
+        style = header_div.get("style", "")
+        # e.g., style="background-image:url('...')"
+        import re
+        m = re.search(r'background-image\s*:\s*url\([\'"]?(.*?)[\'"]?\)', style)
+        image_url = m.group(1) if m else None
+
+    if not image_url:
+        raise RuntimeError("Image URL not found")
+
+    return image_url
+
 def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
     """Parse the schedule for the given season from the official Formula 1 website.
     Args:
@@ -68,12 +92,15 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
         offname = meeting_obj.find(class_="typography-module_body-xs-semibold__Fyfwn").text
         meeting_url = BASE_URL + meeting_obj["href"]
 
+        title_obj = meeting_obj.find(class_="CountryFlag-module_flag__Y-X37")
+        country_name = title_obj.findAll("title")[0].text.replace("Flag of ", "").strip()
+
         sub_resp = requests.get(meeting_url)
         sub_soup = BeautifulSoup(sub_resp.content, 'html.parser')
         short_name = sub_soup.title.text.split(" - ")[0].split("Grand Prix")[0].strip()
 
 
-        ul = sub_soup.find('ul', class_="contents")
+        ul = sub_soup.find('ul', class_="grid")
         items = [li for li in ul.find_all('li')]
         sessions = {}
 
@@ -83,7 +110,6 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
 
             day = item.find(class_="typography-module_technical-l-bold__AKrZb").text
             month = item.find(class_="typography-module_technical-s-regular__6LvKq").text
-            season = 2025
 
             if len(times) > 1:
                 start = times[0].text
@@ -102,12 +128,16 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
                 "end_date" : end_date
             }
         
+        image_url = get_image_url(sub_soup)
+        
 
         meetings.append(
             {
                 "short_name" : short_name,
                 "offname" : offname,
-                "sessions" : sessions
+                "sessions" : sessions,
+                "image_url" : image_url,
+                "country_name" : country_name
             }
         )
         
@@ -118,17 +148,20 @@ def parse_schedule_from_f1com(season: int) -> pd.DataFrame:
         meeting_shortname = meeting.get("short_name")
         meeting_offname = meeting.get("offname")
         sessions = meeting.get("sessions")
-        
+        image_url = meeting.get("image_url")
+        country_name = meeting.get("country_name")
         for session_name, dates in sessions.items():
             row.append(
                 [
                     meeting_shortname,
                     meeting_offname,
                     session_name,
+                    country_name,
                     dates["start_date"],
-                    dates["end_date"]
+                    dates["end_date"],
+                    image_url,
                     ]
             )
 
-    schedule_df = pd.DataFrame(row, columns=["Meeting Shortname", "Meeting Offname", "Session Name", "Start Date", "End Date"])
+    schedule_df = pd.DataFrame(row, columns=["Meeting Shortname", "Meeting Offname", "Session Name", "Country Name", "Start Date", "End Date", "Image URL"])
     return schedule_df
