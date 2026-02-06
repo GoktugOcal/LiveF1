@@ -19,6 +19,7 @@ from .adapters.livetimingf1_adapter import LivetimingF1adapters
 from .utils.logger import set_log_level
 
 import warnings
+warnings.filterwarnings('ignore')
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -26,7 +27,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 # warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
 # warnings.simplefilter(action='ignore', category=FutureWarning)
 
-__version__ = "1.0.973"
+__version__ = "1.0.975"
 
 __all__ = [
     'set_log_level',

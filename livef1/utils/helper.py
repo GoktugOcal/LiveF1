@@ -403,17 +403,36 @@ def scrape_f1_results(url):
         # Fallback for newer site layouts (2025 results)
         table = soup.find('table')
 
+    if not table:
+        print("Could not find the results table.")
+        return None
+
+    headers = [th.get_text(strip=True) for th in table.find_all("th")]
+
+    rows = []
+    tlas = []
+    for tr in table.find("tbody").find_all("tr"):
+        tds = tr.find_all("td")
+        # --- DRIVER CELL ---
+        driver_td = tds[2]
+        # TLA is always in span.md-hidden
+        tla_span = driver_td.find("span", class_="md:hidden")
+        tla = tla_span.get_text(strip=True) if tla_span else None
+        tlas.append(tla)
+
     if table:
         # read_html returns a list of dataframes
         df = pd.read_html(str(table))[0]
         
         # Data Cleaning:
-        # 1. Remove empty columns (often used for spacing on the F1 site)
         df = df.dropna(axis=1, how='all')
-        
-        # 2. The 'Driver' column often contains the name + abbreviation (e.g., 'Max VerstappenVER')
-        # We can clean this if needed, but the raw text is usually provided.
-        
+
+        df["Tla"] = tlas
+        df["Driver"] = df.apply(
+            lambda x: x["Driver"].replace(x['Tla'], ""),
+            axis=1
+            )
+
         return df
     else:
         print("Could not find the results table on the page.")
