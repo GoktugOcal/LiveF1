@@ -362,7 +362,8 @@ interpolation_map = {
   'Y': 'quadratic',
   'Z': 'quadratic',
   #Car
-  'Speed': 'linear',
+  # 'Speed': 'linear',
+  'Speed': 'index',
   'RPM': 'linear',
   'Throttle': 'linear',
   'Brake': 'ffill',
@@ -639,4 +640,18 @@ silver_laps_col_order = [
   'IsDeleted',
   'DeletionMessage',
   'Driver'
+]
+
+silver_race_control_messages_col_order = [
+    "SessionKey", 
+    "timestamp", 
+    "Utc",
+    "Category", 
+    "Scope",
+    "Status", 
+    "Flag", 
+    "Message", 
+    "Lap",
+    "RacingNumber",
+    "info"
 ]

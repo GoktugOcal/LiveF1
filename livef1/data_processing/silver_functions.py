@@ -8,6 +8,7 @@ from ..utils.constants import (
     interpolation_map, 
     silver_cartel_col_order, 
     silver_laps_col_order, 
+    silver_race_control_messages_col_order,
     FIA_CATEGORY_SCOPE_RULES, 
     penalty_types
 )
@@ -479,7 +480,8 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
     else:
         all_drivers_df["TrackRegion"] = None
 
-    return all_drivers_df[silver_cartel_col_order]
+    cols_present = [col for col in silver_cartel_col_order if col in all_drivers_df.columns]
+    return all_drivers_df.loc[:, cols_present]
 
 def generate_race_control_messages_table(session, rcm_df):
     """
@@ -691,18 +693,5 @@ def generate_race_control_messages_table(session, rcm_df):
         .apply(lambda m: pd.Series(parse_category_scope(m)), axis=1)
     )
 
-    return rcm_df[
-        [
-            "SessionKey", 
-            "timestamp", 
-            "Utc",
-            "Category", 
-            "Scope",
-            "Status", 
-            "Flag", 
-            "Message", 
-            "Lap",
-            "RacingNumber",
-            "info"
-        ]
-    ]
+    cols_present = [col for col in silver_race_control_messages_col_order if col in rcm_df.columns]
+    return rcm_df.loc[:, cols_present]
