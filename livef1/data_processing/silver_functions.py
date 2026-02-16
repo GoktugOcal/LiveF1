@@ -306,7 +306,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     all_laps_df = pd.concat(all_laps, ignore_index=True)
     
     new_ts = (all_laps_df["LapStartTime"] + all_laps_df["LapTime"]).shift(1)
-    all_laps_df["LapStartTime"] = (new_ts.isnull() * all_laps_df["LapStartTime"]) + new_ts.fillna(timedelta(0))
+    all_laps_df["LapStartTime"] = new_ts.combine_first(all_laps_df["LapStartTime"])
     all_laps_df["LapStartDate"] = (all_laps_df["LapStartTime"] + session.first_datetime).fillna(session.session_start_datetime)
     all_laps_df["LapStartTime"] = all_laps_df["LapStartTime"].fillna(all_laps_df.iloc[1].LapStartTime - (all_laps_df.iloc[1].LapStartDate - all_laps_df.iloc[0].LapStartDate))
 
