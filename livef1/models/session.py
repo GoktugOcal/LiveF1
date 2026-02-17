@@ -675,6 +675,7 @@ class Session:
                         logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
                     except Exception as e:
                         logger.error(f"Failed to generate silver table '{table_name}': {e}")
+                        logger.debug(f"Traceback: ", exc_info=True)
             if gold:
                 logger.info("Gold tables are being generated.")
                 for gold_table in gold_tables_to_generate:

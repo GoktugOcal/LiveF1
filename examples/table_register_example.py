@@ -2,6 +2,10 @@
 Example: Creating custom silver and gold tables with create_silver_table and create_gold_table.
 Run after installing livef1: pip install livef1
 """
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import livef1
 
 session = livef1.get_session(

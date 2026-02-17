@@ -62,14 +62,27 @@ def test_bronze_table():
 
 
 def test_silver_table_init():
-    t = SilverTable("silver1", sources=["laps"], data_lake=None)
-    assert t.table_name == "silver1"
-    assert t.sources == ["laps"]
-    assert set(t.source_tables.keys()) == {"bronze", "silver", "gold"}
-    assert t.source_tables["bronze"] == []
-    assert t.source_tables["silver"] == []
-    assert t.source_tables["gold"] == []
-    assert t.df is None
+    """Test that SilverTable creates isolated source_tables dict (no shared mutable default)."""
+    t1 = SilverTable("silver1", sources=["laps"], data_lake=None)
+    t2 = SilverTable("silver2", sources=["telemetry"], data_lake=None)
+    
+    # Each instance should have its own dict and lists
+    assert t1.table_name == "silver1"
+    assert t1.sources == ["laps"]
+    assert set(t1.source_tables.keys()) == {"bronze", "silver", "gold"}
+    assert t1.source_tables["bronze"] == []
+    assert t1.source_tables["silver"] == []
+    assert t1.source_tables["gold"] == []
+    assert t1.df is None
+    
+    # Verify t2 also has empty lists (ensures no shared state)
+    assert t2.source_tables["bronze"] == []
+    assert t2.source_tables["silver"] == []
+    assert t2.source_tables["gold"] == []
+    
+    # Verify they are different objects (not shared)
+    assert t1.source_tables is not t2.source_tables
+    assert t1.source_tables["bronze"] is not t2.source_tables["bronze"]
 
 
 def test_gold_table_init():

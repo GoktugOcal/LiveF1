@@ -141,6 +141,7 @@ def _fresh_source_tables_dict(source_tables=None):
     """Return a new dict with new lists (avoids mutable default)."""
     if source_tables is None:
         return {"bronze": [], "silver": [], "gold": []}
+    # Always create new lists to avoid sharing mutable references
     return {
         "bronze": list(source_tables.get("bronze", [])),
         "silver": list(source_tables.get("silver", [])),
