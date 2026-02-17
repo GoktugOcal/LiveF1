@@ -137,11 +137,22 @@ class BronzeTable(Table):
         if "timestamp" in self.df.columns:
             self.df.timestamp = pd.to_timedelta(self.df.timestamp)
 
+def _fresh_source_tables_dict(source_tables=None):
+    """Return a new dict with new lists (avoids mutable default)."""
+    if source_tables is None:
+        return {"bronze": [], "silver": [], "gold": []}
+    return {
+        "bronze": list(source_tables.get("bronze", [])),
+        "silver": list(source_tables.get("silver", [])),
+        "gold": list(source_tables.get("gold", [])),
+    }
+
+
 class SilverTable(Table):
-    def __init__(self, table_name, sources, source_tables = {"bronze": [], "silver": [], "gold": []}, data_lake = None):
+    def __init__(self, table_name, sources, source_tables=None, data_lake=None):
         super().__init__(table_name, data_lake)
         self.sources = sources
-        self.source_tables = source_tables
+        self.source_tables = _fresh_source_tables_dict(source_tables)
         self.df = None
         self.dependency_tables = []
 
@@ -160,10 +171,10 @@ class SilverTable(Table):
                 raise ValueError(f"Source table '{source}' not found in data lake.")
 
 class GoldTable(Table):
-    def __init__(self, table_name, sources, source_tables = {"bronze": [], "silver": [], "gold": []}, data_lake = None):
+    def __init__(self, table_name, sources, source_tables=None, data_lake=None):
         super().__init__(table_name, data_lake)
         self.sources = sources
-        self.source_tables = source_tables
+        self.source_tables = _fresh_source_tables_dict(source_tables)
         self.df = None
         self.dependency_tables = []
 

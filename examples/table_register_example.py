@@ -1,3 +1,7 @@
+"""
+Example: Creating custom silver and gold tables with create_silver_table and create_gold_table.
+Run after installing livef1: pip install livef1
+"""
 import livef1
 
 session = livef1.get_session(
@@ -8,7 +12,7 @@ session = livef1.get_session(
 
 @session.create_silver_table(
     table_name = "SectorDiff",
-    source_tables = ["laps"], # This time we source from a default silver table to create a silver table.
+    source_tables = ["laps"],
     include_session = True
 )
 def sector_diff(session, laps):
@@ -22,10 +26,10 @@ def sector_diff(session, laps):
 
 @session.create_gold_table(
     table_name = "SectorLeaders",
-    source_tables = ["SectorDiff"], # This time we source from a default silver table to create a silver table.
+    source_tables = ["SectorDiff"],
     include_session = True
 )
-def sector_diff(session, SectorDiff):
+def sector_leaders(session, SectorDiff):
     return SectorDiff.iloc[SectorDiff[["sector1_diff","sector2_diff","sector3_diff"]].idxmin().values]
 
 

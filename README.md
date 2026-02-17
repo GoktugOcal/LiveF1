@@ -117,6 +117,23 @@ client.run()
 
 For detailed documentation, examples, and API reference, visit our [documentation page](https://livef1.readthedocs.io/).
 
+## Testing
+
+The project uses [pytest](https://pytest.org/) for unit tests. Install dev dependencies and run the test suite:
+
+```bash
+pip install -r requirements-dev.txt
+pytest tests/ -v
+```
+
+With coverage:
+
+```bash
+pytest tests/ -v --cov=livef1 --cov-report=term-missing
+```
+
+Example scripts that use the library (without assertions) live in the `examples/` directory.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
