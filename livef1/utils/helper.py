@@ -295,9 +295,7 @@ def find_most_similar_vectorized(df, target):
         for _ in range(n):
             row, col = divmod(arr.argmax(), arr.shape[1])
             argmaxes.append(row)
-            # arr = np.delete(arr, row, axis=0)
             arr[row,:] = 0
-            # print(row, col)
         return argmaxes
 
     logger.debug(f"Searching of identifier '{target}' has started.")
@@ -343,7 +341,7 @@ def find_most_similar_vectorized(df, target):
             }
 
         else:
-            poss_args = argmax_n(jaro_df.values, 3, axis=1)
+            poss_args = argmax_n(jaro_df.to_numpy(copy=True), 3, axis=1)
             possible_df = df.iloc[poss_args]
 
             err_text = f"\nThe searched query '{target}' not found in the table. Did you mean one of these :\n\n"

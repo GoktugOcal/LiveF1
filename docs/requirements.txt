@@ -4,7 +4,7 @@ numpydoc
 websockets
 jellyfish
 shibuya
-sphinx-tabs
+sphinx-tabs==3.4.7
 sphinx_design
 sphinx_sitemap
 scipy

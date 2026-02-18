@@ -31,7 +31,7 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
 
     if len(lap_df) > 0:
         # Calculate cumulative distance based on speed and time difference
-        dt_diff = lap_df["timestamp"].diff().dt.total_seconds()
+        dt_diff = lap_df["timestamp"].diff().dt.total_seconds().copy()
         # dt_diff.iloc[0] = lap_df["timestamp"].iloc[0].total_seconds()
         dt_diff.iloc[0] = 0
         lap_df["Distance"] = ((((lap_df.Speed + lap_df.Speed.shift(1)) / 2) / 3.6) * dt_diff).cumsum()
@@ -69,7 +69,7 @@ def add_track_status(laps_df, df_track):
 def add_track_status_telemetry(telemetry_df, df_track):
 
     telemetry_df = telemetry_df.set_index("timestamp").join(df_track.set_index("timestamp")[["Status"]]).rename(columns={"Status":"TrackStatus"})
-    telemetry_df.TrackStatus = telemetry_df.TrackStatus.ffill()
+    telemetry_df.TrackStatus = telemetry_df.TrackStatus.astype(str).ffill()
     return telemetry_df.dropna(subset="SessionKey").reset_index()
 
 def add_lineposition(telemetry_df, df_tmg):
@@ -122,7 +122,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     if "_deleted" not in df_exp.columns:
         df_exp["_deleted"] = None
     else:
-        df_exp["_deleted"] = df_exp["_deleted"].fillna(False)
+        df_exp["_deleted"] = df_exp["_deleted"].astype(boolean).fillna(False)
 
     sector_cols = {
         "Sectors_0_Value": "Sector1_Time",
