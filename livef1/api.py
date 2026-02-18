@@ -58,6 +58,7 @@ def get_meeting(
             - "Meeting Name"
             - "Circuit Short Name"
         Therefore, it is suggested to use keywords that is distinguishable among meetings.
+        
         Another suggestion is using circuit names for querying.
     meeting_key : :class:`int`
         The key of the meeting to get the desired meeting whose key is matching.

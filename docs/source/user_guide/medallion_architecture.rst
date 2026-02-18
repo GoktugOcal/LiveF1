@@ -135,7 +135,7 @@ In the previous examples, LiveF1 generates the silver tables that are already re
    session.generate() # Generate registered Silver lake
    print(session.RaceLeaders)
 
-.. code-block:: cli
+.. code-block:: bash
 
    ...
    ...

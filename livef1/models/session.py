@@ -186,7 +186,7 @@ class Session:
         -------------
         The output would be:
 
-        .. code-block:: plain
+        .. code-block::
 
             T1 : 
                 Description for topic 1
