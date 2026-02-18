@@ -414,7 +414,8 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
             if col in interpolation_map:
                 if len(df_driver[col].dropna()) < len(df_driver)*0.2:
                     continue
-                df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
+                if interpolation_map[col] == "ffill": df_driver[col] = df_driver[col].ffill().values
+                else: df_driver[col] = df_driver[col].interpolate(method=interpolation_map[col], order=2).values
 
         laps_driver.loc[:, "lap_end_date"] = laps_driver["LapStartDate"] + laps_driver["LapTime"]
 

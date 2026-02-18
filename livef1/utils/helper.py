@@ -2,6 +2,7 @@
 import base64
 import collections
 import datetime
+import io
 import json
 import zlib
 from urllib.parse import urljoin
@@ -420,7 +421,7 @@ def scrape_f1_results(url):
 
     if table:
         # read_html returns a list of dataframes
-        df = pd.read_html(str(table))[0]
+        df = pd.read_html(io.StringIO(str(table)))[0]
         
         # Data Cleaning:
         df = df.dropna(axis=1, how='all')
