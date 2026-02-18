@@ -7,5 +7,4 @@ python_dateutil==2.9.0.post0
 Requests==2.32.5
 setuptools==59.6.0
 ujson==5.10.0
-uvloop==0.22.1
 websockets==13.0.1
