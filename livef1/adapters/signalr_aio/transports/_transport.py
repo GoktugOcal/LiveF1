@@ -24,14 +24,16 @@ except ModuleNotFoundError:
     from json import dumps, loads
 import websockets
 import asyncio
+import sys
 import time
 
-try:
-    import uvloop
-
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-except ModuleNotFoundError:
-    pass
+# uvloop is Unix-only (Linux, macOS); use default policy on Windows
+if sys.platform != "win32":
+    try:
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    except ModuleNotFoundError:
+        pass
 
 
 class Transport:
