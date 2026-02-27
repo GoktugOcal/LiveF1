@@ -122,7 +122,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     if "_deleted" not in df_exp.columns:
         df_exp["_deleted"] = None
     else:
-        df_exp["_deleted"] = df_exp["_deleted"].astype(boolean).fillna(False)
+        df_exp["_deleted"] = df_exp["_deleted"].astype("boolean").fillna(False)
 
     sector_cols = {
         "Sectors_0_Value": "Sector1_Time",
@@ -304,8 +304,15 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         all_laps.append(laps_df)
 
     all_laps_df = pd.concat(all_laps, ignore_index=True)
-    
-    new_ts = (all_laps_df["LapStartTime"] + all_laps_df["LapTime"]).shift(1)
+
+
+    all_laps_df["LapStartTime"] = pd.to_timedelta(
+        all_laps_df["LapStartTime"], errors="coerce"
+    )
+    all_laps_df["LapTime"] = pd.to_timedelta(
+        all_laps_df["LapTime"], errors="coerce"
+    )
+    new_ts = ( all_laps_df["LapStartTime"] + all_laps_df["LapTime"] ).shift(1)
     all_laps_df["LapStartTime"] = new_ts.combine_first(all_laps_df["LapStartTime"])
     all_laps_df["LapStartDate"] = (all_laps_df["LapStartTime"] + session.first_datetime).fillna(session.session_start_datetime)
     all_laps_df["LapStartTime"] = all_laps_df["LapStartTime"].fillna(all_laps_df.iloc[1].LapStartTime - (all_laps_df.iloc[1].LapStartDate - all_laps_df.iloc[0].LapStartDate))
