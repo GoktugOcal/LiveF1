@@ -122,7 +122,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     if "_deleted" not in df_exp.columns:
         df_exp["_deleted"] = None
     else:
-        df_exp["_deleted"] = df_exp["_deleted"].astype("boolean").fillna(False)
+        df_exp["_deleted"] = df_exp["_deleted"].fillna(0).astype("bool")
 
     sector_cols = {
         "Sectors_0_Value": "Sector1_Time",
@@ -624,7 +624,8 @@ def generate_race_control_messages_table(session, rcm_df):
             mode = row.Mode
         else:
             mode = None
-        status = row.Status
+        if hasattr(row, "Status"): status = row.Status
+        else: status = None
 
         if pd.isna(message):
             return "Unknown", "Unknown", None, None
