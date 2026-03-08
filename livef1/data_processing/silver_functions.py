@@ -330,8 +330,24 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     if "PitStopSeries" in session.topic_names_info:
         # Get Pit Stop Data
         df_pit = session.get_data("PitStopSeries", level="bronze")
-        df_pit = df_pit[["RacingNumber", "PitStopTime", "PitLaneTime", "Lap"]].rename(columns={"RacingNumber": "DriverNo", "Lap":"LapNo", "PitStopTime": "PitStopDuration", "PitLaneTime":"PitLaneDuration"})
-        df_pit["LapNo"] = df_pit["LapNo"].astype(int)
+        df_pit = df_pit[["RacingNumber", "Utc", "PitStopTime", "PitLaneTime", "Lap"]].rename(columns={"RacingNumber": "DriverNo", "Lap": "LapNo", "PitStopTime": "PitStopDuration", "PitLaneTime": "PitLaneDuration"})
+        df_pit["Utc"] = to_datetime(df_pit["Utc"])
+
+        # Where LapNo is missing or empty, infer from pit time vs lap start times
+        missing_lap = df_pit["LapNo"].isna() | (df_pit["LapNo"].astype(str).str.strip() == "")
+        if missing_lap.any():
+            laps_lookup = all_laps_df[["DriverNo", "LapStartDate", "LapNo"]].dropna(subset=["LapStartDate"])
+            pit_missing = df_pit.loc[missing_lap, ["DriverNo", "Utc"]].dropna(subset=["Utc"]).copy()
+            pit_missing["_pit_idx"] = pit_missing.index
+            merged = pit_missing.merge(laps_lookup, on="DriverNo", how="left")
+            merged = merged[merged["LapStartDate"] <= merged["Utc"]]
+            # Per pit row, take the lap with latest LapStartDate (pit happened during that lap)
+            best = merged.loc[merged.groupby("_pit_idx")["LapStartDate"].idxmax(), ["_pit_idx", "LapNo"]]
+            df_pit.loc[best["_pit_idx"], "LapNo"] = best["LapNo"].values
+
+        df_pit = df_pit.drop(columns=["Utc"], errors="ignore")
+        df_pit["LapNo"] = pd.to_numeric(df_pit["LapNo"], errors="coerce").fillna(-1).astype(int)
+
         all_laps_df = all_laps_df.set_index(["DriverNo", "LapNo"]).join(df_pit.set_index(["DriverNo", "LapNo"])).reset_index()
     
     # Add tyre data
