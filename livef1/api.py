@@ -43,7 +43,7 @@ def get_meeting(
     meeting_identifier: str = None,
     meeting_key: int = None,
     meeting_offname: str = None,
-    ) -> Meeting:
+) -> Meeting:
     """
     Retrieve data for a specific meeting in a given season.
 
@@ -54,9 +54,9 @@ def get_meeting(
     meeting_identifier : :class:`str`
         The identifier (e.g., circuit name, grand prix name) of the meeting.
         The identifier is going to be searched in the season's meeting table columns:
-            - "Meeting Official Name"
-            - "Meeting Name"
-            - "Circuit Short Name"
+        - "Meeting Official Name"
+        - "Meeting Name"
+        - "Circuit Short Name"
         Therefore, it is suggested to use keywords that is distinguishable among meetings.
         
         Another suggestion is using circuit names for querying.
@@ -73,7 +73,6 @@ def get_meeting(
     livef1Exception
         If the meeting cannot be found based on the provided parameters.
     """
-
     # Check if sufficient arguments have been provided
     if (meeting_identifier == None) and (meeting_key == None) and (meeting_offname == None):
         try:
@@ -131,9 +130,9 @@ def get_session(
     meeting_identifier : :class:`str`
         The identifier (e.g., circuit name, grand prix name) of the meeting.
         The identifier is going to be searched in the season's meeting table columns:
-            - "Meeting Official Name"
-            - "Meeting Name"
-            - "Circuit Short Name"
+        - "Meeting Official Name"
+        - "Meeting Name"
+        - "Circuit Short Name"
         Therefore, it is suggested to use keywords that is distinguishable among meetings.
         Another suggestion is using circuit names for querying.
     meeting_key : :class:`int`
@@ -154,7 +153,6 @@ def get_session(
     livef1Exception
         If the session cannot be found based on the provided parameters.
     """
-
     # Check if sufficient arguments have been provided
     if (session_identifier == None) and (session_key == None):
         try:

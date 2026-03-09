@@ -387,13 +387,13 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
                                   session and circuit information.
     Returns:
         pd.DataFrame: A DataFrame containing processed telemetry data for all drivers, including:
-                      - DriverNo: Driver number.
-                      - Utc: Timestamp in UTC.
-                      - LapNo: Lap number for the driver.
-                      - Distance: Cumulative distance covered during the lap.
-                      - SessionKey: Session identifier.
-                      - timestamp: Time elapsed since the session start.
-                      - Other interpolated and processed telemetry data.
+        - DriverNo: Driver number.
+        - Utc: Timestamp in UTC.
+        - LapNo: Lap number for the driver.
+        - Distance: Cumulative distance covered during the lap.
+        - SessionKey: Session identifier.
+        - timestamp: Time elapsed since the session start.
+        - Other interpolated and processed telemetry data.
     Notes:
         - The function interpolates missing data based on predefined interpolation methods.
         - Data is filtered to include only timestamps within the lap start and end times.
