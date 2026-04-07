@@ -1,0 +1,20 @@
+[project]
+name = "livef1"
+version = "1.1.106"
+description = "A Python toolkit for seamless access to live and historical Formula 1 data"
+readme = "README.md"
+requires-python = ">=3.09"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "jellyfish>=1.1.0",
+    "lxml>=6.0.2",
+    "numpy>=1.26.4",
+    "pandas>=2.2.0",
+    "pytest>=9.0.2",
+    "python-dateutil>=2.9.0.post0",
+    "requests>=2.32.2",
+    "scipy>=1.14.1",
+    "setuptools>=59.6.0",
+    "ujson>=5.10.0",
+    "websockets>=13.0.1",
+]
