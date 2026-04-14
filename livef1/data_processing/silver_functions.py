@@ -274,6 +274,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
                         sc_no = int(sc_key.split("_")[1])
                         key_type = sc_key.split("_")[2]
 
+
                         if key_type == "Value":
                             if record[f"Sector{str(sc_no + 1)}_Time"] == None:
                                 record[f"Sector{str(sc_no + 1)}_Time"] = sc_value
@@ -281,6 +282,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
                                 if sc_no == 2:
                                     laps, record = enter_new_lap(laps, record)
                                     record["LapStartTime"] = ts
+
                             elif sc_value == record[f"Sector{str(sc_no + 1)}_Time"]:
                                 pass
                             elif ts - last_record_ts > timedelta(seconds=10):
@@ -298,9 +300,13 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
                                 last_record_ts = ts
 
         # Aggregate all laps data of the driver
-        laps_df = pd.DataFrame(laps)    
+        laps_df = pd.DataFrame(laps)
         laps_df["DriverNo"] = driver_no
+
         if "LapStartTime" in laps_df.columns: laps_df = add_track_status(laps_df, df_track)
+        else: laps_df["LapStartTime"] = None
+            
+
         new_ts = ( laps_df["LapStartTime"] + laps_df["LapTime"] ).shift(1)
         laps_df["LapStartTime"] = new_ts.combine_first(laps_df["LapStartTime"])
         all_laps.append(laps_df)

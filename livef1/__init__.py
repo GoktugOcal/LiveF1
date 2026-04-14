@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 # warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
 # warnings.simplefilter(action='ignore', category=FutureWarning)
 
-__version__ = "1.1.106"
+__version__ = "1.1.107"
 
 __all__ = [
     'set_log_level',
