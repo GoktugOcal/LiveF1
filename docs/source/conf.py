@@ -14,9 +14,9 @@ import livef1
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'LiveF1'
-copyright = '2024, Göktuğ Öcal'
+copyright = '2026, Göktuğ Öcal'
 author = 'Göktuğ Öcal'
-release = '0.0.1'
+release = livef1.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

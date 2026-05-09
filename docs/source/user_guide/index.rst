@@ -78,3 +78,7 @@ Where to Go Next
 ..    data_models
 ..    historical_data
 ..    realtime_data
+
+.. admonition:: Disclaimer
+
+   LiveF1 is an unofficial toolkit and is not affiliated with or endorsed by Formula 1, Liberty Media, or any official timing service. It is provided as a community library and relies on external timing data feeds that may change or become unavailable.
