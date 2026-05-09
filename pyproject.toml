@@ -3,7 +3,7 @@ name = "livef1"
 version = "1.1.107"
 description = "A Python toolkit for seamless access to live and historical Formula 1 data"
 readme = "README.md"
-requires-python = ">=3.09"
+requires-python = ">=3.10"
 dependencies = [
     "beautifulsoup4>=4.14.3",
     "jellyfish>=1.1.0",

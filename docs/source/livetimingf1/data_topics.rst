@@ -134,13 +134,13 @@ Provides essential details about the current session, including:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionInfo.json
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionInfo.json"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             from urllib.request import urlopen
             import json
@@ -150,7 +150,7 @@ Provides essential details about the current session, including:
             data = json.loads(response.read().decode('utf-8'))
             print(data)
         
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionInfo.json')
                 .then(response => response.json())
@@ -275,13 +275,13 @@ Tracks the status of archived session data, indicating:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ArchiveStatus.json
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ArchiveStatus.json"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             from urllib.request import urlopen
             import json
@@ -291,7 +291,7 @@ Tracks the status of archived session data, indicating:
             data = json.loads(response.read().decode('utf-8'))
             print(data)
         
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ArchiveStatus.json')
                 .then(response => response.json())
@@ -331,13 +331,13 @@ Describes current track conditions and statuses:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TrackStatus.jsonStream
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TrackStatus.jsonStream"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             from urllib.request import urlopen
             import json
@@ -347,7 +347,7 @@ Describes current track conditions and statuses:
             data = json.loads(response.read().decode('utf-8'))
             print(data)
         
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TrackStatus.jsonStream')
                 .then(response => response.json())
@@ -391,13 +391,13 @@ Provides raw data for the session, including:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionData.json
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionData.json"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             import requests
 
@@ -406,7 +406,7 @@ Provides raw data for the session, including:
             data = response.json()
             print(data)
 
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionData.json')
                 .then(response => response.json())
@@ -473,13 +473,13 @@ Streams multimedia content related to the session:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ContentStreams.json
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ContentStreams.json"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             import requests
 
@@ -488,7 +488,7 @@ Streams multimedia content related to the session:
             data = response.json()
             print(data)
 
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ContentStreams.json')
                 .then(response => response.json())
@@ -555,13 +555,13 @@ Delivers live audio commentary and team radio communications:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/AudioStreams.json
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/AudioStreams.json"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             import requests
 
@@ -570,7 +570,7 @@ Delivers live audio commentary and team radio communications:
             data = response.json()
             print(data)
 
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/AudioStreams.json')
                 .then(response => response.json())
@@ -633,13 +633,13 @@ Predicts session time data:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ExtrapolatedClock.json
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ExtrapolatedClock.json"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             import requests
 
@@ -648,7 +648,7 @@ Predicts session time data:
             data = response.json()
             print(data)
 
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/ExtrapolatedClock.json')
                 .then(response => response.json())
@@ -695,13 +695,13 @@ Analyzes tyre usage over stints:
 
         https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TyreStintSeries.json
 
-    .. tabs::
+    .. tab-set-code::
 
-        .. code-tab:: shell
+        .. code-block:: shell
 
             curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TyreStintSeries.json"
 
-        .. code-tab:: python
+        .. code-block:: python
 
             import requests
             url = "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TyreStintSeries.json"
@@ -709,7 +709,7 @@ Analyzes tyre usage over stints:
             data = response.json()
             print(data)
 
-        .. code-tab:: javascript
+        .. code-block:: javascript
 
             fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TyreStintSeries.json')
                 .then(response => response.json())
@@ -778,13 +778,13 @@ Displays the live session status:
 
        https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionStatus.json
 
-   .. tabs::
+   .. tab-set-code::
 
-       .. code-tab:: shell
+       .. code-block:: shell
 
            curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionStatus.json"
 
-       .. code-tab:: python
+       .. code-block:: python
 
            import requests
            url = "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionStatus.json"
@@ -792,7 +792,7 @@ Displays the live session status:
            data = response.json()
            print(data)
 
-       .. code-tab:: javascript
+       .. code-block:: javascript
 
            fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/SessionStatus.json')
                .then(response => response.json())
@@ -832,13 +832,13 @@ Specialized timing information for Formula 1:
 
        https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TimingDataF1.json
 
-   .. tabs::
+   .. tab-set-code::
 
-       .. code-tab:: shell
+       .. code-block:: shell
 
            curl "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TimingDataF1.json"
 
-       .. code-tab:: python
+       .. code-block:: python
 
            import requests
            url = "https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TimingDataF1.json"
@@ -846,7 +846,7 @@ Specialized timing information for Formula 1:
            data = response.json()
            print(data)
 
-       .. code-tab:: javascript
+       .. code-block:: javascript
 
            fetch('https://livetiming.formula1.com/static/2024/2024-07-28_Belgian_Grand_Prix/2024-07-28_Race/TimingDataF1.json')
                .then(response => response.json())
