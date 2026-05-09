@@ -79,3 +79,7 @@ LiveF1
 
    api_reference/index
    user_guide/logging_config
+
+.. note::
+
+   LiveF1 is an unofficial, community-maintained toolkit and is not endorsed by Formula 1 or its official timing providers. Live data endpoints and topic definitions may change without notice, so use the library with caution and verify compliance with third-party data terms.

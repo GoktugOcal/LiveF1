@@ -22,3 +22,7 @@ LiveF1 API - :mod:`livef1`
 
 .. .. automodule:: livef1.api
 ..    :members: get_session
+
+.. note::
+
+   The LiveF1 package provides access to Formula 1 timing data, but it is not an official Formula 1 API client. External endpoints, available topics, and data formats may change without notice.

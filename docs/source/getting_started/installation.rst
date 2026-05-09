@@ -34,3 +34,7 @@ If you want to install the latest development version or contribute to LiveF1, f
 
       pip install -r requirements.txt
       pip install .
+
+.. note::
+
+   LiveF1 uses data feeds from external Formula 1 timing services. These data sources may be subject to change, service limitations, or terms of use outside the control of this library.

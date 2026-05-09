@@ -212,3 +212,6 @@ Store incoming data in a database.
                 driver_number=driver_number,
                 data=record
             )
+.. warning::
+
+   The RealF1Client connects to external Formula 1 timing services that are outside the control of this library. Live data topics, endpoint availability, and response formats may change without notice, and data is provided "as-is". Please use this library with caution and ensure your usage complies with applicable third-party terms.
