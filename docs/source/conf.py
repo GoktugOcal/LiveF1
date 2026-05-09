@@ -32,7 +32,7 @@ extensions = [
     'numpydoc',
     "sphinx.ext.autosummary",
     'sphinx.ext.autosectionlabel',
-    'sphinx_tabs.tabs',
+    # 'sphinx_tabs.tabs',
     'sphinx_design',
     # 'jupyter_sphinx'
     'sphinx_sitemap'
