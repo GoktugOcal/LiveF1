@@ -32,6 +32,7 @@ class Driver:
 
     def __init__(
         self,
+        id: str = None,
         RacingNumber: str = None,
         BroadcastName: str = None,
         FullName: str = None,
@@ -43,9 +44,12 @@ class Driver:
         LastName: str = None,
         Reference: str = None,
         HeadshotUrl: str = None,
+        DateOfBirth: str = None,
+        Nationality: str = None,
         session: "Session" = None,
         **kwargs
     ):
+        self.id = id
         self.RacingNumber = RacingNumber
         self.BroadcastName = BroadcastName
         self.FullName = FullName
@@ -57,6 +61,8 @@ class Driver:
         self.LastName = LastName
         self.Reference = Reference
         self.HeadshotUrl = HeadshotUrl
+        self.DateOfBirth = DateOfBirth
+        self.Nationality = Nationality
         self.session = session
 
         # Set any additional attributes from kwargs
@@ -95,3 +101,19 @@ class Driver:
 
     def __repr__(self):
         return f"[{self.RacingNumber}] {self.Tla} - {self.TeamName}"
+
+
+def _jolpica_driver_dict(driver: object) -> dict:
+    """
+    Convert a Jolpica driver object to a dictionary.
+    """
+    return {
+        "id" : driver.get("driverId", None),
+        "RacingNumber": driver.get("permanentNumber", None),
+        "wiki" : driver.get("url", None),
+        "Tla" : driver.get("code", None),
+        "FirstName" : driver.get("givenName", None),
+        "LastName" : driver.get("familyName", None),
+        "DateOfBirth" : driver.get("dateOfBirth", None),
+        "Nationality" : driver.get("nationality", None),
+    }

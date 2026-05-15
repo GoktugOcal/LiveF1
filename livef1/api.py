@@ -1,4 +1,5 @@
 from .adapters import LivetimingF1adapters, livetimingF1_request
+from .adapters.jolpicaf1_adapter import jolpica_client
 from .models import (
     Session,
     Season,
@@ -12,6 +13,10 @@ from .utils.exceptions import *
 from .utils.constants import SESSIONS_COLUMN_MAP
 
 from datetime import datetime
+
+def list_seasons() -> list:
+    res = jolpica_client.get_seasons(limit=100)
+    return [season.season for season in res.data.seasons]
 
 def get_season(season: int) -> Season:
     """
@@ -94,6 +99,7 @@ def get_meeting(
 
     else:
         search_df_season = season_obj.meetings_table.reset_index()[required_cols].drop_duplicates()
+        search_df_season = search_df_season.fillna("")
         if meeting_identifier:
             logger.debug("Getting meeting by meeting identifier.")
             result_meeting = find_most_similar_vectorized(search_df_season, meeting_identifier)
@@ -186,5 +192,6 @@ def get_session(
     )
     logger.info("The session was received successfully.")
 
-    session_obj.load_session_data()
+    if session_obj.is_livetiming_available or session_obj.is_jolpica_available:
+        session_obj.load_session_data()
     return session_obj

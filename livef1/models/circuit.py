@@ -5,6 +5,7 @@ import pandas as pd
 from livef1.utils.constants import START_COORDINATES_URL
 from livef1.utils.exceptions import livef1Exception
 from livef1.utils.helper import string_match_ratio
+from livef1.models.location import Location
 
 
 class Circuit:
@@ -33,12 +34,21 @@ class Circuit:
 
     def __init__(
         self,
-        key: str,
-        short_name: str
+        key: str = None,
+        short_name: str = None,
+        **kwargs
     ):
         self.key = key
-        self.short_name = short_name
-    
+        self.short_name = short_name or kwargs.get("circuitId", None)
+        # Iterate over the kwargs and set them as attributes of the instance
+        for key, value in kwargs.items():
+            if value:
+                setattr(self, key.lower(), value)
+        if hasattr(self, "shortname"):
+            self.short_name = self.shortname
+        if hasattr(self, "location"):
+            self.location = Location(**self.location)
+
     def _load_start_coordinates(self):
         """
         Load the start coordinates of the circuit from an external API.
@@ -109,3 +119,6 @@ class Circuit:
         df_straights["name"] = "S" + df_straights["number"].astype(str)
 
         self.track_regions = pd.concat([df_corners, df_straights])
+    
+    def get(self, key, default=None):
+        return getattr(self, key, default)

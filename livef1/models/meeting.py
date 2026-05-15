@@ -2,6 +2,7 @@
 import dateutil
 import sys
 import json
+from functools import cached_property
 
 # Third-Party Library Imports
 import pandas as pd
@@ -9,10 +10,19 @@ from typing import List, Dict
 
 # Internal Project Imports
 from ..adapters import download_data
+from ..adapters.functions import (
+    fetch_livetiming_season_index,
+    fetch_jolpica_season_races_list,
+    livetiming_meeting_in_season_index,
+    jolpica_meeting_in_races,
+)
+from ..adapters.jolpicaf1_adapter import jolpica_client
+from ..data_processing.jolpica_etl import parse_constructor_standings, parse_driver_standings
 from ..models.session import Session
 from ..models.circuit import Circuit
 from ..utils.helper import json_parser_for_objects, build_session_endpoint
 from ..utils.constants import SESSIONS_COLUMN_MAP
+from livef1.models.country import Country
 
 
 class Meeting:
@@ -45,6 +55,12 @@ class Meeting:
         List of session objects associated with the meeting.
     loaded : :class:`bool`
         Indicates whether the meeting data has been loaded.
+    driverStandings : list of dict or None
+        Cumulative driver standings after this round (Jolpica). Loaded lazily on first read
+        when ``is_jolpica_available`` is True; otherwise ``None``.
+    constructorStandings : list of dict or None
+        Cumulative constructor standings after this round (Jolpica). Same loading rules as
+        ``driverStandings``.
     """
 
     def __init__(
@@ -72,15 +88,60 @@ class Meeting:
                 setattr(self, key.lower(), value)
 
         # Load Circuit
-        self.circuit = Circuit(self.circuit["Key"],self.circuit["ShortName"])
+        self.circuit = Circuit(**json_parser_for_objects(self.circuit))
         self.circuit._load_start_coordinates()
+
+        if not self.country:
+            self.country = self.circuit.location.country
+        else:
+            if isinstance(self.country, str): self.country = {"name": self.country}
+            self.country = Country(**self.country)
 
         if hasattr(self, "sessions"):
             self.sessions_json = self.sessions
             self.sessions = {}
             self.set_sessions()
 
+        # self.is_livetiming_available = (
+        #     getattr(season, "is_livetiming_available", None) if season is not None else None
+        # )
+        # self.is_jolpica_available = (
+        #     getattr(season, "is_jolpica_available", None) if season is not None else None
+        # )
+        
+        # if "is_livetiming_available" in kwargs:
+        #     self.is_livetiming_available = kwargs["is_livetiming_available"]
+        # if "is_jolpica_available" in kwargs:
+        #     self.is_jolpica_available = kwargs["is_jolpica_available"]
+
+        self.is_livetiming_available = livetiming_meeting_in_season_index(self.season.livetiming_data, self.name)
+        self.is_jolpica_available = jolpica_meeting_in_races(self.season.jolpica_data, self.name)
+
         self.parse_sessions()
+
+    def _meeting_year(self) -> int:
+        if self.season is not None:
+            return self.season.year
+        year = getattr(self, "year", None)
+        if year is not None:
+            return year
+        raise ValueError("Meeting needs a linked season or a year to probe API availability.")
+
+    def _check_if_jolpica_available(self):
+        """
+        Checks if this meeting's name appears as a Jolpica ``race_name`` for the season year.
+        """
+        races, ok = fetch_jolpica_season_races_list(self._meeting_year())
+        self.is_jolpica_available = ok and jolpica_meeting_in_races(races, self.name)
+        return self.is_jolpica_available
+
+    def _check_if_livetiming_available(self):
+        """
+        Checks if this meeting's ``Name`` appears in Livetiming season ``Index.json``.
+        """
+        data, ok = fetch_livetiming_season_index(self._meeting_year())
+        self.is_livetiming_available = ok and livetiming_meeting_in_season_index(data, self.name)
+        return self.is_livetiming_available
 
     def load(self, force=False):
         """
@@ -144,15 +205,17 @@ class Meeting:
         for session in self.sessions_json:
             session_data = {
                 "season_year": dateutil.parser.parse(session["StartDate"]).year,
-                "meeting_code": self.code,
-                "meeting_key": self.key,
-                "meeting_number": self.number,
-                "meeting_location": self.location,
-                "meeting_offname": self.officialname,
-                "meeting_name": self.name,
-                "meeting_country_key": self.country["Key"],
-                "meeting_country_code": self.country["Code"],
-                "meeting_country_name": self.country["Name"],
+                "meeting_code": self.__dict__.get("code", None),
+                "meeting_key": self.__dict__.get("key", None),
+                "meeting_number": self.__dict__.get("number", None),
+                "meeting_location": self.__dict__.get("location", None),
+                "meeting_offname": self.__dict__.get("officialname", None),
+                "meeting_name": self.__dict__.get("name", None),
+                "meeting_country_key": self.country.get("key", None),
+                "meeting_country_code": self.country.get("code", None),
+                "meeting_country_name": self.country.get("name", None),
+                "meeting_circuit_key": self.circuit.get("key", None),
+                "meeting_circuit_shortname": self.circuit.get("short_name", None),
                 "circuit": self.circuit,
                 "session_key": session.get("Key", None),
                 "session_type": session["Type"] + " " + str(session["Number"]) if "Number" in session else session["Type"],
@@ -162,18 +225,47 @@ class Meeting:
                 "gmtoffset": session.get("GmtOffset", None),
                 "path": session.get("Path", None),
             }
-            session_all_data.append(session_data)
+            session_all_data.append(session_data)  # Add the session data to the list.
 
         self.meeting_table = pd.DataFrame(session_all_data).set_index(["season_year", "meeting_location", "session_type"])
         self.meeting_table["session_startDate"] = pd.to_datetime(self.meeting_table["session_startDate"])
         self.meeting_table["session_endDate"] = pd.to_datetime(self.meeting_table["session_endDate"])
 
         self.sessions_table = self.meeting_table[["meeting_key","session_key","session_name","session_startDate","session_endDate","gmtoffset","path"]].set_index("session_key")
-        # self.meeting_table = self.meeting_table.reset_index().rename(columns = SESSIONS_COLUMN_MAP)
 
+    @cached_property
+    def driverStandings(self):
+        if not self.is_jolpica_available or self.season is None:
+            return None
+        n = getattr(self, "number", None)
+        if n is None:
+            return None
+        raw = (
+            jolpica_client.query()
+            .season(self.season.year)
+            .round(n)
+            .get_driver_standings(limit=100)
+            .data.standings_lists[0]
+            .to_dict()["DriverStandings"]
+        )
+        return parse_driver_standings(self.season, raw)
 
-
-        # self.meeting_table = 
+    @cached_property
+    def constructorStandings(self):
+        if not self.is_jolpica_available or self.season is None:
+            return None
+        n = getattr(self, "number", None)
+        if n is None:
+            return None
+        raw = (
+            jolpica_client.query()
+            .season(self.season.year)
+            .round(n)
+            .get_constructor_standings(limit=100)
+            .data.standings_lists[0]
+            .to_dict()["ConstructorStandings"]
+        )
+        return parse_constructor_standings(self.season, raw)
 
     def __repr__(self):
         """

@@ -157,7 +157,7 @@ def test_get_season_meeting_session_and_generate_with_dummy_data(
     if session_obj is None:
         session_obj = list(meeting.sessions.values())[0]
 
-    with patch("livef1.models.session.livetimingF1_request", return_value=index_feeds):
+    with patch("livef1.models.session.fetch_livetiming_session_index", return_value=(index_feeds, True)):
         with patch("livef1.models.session.livetimingF1_getdata") as mock_getdata:
             mock_getdata.return_value = {"1": {"RacingNumber": "1", "Tla": "VER", "FirstName": "Max", "LastName": "Verstappen"}}
             session_obj.load_session_data()

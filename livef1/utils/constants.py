@@ -26,6 +26,7 @@ QUERY_STOPWORDS = [
 ]
 
 SESSIONS_COLUMN_MAP = {
+    'round': 'Round',
     'season_year': 'Season Year',
     'meeting_code': 'Meeting Code',
     'meeting_key': 'Meeting Key',

@@ -8,16 +8,26 @@ import functools
 # (No third-party libraries imported in this file)
 
 # Internal Project Imports
-from ..adapters import livetimingF1_request, livetimingF1_getdata
+from ..adapters import livetimingF1_getdata
+from ..adapters.jolpicaf1_adapter import jolpica_client
+from ..adapters.functions import (
+    fetch_livetiming_session_index,
+    fetch_livetiming_season_index,
+    fetch_jolpica_season_races_list,
+    livetiming_session_in_season_index,
+    jolpica_find_race_for_meeting,
+    jolpica_session_available_on_race,
+)
 from ..utils import helper
 from ..utils.logger import logger
 from ..data_processing.etl import *
+from ..data_processing.jolpica_etl import parse_constructor_standings, parse_driver_standings
 from ..data_processing.data_models import *
 from ..data_processing.silver_functions import *
 from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES, TABLE_GENERATION_FUNCTIONS
 from ..utils.exceptions import *
 from ..data_processing.lakes import DataLake
-from .driver import Driver
+from .driver import Driver, _jolpica_driver_dict
 
 from multiprocessing import Pool
 from functools import partial
@@ -71,10 +81,13 @@ class Session:
         gmtoffset: str = None,
         path: Dict = None,
         loaded: bool = False,
+        is_livetiming_available: bool | None = None,
+        is_jolpica_available: bool | None = None,
         **kwargs
     ):
         self.season = season
         self.loaded = loaded
+        self.number = number
         self.data_lake = DataLake(self)
         self.etl_parser = livef1SessionETL(session=self)  # Create an ETL parser for the session.
         # Silver Data
@@ -89,6 +102,58 @@ class Session:
         # Build the full path for accessing session data if path attribute exists.
         if hasattr(self, "path"):
             self.full_path = helper.build_session_endpoint(self.path)
+
+        # Check if the session is available in Livetiming and Jolpica
+        if self.season is None or self.meeting is None:
+            self.is_livetiming_available = False
+            self.is_jolpica_available = False
+        else:
+            self.is_livetiming_available = livetiming_session_in_season_index(getattr(self.season, "livetiming_data", None), self.meeting.name, self.name, self.type, self.number)
+            self.is_jolpica_available = jolpica_session_available_on_race(getattr(self.season, "jolpica_data", None), self.name, self.type, self.number)
+
+    def _check_if_livetiming_available(self):
+        """
+        True if this session appears under the meeting in Livetiming season ``Index.json``.
+        """
+        if self.meeting is None or not getattr(self.meeting, "name", None):
+            self.is_livetiming_available = False
+            return False
+        if not getattr(self, "name", None):
+            self.is_livetiming_available = False
+            return False
+        year = self.season.year if self.season is not None else getattr(self, "year", None)
+        if year is None:
+            self.is_livetiming_available = False
+            return False
+        data, ok = fetch_livetiming_season_index(year)
+        self.is_livetiming_available = ok and livetiming_session_in_season_index(
+            data, self.meeting.name, self.name, self.type, self.number
+        )
+        return self.is_livetiming_available
+
+    def _check_if_jolpica_available(self):
+        """
+        True if Jolpica exposes session-type fields for this session on the meeting's race row.
+        """
+        if self.meeting is None or not getattr(self.meeting, "name", None):
+            self.is_jolpica_available = False
+            return False
+        year = self.season.year if self.season is not None else getattr(self, "year", None)
+        if year is None:
+            self.is_jolpica_available = False
+            return False
+        races, ok = fetch_jolpica_season_races_list(year)
+        if not ok:
+            self.is_jolpica_available = False
+            return False
+        race = jolpica_find_race_for_meeting(races, self.meeting.name)
+        if race is None:
+            self.is_jolpica_available = False
+            return False
+        self.is_jolpica_available = jolpica_session_available_on_race(
+            race, self.name, self.type, self.number
+        )
+        return self.is_jolpica_available
 
     def _load_default_silver_tables(self):
         for table_name in SILVER_SESSION_TABLES:
@@ -105,8 +170,13 @@ class Session:
 
         This method loads the session data by fetching the topic names and drivers.
         """
-        self.get_topic_names()
-        self._load_drivers()
+        if self.is_livetiming_available: self.get_topic_names()
+        if self.is_jolpica_available or self.is_livetiming_available: self._load_drivers()
+        if self.is_jolpica_available:
+            if not hasattr(self, "driverStandings"):
+                self._load_driver_standings()
+            if not hasattr(self, "constructorStandings"):
+                self._load_constructor_standings()
 
     def get_topic_names(self):
         """
@@ -156,7 +226,12 @@ class Session:
 
         """
         logger.debug(f"Getting topic names for the session: {self.meeting.name}: {self.name}")
-        self.topic_names_info = livetimingF1_request(urljoin(self.full_path, "Index.json"))["Feeds"]
+        data, ok = fetch_livetiming_session_index(self.full_path)
+        if not ok:
+            raise livef1Exception(
+                f"Livetiming session index unavailable for path {self.full_path!r}."
+            )
+        self.topic_names_info = data["Feeds"]
         for topic in self.topic_names_info:
             self.topic_names_info[topic]["description"] = TOPICS_MAP[topic]["description"]
             self.topic_names_info[topic]["key"] = TOPICS_MAP[topic]["key"]
@@ -208,13 +283,36 @@ class Session:
         """
         logger.info(f"Fetching drivers.")
         self.drivers = {}
-        data = livetimingF1_getdata(
-            urljoin(self.full_path, self.topic_names_info["DriverList"]["KeyFramePath"]),
-            stream=False
-        )
+
+        if self.is_livetiming_available:
+            data_livetiming = livetimingF1_getdata(
+                urljoin(self.full_path, self.topic_names_info["DriverList"]["KeyFramePath"]),
+                stream=False
+            )
+        else: data_livetiming = {}
+
+        if self.is_jolpica_available:
+            drivers_jolpica = jolpica_client.query().season(self.season.year).round(self.meeting.number).get_drivers(limit=100).data.drivers
+            data_jolpica = {}
+            for driver in drivers_jolpica:
+                if driver.permanent_number is not None:
+                    data_jolpica[driver.permanent_number] = _jolpica_driver_dict(driver.to_dict())
+                else:
+                    data_jolpica[driver.driver_id] = _jolpica_driver_dict(driver.to_dict())
+        else: data_jolpica = {}
+
+        data = {}
+        for driver_no in set(data_livetiming.keys()) | set(data_jolpica.keys()):
+            data[driver_no] = {**data_livetiming.get(driver_no, {}), **data_jolpica.get(driver_no, {})}
+
         for key, driver_info in data.items():
             driver = Driver(session=self, **driver_info)
-            self.drivers[driver.RacingNumber] = driver
+            # TODO: Use the loaded drivers from the season instead of creating new ones.
+            # driver = self.meeting.season.drivers[driver_info["permanentNumber"] or driver_info["driverId"]]
+            if driver.RacingNumber is not None:
+                self.drivers[driver.RacingNumber] = driver
+            else:
+                self.drivers[driver.id] = driver
 
 
     def get_driver(self, identifier: str) -> Driver:
@@ -499,23 +597,6 @@ class Session:
         
         return dataName
 
-        # raise TopicNotFoundError(f"The topic name you provided '{dataName}' is not included in the topics.")
-    
-    # def normalize_topic_name(self, topicName):
-    #     """
-    #     Normalize the topic name.
-    #     """
-
-    #     if not hasattr(self,"topic_names_info"):
-    #         self.get_topic_names()
-
-    #     for topic in self.topic_names_info:
-    #         if (self.topic_names_info[topic]["key"].lower() == topicName.lower()) or (topic.lower() == topicName.lower()):
-    #             topicName = topic
-    #             break
-
-    #     return topicName
-
     def _identify_data_level(self, dataName):
 
         corrected_data_name = self.check_data_name(dataName)
@@ -571,46 +652,6 @@ class Session:
         else:
             logger.info("Car Telemetry table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
-
-    # def get_weather(self):
-    #     """
-    #     Retrieve the weather data.
-
-    #     This method returns the weather data if it has been generated. If not, it logs an 
-    #     informational message indicating that the weather table is not generated yet.
-
-    #     Returns
-    #     -------
-    #     :class:`~Weather` or None
-    #         The weather data if available, otherwise None.
-
-    #     Notes
-    #     -----
-    #     - The method checks if the `weather` attribute is populated.
-    #     - If the `weather` attribute is not populated, it logs an informational message.
-    #     """
-
-    #     logger.error(".get_weather() is not implemented yet.")
-    
-    # def get_timing(self):
-    #     """
-    #     Retrieve the timing data.
-
-    #     This method returns the timing data if it has been generated. If not, it logs an 
-    #     informational message indicating that the timing table is not generated yet.
-
-    #     Returns
-    #     -------
-    #     :class:`~Timing` or None
-    #         The timing data if available, otherwise None.
-
-    #     Notes
-    #     -----
-    #     - The method checks if the `timing` attribute is populated.
-    #     - If the `timing` attribute is not populated, it logs an informational message.
-    #     """
-
-    #     logger.error(".get_timing() is not implemented yet.")
     
     def _get_first_datetime(self):
         pos_df = self.get_data("Position.z")
@@ -852,7 +893,15 @@ class Session:
             self.startingGrid = helper.scrape_f1_results(target_url)
             logger.info(f"Starting grid have been loaded and saved to 'session.startingGrid'.")
 
+    def _load_driver_standings(self):
+        driver_standings = jolpica_client.query().season(self.season.year).round(self.meeting.number).get_driver_standings(limit=100).data.standings_lists[0].to_dict()["DriverStandings"]
+        self.driverStandings = parse_driver_standings(self.meeting.season, driver_standings)
+        logger.info(f"Driver standings have been loaded and saved to 'session.driverStandings'.")
 
+    def _load_constructor_standings(self):
+        rows = jolpica_client.query().season(self.season.year).round(self.meeting.number).get_constructor_standings(limit=100).data.standings_lists[0].to_dict()["ConstructorStandings"]
+        self.constructorStandings = parse_constructor_standings(self.meeting.season, rows)
+        logger.info("Constructor standings have been loaded and saved to 'session.constructorStandings'.")
 
 def load_single_data(dataName, session, stream):
 

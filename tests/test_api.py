@@ -275,7 +275,7 @@ def test_get_meeting_get_session_and_generate_explicit(season_data):
 
     session_obj = next((s for s in meeting.sessions.values() if s.key == 9465), list(meeting.sessions.values())[0])
 
-    with patch("livef1.models.session.livetimingF1_request", return_value=index_feeds):
+    with patch("livef1.models.session.fetch_livetiming_session_index", return_value=(index_feeds, True)):
         with patch("livef1.models.session.livetimingF1_getdata", return_value={"1": {"RacingNumber": "1", "Tla": "VER", "FirstName": "Max", "LastName": "Verstappen"}}):
             session_obj.load_session_data()
 

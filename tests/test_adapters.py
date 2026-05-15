@@ -13,27 +13,27 @@ def test_download_data_requires_season():
 
 
 def test_download_data_season_only():
-    with patch("livef1.adapters.functions.livetimingF1_request") as mock_req:
-        mock_req.return_value = {"Meetings": []}
-        result = adapter_functions.download_data(season_identifier=2024)
-    assert result == {"Meetings": []}
-    mock_req.assert_called_once()
+    with patch("livef1.adapters.functions.fetch_livetiming_season_index", return_value=({"Meetings": []}, True)):
+        with patch("livef1.adapters.functions.fetch_jolpica_season_meetings", return_value=([], False, None)):
+            result = adapter_functions.download_data(season_identifier=2024)
+    assert result["Meetings"] == []
+    assert result.get("is_livetiming_available") is True
 
 
 def test_download_data_with_location():
-    with patch("livef1.adapters.functions.livetimingF1_request") as mock_req:
-        mock_req.return_value = {
-            "Meetings": [{"Location": "Sakhir", "Sessions": []}],
-        }
-        result = adapter_functions.download_data(season_identifier=2024, location_identifier="Sakhir")
+    idx = {"Meetings": [{"Name": "Bahrain", "Location": "Sakhir", "Sessions": []}]}
+    with patch("livef1.adapters.functions.fetch_livetiming_season_index", return_value=(idx, True)):
+        with patch("livef1.adapters.functions.fetch_jolpica_season_meetings", return_value=([], False, None)):
+            result = adapter_functions.download_data(season_identifier=2024, location_identifier="Sakhir")
     assert result["Location"] == "Sakhir"
 
 
 def test_download_data_location_not_found():
-    with patch("livef1.adapters.functions.livetimingF1_request") as mock_req:
-        mock_req.return_value = {"Meetings": [{"Location": "Monaco"}]}
-        with pytest.raises(livef1Exception, match="not found"):
-            adapter_functions.download_data(season_identifier=2024, location_identifier="Sakhir")
+    idx = {"Meetings": [{"Name": "Monaco", "Location": "Monaco", "Sessions": []}]}
+    with patch("livef1.adapters.functions.fetch_livetiming_season_index", return_value=(idx, True)):
+        with patch("livef1.adapters.functions.fetch_jolpica_season_meetings", return_value=([], False, None)):
+            with pytest.raises(livef1Exception, match="not found"):
+                adapter_functions.download_data(season_identifier=2024, location_identifier="Sakhir")
 
 
 def test_livetiming_adapter_get():

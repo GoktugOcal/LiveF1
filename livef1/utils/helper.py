@@ -51,7 +51,7 @@ def json_parser_for_objects(data: Dict) -> Dict:
     Dict
         A new dictionary with all keys converted to lowercase.
     """
-    return {key.lower(): value for key, value in data.items()}
+    return {key.lower(): value for key, value in data.items() if key != None}
 
 def get_data(path, stream):
     """
@@ -301,7 +301,6 @@ def find_most_similar_vectorized(df, target):
 
     logger.debug(f"Searching of identifier '{target}' has started.")
 
-    # df = df.reset_index(drop=True)
     similarity_df = df.map(jaccard_similarity)
     jaccard_score = similarity_df.max().max()
     row, col = divmod(similarity_df.values.argmax(), similarity_df.shape[1])
@@ -449,4 +448,49 @@ def to_datetime(var):
         return pd.to_datetime(var.values, format='ISO8601').tz_localize(None).round("ms")
     elif isinstance(var, np.ndarray):
         return pd.to_datetime(var, format='ISO8601').tz_localize(None).round("ms")
-        
+
+import pycountry
+import pytz
+from zoneinfo import ZoneInfo
+
+def get_country_code(country_name):
+    country = pycountry.countries.search_fuzzy(country_name.replace("’", "'"))[0]
+    return country.alpha_2
+
+def localize_dt(local_dt, country_code, target_tz="UTC"):
+    # 1. Get the timezone for the country
+    try:
+        timezone_str = pytz.country_timezones.get(country_code)[0]
+    except Exception as e:
+        print(e)
+        return "Country not found or no timezone mapping available."
+
+    # 2. Parse the local time (assuming format: YYYY-MM-DD HH:MM:SS)
+    local_tz = ZoneInfo(timezone_str)
+    
+    # 3. Attach the local timezone info (localize)
+    local_dt = local_dt.replace(tzinfo=local_tz)
+    
+    # 4. Convert to target timezone
+    utc_dt = local_dt.astimezone(ZoneInfo(target_tz))
+    
+    return utc_dt
+
+def relocate_tz(
+    dt,
+    source_location=None,
+    target_location=None,
+    source_tz=None,
+    target_tz=None
+):
+    if not source_tz:
+        country_code = get_country_code(source_location)
+        source_tz = pytz.country_timezones.get(country_code)[0]
+    if not target_tz:
+        country_code = get_country_code(target_location)
+        target_tz = pytz.country_timezones.get(country_code)[0]
+    
+    dt = dt.replace(tzinfo=ZoneInfo(source_tz))
+    dt = dt.astimezone(ZoneInfo(target_tz))
+    
+    return dt

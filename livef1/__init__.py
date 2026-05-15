@@ -5,6 +5,7 @@ from .models import (
     )
 
 from .api import (
+    list_seasons,
     get_season,
     get_meeting,
     get_session
