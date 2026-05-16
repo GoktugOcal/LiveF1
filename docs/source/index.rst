@@ -7,7 +7,7 @@ LiveF1
 
 .. rst-class:: lead
 
-   LiveF1 is a powerful toolkit for accessing and analyzing Formula 1 data in real time or from historical archives, designed for developers, analysts, and fans building applications around F1 insights.
+   LiveF1 is a powerful toolkit for accessing and analyzing Formula 1 data in real time or from historical archives, designed for developers, analysts, and fans building applications around F1 insights. It combines **Formula 1 Livetiming** with the **Jolpica F1 API**; see :ref:`data_sources`.
 
    .. container:: buttons
 
@@ -61,6 +61,7 @@ LiveF1
    user_guide/index
    user_guide/medallion_architecture
    user_guide/data_models
+   user_guide/data_sources
    user_guide/historical_data
    user_guide/realtime_data
 

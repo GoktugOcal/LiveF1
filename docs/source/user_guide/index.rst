@@ -8,6 +8,8 @@ Understanding Formula 1 Data
 
 Formula 1 live timing data provides comprehensive insights into the performance of drivers, teams, and cars during races. This data is critical for real-time analytics, historical analysis, and developing strategies for races.
 
+LiveF1 does not rely on Livetiming alone. It also integrates the **Jolpica F1 API** (Ergast-style JSON) for calendars, registry data, and championship tables, using the separate **BaseF1** (``basef1``) client. Read :ref:`data_sources` first for how the two backends differ and how meetings are merged.
+
 The live timing API follows a structured format to ensure efficient data access. Each API address corresponds to a specific endpoint, which streams or delivers data for various aspects of Formula 1 sessions. These endpoints can be accessed via HTTP requests.
 
 .. seealso::
@@ -64,6 +66,7 @@ Examples and Use Cases
 Where to Go Next
 ---------------
 
+* For Livetiming vs Jolpica and how BaseF1 fits in, see :ref:`data_sources`
 * For detailed API documentation, see the :ref:`api_reference`
 * For examples and tutorials, check out the :ref:`examples` section
 * For understanding data organization, read about the :ref:`medallion_architecture`

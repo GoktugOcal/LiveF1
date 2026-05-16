@@ -292,7 +292,7 @@ class Session:
         else: data_livetiming = {}
 
         if self.is_jolpica_available:
-            drivers_jolpica = jolpica_client.query().season(self.season.year).round(self.meeting.number).get_drivers(limit=100).data.drivers
+            drivers_jolpica = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_drivers(limit=100).data.drivers
             data_jolpica = {}
             for driver in drivers_jolpica:
                 if driver.permanent_number is not None:
@@ -894,12 +894,12 @@ class Session:
             logger.info(f"Starting grid have been loaded and saved to 'session.startingGrid'.")
 
     def _load_driver_standings(self):
-        driver_standings = jolpica_client.query().season(self.season.year).round(self.meeting.number).get_driver_standings(limit=100).data.standings_lists[0].to_dict()["DriverStandings"]
+        driver_standings = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_driver_standings(limit=100).data.standings_lists[0].to_dict()["DriverStandings"]
         self.driverStandings = parse_driver_standings(self.meeting.season, driver_standings)
         logger.info(f"Driver standings have been loaded and saved to 'session.driverStandings'.")
 
     def _load_constructor_standings(self):
-        rows = jolpica_client.query().season(self.season.year).round(self.meeting.number).get_constructor_standings(limit=100).data.standings_lists[0].to_dict()["ConstructorStandings"]
+        rows = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_constructor_standings(limit=100).data.standings_lists[0].to_dict()["ConstructorStandings"]
         self.constructorStandings = parse_constructor_standings(self.meeting.season, rows)
         logger.info("Constructor standings have been loaded and saved to 'session.constructorStandings'.")
 

@@ -27,6 +27,14 @@ The Season model is the top-level container for Formula 1 data. It manages all m
 
 - ``meetings_table``: Aggregated meetings data
 
+- ``jolpica_data``: Jolpica race rows for the season (when fetched); used for merge and availability checks
+
+- ``is_jolpica_available``: Whether Jolpica returned a usable season/races payload for this year
+
+- ``is_livetiming_available``: Whether the Livetiming season index could be loaded
+
+See :ref:`data_sources` for how Livetiming and Jolpica are combined.
+
 **Example Usage:**
 
 .. code-block:: python
@@ -62,6 +70,10 @@ The Meeting model represents a specific Grand Prix event within a season. It man
 - ``sessions``: List of Session objects
 
 - ``sessions_table``: DataFrame of session data
+
+- ``is_livetiming_available``: Whether this meeting exists in the Livetiming season index
+
+- ``is_jolpica_available``: Whether this meeting appears on the Jolpica calendar for the season
 
 **Example Usage:**
 
@@ -100,6 +112,10 @@ The Session model represents individual F1 sessions (Practice, Qualifying, Race)
 - ``data_lake``: DataLake object for data storage
 
 - ``topic_names_info``: Available data topics
+
+- ``is_livetiming_available``: Whether this session maps to Livetiming archives (topics / ``get_data``)
+
+- ``is_jolpica_available``: Whether Jolpica exposes matching session timing fields for this slot
 
 **Data Access Methods:**
 

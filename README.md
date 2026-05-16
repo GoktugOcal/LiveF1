@@ -23,6 +23,15 @@ In a nutshell:
 
 **Using LiveF1, you can access real-time and historical racing data, making it easy to feed analytics and visualizations.**
 
+### Data sources
+
+LiveF1 combines two backends:
+
+- **Formula 1 Livetiming** — Official timing static JSON and feeds for session discovery and archived high-frequency topics (telemetry, timing, position, weather, etc.).
+- **Jolpica F1 API** — Community Ergast-style JSON REST API for seasons, calendars, drivers, constructors, results, standings, and related structured data.
+
+Livetiming alone does not cover every object shape users need; Jolpica fills and enriches the season calendar when Livetiming is incomplete and supplies championship-oriented data. The HTTP client for Jolpica is **[BaseF1](https://pypi.org/project/basef1/)** ([source](https://github.com/GoktugOcal/BaseF1)), a separate library that LiveF1 depends on.
+
 ## Installation
 
 Install using pip:

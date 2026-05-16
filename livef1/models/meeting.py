@@ -84,6 +84,12 @@ class Meeting:
 
         # Iterate over the kwargs and set them as attributes of the instance
         for key, value in locals().items():
+            if key == "self": continue
+            if key == "kwargs": continue
+            if value:
+                setattr(self, key.lower(), value)
+        
+        for key, value in kwargs.items():
             if value:
                 setattr(self, key.lower(), value)
 

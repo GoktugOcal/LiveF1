@@ -1,5 +1,5 @@
 Data Processing - :mod:`livef1.data_processing`
-=================================
+===============================================
 
 Data Models
 -------------------
@@ -10,6 +10,11 @@ Data Models
     .. autosummary::
         BasicResult
 
+
+Jolpica ETL
+-----------
+.. automodule:: livef1.data_processing.jolpica_etl
+   :members:
 
 Data Preprocessing
 --------------------

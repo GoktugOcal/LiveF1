@@ -5,6 +5,9 @@ Historical Data
 
 The LiveF1 package provides access to historical Formula 1 data through Session objects, which contain comprehensive race data including timing, telemetry, and other metrics.
 
+.. note::
+   Topic-level **telemetry and timing archives** (e.g. ``get_data``, ``generate``) generally require a session that is backed by **Livetiming** static data. **Calendar and metadata** may still come from **Jolpica** when meetings are merged or enriched. See :ref:`data_sources` for how availability flags behave.
+
 Accessing Historical Data
 ------------------------
 

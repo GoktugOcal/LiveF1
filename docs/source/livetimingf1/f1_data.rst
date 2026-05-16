@@ -9,6 +9,10 @@ Source of Data
 ======================================
 Formula 1 live timing data delivers real-time and historical telemetry, timing, and contextual data. This data is critical for real-time analytics, historical analysis, and developing strategies for races.
 
+.. seealso::
+
+   LiveF1 also uses the **Jolpica F1 API** for Ergast-style calendar and championship data, merged with Livetiming for a single season view. See :ref:`data_sources`.
+
 API Structure
 --------------------------------------------
 
