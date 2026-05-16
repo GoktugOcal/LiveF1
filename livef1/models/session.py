@@ -174,9 +174,15 @@ class Session:
         if self.is_jolpica_available or self.is_livetiming_available: self._load_drivers()
         if self.is_jolpica_available:
             if not hasattr(self, "driverStandings"):
-                self._load_driver_standings()
+                try:
+                    self._load_driver_standings()
+                except Exception as e:
+                    logger.debug(f"Driver standings not available for session: {self.meeting.name}: {self.name}")
             if not hasattr(self, "constructorStandings"):
-                self._load_constructor_standings()
+                try:
+                    self._load_constructor_standings()
+                except Exception as e:
+                    logger.debug(f"Constructor standings not available for session: {self.meeting.name}: {self.name}")
 
     def get_topic_names(self):
         """

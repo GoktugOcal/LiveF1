@@ -22,18 +22,25 @@ def parse_driver_standings(season_obj, data):
     """
     driver_standings = []
     for driver_standing in data:
-        key = driver_standing["Driver"]["permanentNumber"] or driver_standing["Driver"]["driverId"]
+        
+        if "permanentNumber" in driver_standing["Driver"]: key = driver_standing["Driver"]["permanentNumber"]
+        elif "driverId" in driver_standing["Driver"]: key = driver_standing["Driver"]["driverId"]
+        else: continue
+
         driver = season_obj.drivers[key]
         constructors = driver_standing.get("Constructors") or []
         ctor_raw = constructors[0] if constructors else None
-        row = {
-            "position": driver_standing["position"],
-            "points": driver_standing["points"],
-            "wins": driver_standing["wins"],
-            "Driver": driver,
-            "Constructor": _resolve_constructor(season_obj, ctor_raw),
-        }
-        driver_standings.append(row)
+
+        
+        if "position" in driver_standing:
+            row = {
+                "position": driver_standing["position"],
+                "points": driver_standing["points"],
+                "wins": driver_standing["wins"],
+                "Driver": driver,
+                "Constructor": _resolve_constructor(season_obj, ctor_raw),
+            }
+            driver_standings.append(row)
 
     return driver_standings
 
@@ -43,12 +50,13 @@ def parse_constructor_standings(season_obj, data):
     constructor_standings = []
     for row in data:
         ctor_raw = row.get("Constructor")
-        constructor_standings.append(
-            {
-                "position": row["position"],
-                "points": row["points"],
-                "wins": row["wins"],
-                "Constructor": _resolve_constructor(season_obj, ctor_raw),
-            }
-        )
+        if "position" in row:
+            constructor_standings.append(
+                {
+                    "position": row["position"],
+                    "points": row["points"],
+                    "wins": row["wins"],
+                    "Constructor": _resolve_constructor(season_obj, ctor_raw),
+                }
+            )
     return constructor_standings

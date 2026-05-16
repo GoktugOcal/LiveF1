@@ -1,5 +1,9 @@
 from typing import Any, Dict, Optional
+from timezonefinder import TimezoneFinder
+
 from livef1.models.country import Country
+
+tzfinder = TimezoneFinder()
 
 class Location:
     """
@@ -29,6 +33,9 @@ class Location:
         self.country = country
         self.lat = lat
         self.long = long
+
+        if self.lat is not None and self.long is not None:
+            self.timezone = tzfinder.timezone_at(lat=self.lat, lng=self.long)
 
         for key, value in kwargs.items():
             if value is not None:
