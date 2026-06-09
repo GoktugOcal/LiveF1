@@ -23,3 +23,8 @@ dependencies = [
     "ujson>=5.10.0",
     "websockets>=13.0.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.16",
+]

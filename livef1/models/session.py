@@ -155,6 +155,18 @@ class Session:
         )
         return self.is_jolpica_available
 
+    def _jolpica_round(self):
+        if self.meeting is None:
+            return None
+        value = getattr(self.meeting, "jolpica_round", None)
+        if value is not None:
+            return value
+        for attr in ("round", "number"):
+            value = getattr(self.meeting, attr, None)
+            if value is not None:
+                return value
+        return None
+
     def _load_default_silver_tables(self):
         for table_name in SILVER_SESSION_TABLES:
             self.create_silver_table(table_name, TABLE_REQUIREMENTS[table_name], include_session=True)(globals()[TABLE_GENERATION_FUNCTIONS[table_name]])
@@ -170,7 +182,13 @@ class Session:
 
         This method loads the session data by fetching the topic names and drivers.
         """
-        if self.is_livetiming_available: self.get_topic_names()
+        if self.is_livetiming_available or hasattr(self, "full_path"):
+            try:
+                self.get_topic_names()
+                self.is_livetiming_available = True
+            except Exception:
+                if self.is_livetiming_available:
+                    raise
         if self.is_jolpica_available or self.is_livetiming_available: self._load_drivers()
         if self.is_jolpica_available:
             if not hasattr(self, "driverStandings"):
@@ -297,8 +315,9 @@ class Session:
             )
         else: data_livetiming = {}
 
-        if self.is_jolpica_available:
-            drivers_jolpica = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_drivers(limit=100).data.drivers
+        round_number = self._jolpica_round()
+        if self.is_jolpica_available and round_number is not None:
+            drivers_jolpica = jolpica_client.query().season(self.season.year).round(round_number).get_drivers(limit=100).data.drivers
             data_jolpica = {}
             for driver in drivers_jolpica:
                 if driver.permanent_number is not None:
@@ -900,12 +919,18 @@ class Session:
             logger.info(f"Starting grid have been loaded and saved to 'session.startingGrid'.")
 
     def _load_driver_standings(self):
-        driver_standings = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_driver_standings(limit=100).data.standings_lists[0].to_dict()["DriverStandings"]
+        round_number = self._jolpica_round()
+        if round_number is None:
+            return
+        driver_standings = jolpica_client.query().season(self.season.year).round(round_number).get_driver_standings(limit=100).data.standings_lists[0].to_dict()["DriverStandings"]
         self.driverStandings = parse_driver_standings(self.meeting.season, driver_standings)
         logger.info(f"Driver standings have been loaded and saved to 'session.driverStandings'.")
 
     def _load_constructor_standings(self):
-        rows = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_constructor_standings(limit=100).data.standings_lists[0].to_dict()["ConstructorStandings"]
+        round_number = self._jolpica_round()
+        if round_number is None:
+            return
+        rows = jolpica_client.query().season(self.season.year).round(round_number).get_constructor_standings(limit=100).data.standings_lists[0].to_dict()["ConstructorStandings"]
         self.constructorStandings = parse_constructor_standings(self.meeting.season, rows)
         logger.info("Constructor standings have been loaded and saved to 'session.constructorStandings'.")
 
