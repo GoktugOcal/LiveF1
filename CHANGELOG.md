@@ -2,6 +2,16 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.1] - 2026-06-14
+
+### Added
+
+- Added Barcelona Grand Prix circuit key mapping in `circuits_key.csv`.
+
+### Fixed
+
+- Fixed `Session.get_driver()` raising errors when driver name or TLA fields are missing or `None`.
+
 ## [1.2.0] - 2026-05-16
 
 Changes since `v1.1.107`.

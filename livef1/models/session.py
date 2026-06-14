@@ -336,13 +336,16 @@ class Session:
             The Driver object for the specified identifier, or None if not found.
         """
         for driver in self.drivers.values():
-            if (
-                str(driver.RacingNumber) == identifier or
-                driver.FirstName.lower() == identifier.lower() or
-                driver.LastName.lower() == identifier.lower() or
-                driver.Tla.lower() == identifier.lower()
-            ):
-                return driver
+            try:
+                if (
+                    str(driver.RacingNumber) == identifier or
+                    driver.FirstName.lower() == identifier.lower() or
+                    driver.LastName.lower() == identifier.lower() or
+                    driver.Tla.lower() == identifier.lower()
+                ):
+                    return driver
+            except:
+                pass
         return None
 
     def load_data(
