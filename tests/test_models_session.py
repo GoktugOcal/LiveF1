@@ -1,6 +1,7 @@
 """Tests for livef1.models.session.Session."""
 import pytest
 import pandas as pd
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 from livef1.models.session import Session
 from livef1.data_processing.data_models import BronzeTable
@@ -77,6 +78,37 @@ def test_session_get_data_from_cache():
     result = session.get_data("TimingData", force=False)
     assert result is not None
     assert hasattr(result, "columns") or hasattr(result, "index")
+
+
+def test_session_load_drivers_uses_meeting_number_as_jolpica_round():
+    with patch("livef1.models.session.helper.build_session_endpoint", return_value="https://example.com/session"):
+        session = Session(key=9465, name="Race", path="x")
+    session.season = SimpleNamespace(year=2024)
+    session.meeting = SimpleNamespace(name="Bahrain Grand Prix", number=1)
+    session.is_livetiming_available = False
+    session.is_jolpica_available = True
+
+    driver = MagicMock()
+    driver.permanent_number = "1"
+    driver.to_dict.return_value = {
+        "driverId": "max_verstappen",
+        "permanentNumber": "1",
+        "code": "VER",
+        "givenName": "Max",
+        "familyName": "Verstappen",
+    }
+
+    query = MagicMock()
+    query.season.return_value = query
+    query.round.return_value = query
+    query.get_drivers.return_value = SimpleNamespace(data=SimpleNamespace(drivers=[driver]))
+
+    with patch("livef1.models.session.jolpica_client") as client:
+        client.query.return_value = query
+        session._load_drivers()
+
+    query.round.assert_called_once_with(1)
+    assert "1" in session.drivers
 
 
 def test_session_create_silver_table_decorator():

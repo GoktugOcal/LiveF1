@@ -133,6 +133,14 @@ class Meeting:
             return year
         raise ValueError("Meeting needs a linked season or a year to probe API availability.")
 
+    @property
+    def jolpica_round(self):
+        for attr in ("round", "number"):
+            value = getattr(self, attr, None)
+            if value is not None:
+                return value
+        return None
+
     def _check_if_jolpica_available(self):
         """
         Checks if this meeting's name appears as a Jolpica ``race_name`` for the season year.
@@ -243,7 +251,7 @@ class Meeting:
     def driverStandings(self):
         if not self.is_jolpica_available or self.season is None:
             return None
-        n = getattr(self, "number", None)
+        n = self.jolpica_round
         if n is None:
             return None
         raw = (
@@ -260,7 +268,7 @@ class Meeting:
     def constructorStandings(self):
         if not self.is_jolpica_available or self.season is None:
             return None
-        n = getattr(self, "number", None)
+        n = self.jolpica_round
         if n is None:
             return None
         raw = (
