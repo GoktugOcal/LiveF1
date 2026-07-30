@@ -5,6 +5,7 @@ from datetime import datetime
 # Third-Party Library Imports
 import pandas as pd
 from ..utils.constants import column_mapping
+from .optimization import downcast, categorize
 
 
 class BasicResult:
@@ -134,6 +135,10 @@ class BronzeTable(Table):
         self.df = pd.DataFrame(parsed_data).rename(
             columns = column_mapping
         )
+
+        self.df = downcast(self.df)
+        self.df = categorize(self.df)
+
         if "timestamp" in self.df.columns:
             self.df.timestamp = pd.to_timedelta(self.df.timestamp)
 

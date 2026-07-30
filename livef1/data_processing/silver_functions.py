@@ -73,6 +73,7 @@ def add_track_status_telemetry(telemetry_df, df_track):
     return telemetry_df.dropna(subset="SessionKey").reset_index()
 
 def add_lineposition(telemetry_df, df_tmg):
+    # df_tmg.Position = df_tmg.Position.ffill() # TODO: Check if this is correct
     telemetry_df = telemetry_df.set_index("timestamp").join(df_tmg.set_index("timestamp")[["Position"]], how="outer")
     telemetry_df.Position = telemetry_df.Position.ffill()
     return telemetry_df.reset_index()
@@ -348,6 +349,8 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
             merged = merged[merged["LapStartDate"] <= merged["Utc"]]
             # Per pit row, take the lap with latest LapStartDate (pit happened during that lap)
             best = merged.loc[merged.groupby("_pit_idx")["LapStartDate"].idxmax(), ["_pit_idx", "LapNo"]]
+            print(best)
+            print(best.dtypes)
             df_pit.loc[best["_pit_idx"], "LapNo"] = best["LapNo"].values
 
         df_pit = df_pit.drop(columns=["Utc"], errors="ignore")
@@ -494,6 +497,7 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
 
         all_drivers_data.append(df_driver)
 
+    del df # free memory
     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
 
     # Add Tyre Data

@@ -656,3 +656,16 @@ silver_race_control_messages_col_order = [
     "RacingNumber",
     "info"
 ]
+
+# In BronzeTable.__init__, after building self.df:
+_DOWNCAST_MAP = {
+    "Speed": "float32",
+    "RPM": "float32",
+    "Throttle": "float32",
+    "Brake": "float32",
+    "GearNo": "uint8",
+    "DRS": "uint8",
+    "X": "float16", "Y": "float16", "Z": "float16"
+}
+
+_CATEGORICAL_COLUMNS = ["DriverNo", "Compound", "TrackStatus", "TrackRegion", "SessionKey", "tag", "Status"]

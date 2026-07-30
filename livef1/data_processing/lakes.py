@@ -279,7 +279,18 @@ class SimpleLake:
             True if the data exists, False otherwise.
         """
         return table_name in self.lake
-            
+    
+    def clear(self):
+        """
+        Clear the data from the Lake.
+        """
+        self.lake.clear()
+    
+    def clear_data(self, table_name):
+        """
+        Clear the data from the Lake.
+        """
+        self.lake.pop(table_name)
 
 class BronzeLake(SimpleLake):
     def __init__(self, great_lake):
@@ -400,6 +411,28 @@ class DataLake:
     #         return callback_func
         
     #     return decorator
+
+    def clear(self):
+        """
+        Clear the data from the DataLake.
+        """
+        self.bronze.lake.clear()
+        self.silver.lake.clear()
+        self.gold.lake.clear()
+        self.metadata.clear()
+    
+    def clear_data(self, level: str, table_name: str):
+        """
+        Clear the data from the DataLake.
+        """
+        if level == "bronze":
+            self.bronze.clear_data(table_name)
+        elif level == "silver":
+            self.silver.clear_data(table_name)
+        elif level == "gold":
+            self.gold.clear_data(table_name)
+        else:
+            raise ValueError("Invalid level. Must be one of 'bronze', 'silver', or 'gold'.")
 
 
     def create_bronze_table(self, table_name, raw_data, parsed_data):
