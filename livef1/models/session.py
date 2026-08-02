@@ -679,7 +679,7 @@ class Session:
         first_date = helper.to_datetime(sess_data[sess_data["SessionStatus"] == "Started"].Utc).tolist()[0]
         return first_date
 
-    def generate(self, silver=True, gold=False):
+    def generate(self, silver=True, gold=False, tables=None):
         
         self._load_circuit_data()
 
@@ -692,7 +692,11 @@ class Session:
         tables_to_generate = set()
         if silver:
             self._load_default_silver_tables()
-            silver_tables_to_generate = [self.data_lake.get("silver", table_name) for table_name, info in self.data_lake.metadata.items() if info["table_type"] == "silver"]
+            silver_tables_to_generate = [
+                self.data_lake.get("silver", table_name) \
+                for table_name, info in self.data_lake.metadata.items() \
+                if (info["table_type"] == "silver") & ((tables != None) & (table_name in tables))]
+
             tables_to_generate.update(silver_tables_to_generate)
             # refine sources for each silver table
             for silver_table in silver_tables_to_generate:
@@ -700,7 +704,10 @@ class Session:
                 required_data.update(set(silver_table.source_tables["bronze"]))
         
         if gold:
-            gold_tables_to_generate = [self.data_lake.get("gold", table_name) for table_name, info in self.data_lake.metadata.items() if info["table_type"] == "gold"]
+            gold_tables_to_generate = [
+                self.data_lake.get("gold", table_name) \
+                for table_name, info in self.data_lake.metadata.items() \
+                if (info["table_type"] == "gold") & ((tables != None) & (table_name in tables))]
             tables_to_generate.update(gold_tables_to_generate)
             # refine sources for each gold table
             for gold_table in gold_tables_to_generate:

@@ -2,6 +2,19 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.2] - 2026-08-02
+
+### Added
+
+- Added bronze-table memory optimization via `downcast` and `categorize` helpers, with configurable downcast and categorical column maps in `constants`.
+- Added `DataLake.clear()` / `clear_data()` and matching lake-level helpers to drop cached bronze, silver, and gold tables.
+- Added optional `tables` argument to `Session.generate()` so callers can request a subset of silver or gold tables.
+
+### Changed
+
+- Stream logger format now includes the logger name (`%(name)s`).
+- Car telemetry generation frees intermediate DataFrames earlier to reduce peak memory use.
+
 ## [1.2.1] - 2026-06-14
 
 ### Added
