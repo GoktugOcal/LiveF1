@@ -566,7 +566,6 @@ penalty_types = [
 ]
 
 SILVER_SESSION_TABLES = ["laps", "carTelemetry", "raceControlMessages"]
-# SILVER_SESSION_TABLES = ["laps", "car_telemetry", "weather", "timing"]
 
 TABLE_GENERATION_FUNCTIONS = {
     "laps": "generate_laps_table",
