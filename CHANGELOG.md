@@ -2,6 +2,18 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.4] - 2026-08-04
+
+### Fixed
+
+- Fixed selective `Session.generate(tables=...)` so silver/gold tables generate correctly when `tables` is omitted (previously required an explicit list).
+- Fixed table generation to expand transitive silver/gold dependencies and topologically sort them before building, so dependent tables are generated in a valid order.
+
+### Added
+
+- Added `DataLake._expand_table_dependencies()` and `DataLake._topo_sort_tables()` helpers for dependency closure and ordered generation.
+- Added unit tests covering lake dependency expansion and topological sorting.
+
 ## [1.2.3] - 2026-08-04
 
 ### Added

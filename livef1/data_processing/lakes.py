@@ -467,6 +467,85 @@ class DataLake:
                 return None
             
 
+    def _expand_table_dependencies(self, seed_tables):
+        """
+        Expand seed tables to include all transitive silver/gold dependencies.
+
+        Calls ``refine_sources()`` at most once per table. Returns the closure
+        as a list (order is discovery order, not generation order).
+        """
+        from .data_models import _fresh_source_tables_dict
+
+        closure = []
+        seen = set()
+        refined = set()
+        stack = list(seed_tables)
+
+        while stack:
+            table = stack.pop()
+            name = table.table_name
+            if name in seen:
+                continue
+            seen.add(name)
+
+            if name not in refined:
+                table.source_tables = _fresh_source_tables_dict()
+                table.dependency_tables = []
+                table.refine_sources()
+                refined.add(name)
+
+            closure.append(table)
+            for dep in getattr(table, "dependency_tables", []) or []:
+                if dep.table_name not in seen:
+                    stack.append(dep)
+
+        return closure
+
+    def _topo_sort_tables(self, tables):
+        """
+        Topologically sort tables so dependencies come before dependents.
+
+        Only edges within ``tables`` are considered. Raises ValueError on cycles.
+        """
+        if not tables:
+            return []
+
+        tables_by_name = {t.table_name: t for t in tables}
+        names = set(tables_by_name)
+        order_index = {t.table_name: i for i, t in enumerate(tables)}
+
+        in_degree = {n: 0 for n in names}
+        dependents = {n: [] for n in names}
+
+        for table in tables:
+            for dep in getattr(table, "dependency_tables", []) or []:
+                dep_name = dep.table_name
+                if dep_name in names:
+                    dependents[dep_name].append(table.table_name)
+                    in_degree[table.table_name] += 1
+
+        queue = sorted(
+            [n for n in names if in_degree[n] == 0],
+            key=lambda n: order_index[n],
+        )
+        result = []
+
+        while queue:
+            name = queue.pop(0)
+            result.append(tables_by_name[name])
+            next_ready = []
+            for dependent in dependents[name]:
+                in_degree[dependent] -= 1
+                if in_degree[dependent] == 0:
+                    next_ready.append(dependent)
+            next_ready.sort(key=lambda n: order_index[n])
+            queue.extend(next_ready)
+
+        if len(result) != len(tables):
+            raise ValueError("Circular dependency detected among tables to generate")
+
+        return result
+
     def _check_circular_dependencies(self):
         """
         Check for circular dependencies in the tables across different levels.

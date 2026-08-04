@@ -689,30 +689,38 @@ class Session:
             logger.warning(f"Failed to load session results: {e}")
 
         required_data = set(["CarData.z", "Position.z", "SessionStatus"])
-        tables_to_generate = set()
-        if silver:
-            self._load_default_silver_tables()
-            silver_tables_to_generate = [
-                self.data_lake.get("silver", table_name) \
-                for table_name, info in self.data_lake.metadata.items() \
-                if (info["table_type"] == "silver") & ((tables != None) & (table_name in tables))]
+        silver_tables_to_generate = []
+        gold_tables_to_generate = []
 
-            tables_to_generate.update(silver_tables_to_generate)
-            # refine sources for each silver table
-            for silver_table in silver_tables_to_generate:
-                silver_table.refine_sources()
-                required_data.update(set(silver_table.source_tables["bronze"]))
-        
+        # Gold tables may depend on default silver tables; register them whenever
+        # either level is requested so dependency expansion can resolve them.
+        if silver or gold:
+            self._load_default_silver_tables()
+
+        seeds = []
+        if silver:
+            for table_name, info in self.data_lake.metadata.items():
+                if info["table_type"] == "silver" and (tables is None or table_name in tables):
+                    seeds.append(self.data_lake.get("silver", table_name))
         if gold:
-            gold_tables_to_generate = [
-                self.data_lake.get("gold", table_name) \
-                for table_name, info in self.data_lake.metadata.items() \
-                if (info["table_type"] == "gold") & ((tables != None) & (table_name in tables))]
-            tables_to_generate.update(gold_tables_to_generate)
-            # refine sources for each gold table
-            for gold_table in gold_tables_to_generate:
-                gold_table.refine_sources()
-                required_data.update(set(gold_table.source_tables["bronze"]))
+            for table_name, info in self.data_lake.metadata.items():
+                if info["table_type"] == "gold" and (tables is None or table_name in tables):
+                    seeds.append(self.data_lake.get("gold", table_name))
+
+        closure = self.data_lake._expand_table_dependencies(seeds)
+        for table in closure:
+            required_data.update(set(table.source_tables["bronze"]))
+
+        silver_in_closure = [
+            t for t in closure
+            if self.data_lake.metadata[t.table_name]["table_type"] == "silver"
+        ]
+        gold_in_closure = [
+            t for t in closure
+            if self.data_lake.metadata[t.table_name]["table_type"] == "gold"
+        ]
+        silver_tables_to_generate = self.data_lake._topo_sort_tables(silver_in_closure)
+        gold_tables_to_generate = self.data_lake._topo_sort_tables(gold_in_closure)
 
         # Use the unified get_data method instead of get_data_parallel
         logger.info(f"Topics to be loaded : {list(required_data)}")
@@ -722,7 +730,7 @@ class Session:
         self.session_start_datetime = self._get_session_start_datetime()
 
         if self.data_lake._check_circular_dependencies():
-            if silver:
+            if silver_tables_to_generate:
                 logger.info(f"Silver tables are being generated.")
                 for silver_table in silver_tables_to_generate:
                     try:
@@ -733,7 +741,7 @@ class Session:
                     except Exception as e:
                         logger.error(f"Failed to generate silver table '{table_name}': {e}")
                         logger.debug(f"Traceback: ", exc_info=True)
-            if gold:
+            if gold_tables_to_generate:
                 logger.info("Gold tables are being generated.")
                 for gold_table in gold_tables_to_generate:
                     try:

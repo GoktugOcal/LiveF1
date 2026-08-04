@@ -198,3 +198,74 @@ def test_data_lake__check_circular_dependencies_silver_no_deps():
     dl.put("silver", "s1", silver)
     dl.metadata["s1"] = {"table_type": "silver", "created_at": None, "generated": False}
     assert dl._check_circular_dependencies() is True
+
+
+def test_data_lake__expand_table_dependencies_transitive_silver():
+    """Requesting B pulls in silver dependency A."""
+    session = MagicMock()
+    session._identify_data_level.side_effect = lambda name: "bronze" if name == "TimingData" else None
+    dl = DataLake(session)
+
+    table_a = SilverTable("A", sources=["TimingData"], data_lake=dl)
+    table_b = SilverTable("B", sources=["A"], data_lake=dl)
+    dl.put("silver", "A", table_a)
+    dl.put("silver", "B", table_b)
+
+    closure = dl._expand_table_dependencies([table_b])
+    names = {t.table_name for t in closure}
+    assert names == {"A", "B"}
+    assert "TimingData" in table_a.source_tables["bronze"]
+    assert table_a in table_b.dependency_tables
+
+
+def test_data_lake__topo_sort_tables_dependency_order():
+    """Dependencies are generated before dependents."""
+    session = MagicMock()
+    session._identify_data_level.side_effect = lambda name: "bronze" if name == "TimingData" else None
+    dl = DataLake(session)
+
+    table_a = SilverTable("A", sources=["TimingData"], data_lake=dl)
+    table_b = SilverTable("B", sources=["A"], data_lake=dl)
+    dl.put("silver", "A", table_a)
+    dl.put("silver", "B", table_b)
+
+    closure = dl._expand_table_dependencies([table_b])
+    ordered = dl._topo_sort_tables(closure)
+    assert [t.table_name for t in ordered] == ["A", "B"]
+
+
+def test_data_lake__expand_and_topo_gold_depends_on_silver():
+    """Gold seed expands to silver deps; topo keeps silver before gold when sorted separately."""
+    session = MagicMock()
+    session._identify_data_level.side_effect = lambda name: "bronze" if name == "TimingData" else None
+    dl = DataLake(session)
+
+    table_a = SilverTable("A", sources=["TimingData"], data_lake=dl)
+    table_g = GoldTable("G", sources=["A"], data_lake=dl)
+    dl.put("silver", "A", table_a)
+    dl.put("gold", "G", table_g)
+
+    closure = dl._expand_table_dependencies([table_g])
+    names = {t.table_name for t in closure}
+    assert names == {"A", "G"}
+
+    silver_ordered = dl._topo_sort_tables(
+        [t for t in closure if dl.metadata[t.table_name]["table_type"] == "silver"]
+    )
+    gold_ordered = dl._topo_sort_tables(
+        [t for t in closure if dl.metadata[t.table_name]["table_type"] == "gold"]
+    )
+    assert [t.table_name for t in silver_ordered] == ["A"]
+    assert [t.table_name for t in gold_ordered] == ["G"]
+
+
+def test_data_lake__topo_sort_tables_cycle_raises():
+    session = MagicMock()
+    dl = DataLake(session)
+    table_a = SilverTable("A", sources=["B"], data_lake=dl)
+    table_b = SilverTable("B", sources=["A"], data_lake=dl)
+    # Bypass refine_sources; wire a cycle directly
+    table_a.dependency_tables = [table_b]
+    table_b.dependency_tables = [table_a]
+    with pytest.raises(ValueError, match="Circular dependency"):
+        dl._topo_sort_tables([table_a, table_b])

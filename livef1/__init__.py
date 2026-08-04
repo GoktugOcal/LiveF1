@@ -29,7 +29,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 # warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
 # warnings.simplefilter(action='ignore', category=FutureWarning)
 
-__version__ = "1.2.3"
+__version__ = "1.2.4"
 
 __all__ = [
     'configure',
