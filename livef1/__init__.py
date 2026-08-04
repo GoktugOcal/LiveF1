@@ -17,6 +17,7 @@ from .data_processing import (
 
 from .utils.helper import *
 from .adapters.livetimingf1_adapter import LivetimingF1adapters
+from .config import configure
 from .utils.logger import set_log_level
 
 import warnings
@@ -28,9 +29,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 # warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
 # warnings.simplefilter(action='ignore', category=FutureWarning)
 
-__version__ = "1.2.2"
+__version__ = "1.2.3"
 
 __all__ = [
+    'configure',
     'set_log_level',
     'get_season',
     'get_meeting',

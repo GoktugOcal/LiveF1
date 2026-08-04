@@ -47,3 +47,5 @@ Logger
    
    .. rubric:: Functions
    .. autosummary::
+        configure_logging
+        set_log_level

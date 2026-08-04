@@ -1,6 +1,18 @@
 LiveF1 API - :mod:`livef1`
 =================================
 
+Configuration
+-------------
+.. automodule:: livef1.config
+   :members: configure
+   :undoc-members:
+
+   .. rubric:: Functions
+   .. autosummary::
+      configure
+
+Session Access
+--------------
 .. automodule:: livef1.api
    :undoc-members:
    :inherited-members:

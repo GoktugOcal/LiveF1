@@ -2,6 +2,26 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.3] - 2026-08-04
+
+### Added
+
+- Added package-level `livef1.configure()` (`livef1.config`) to set logging level, stream/file formats, and an optional file log path before execution. Designed to grow with non-logging settings later.
+- Exported `configure` from the top-level `livef1` package alongside `set_log_level`.
+
+### Changed
+
+- File logging is now optional and **disabled by default** (console only), so LiveF1 works on read-only filesystems such as containerized Lambda. Enable with `livef1.configure(logging_file_path=...)`.
+- Refactored the logger module around `configure_logging()` with reconfigurable stream and file handlers.
+
+### Documentation
+
+- Documented `livef1.configure()` in the API reference and rewrote the logging user guide for console-only defaults and optional file logging.
+
+### Tests
+
+- Added logger / `configure()` unit tests covering level changes, stream formatting, and optional file handlers.
+
 ## [1.2.2] - 2026-08-02
 
 ### Added
