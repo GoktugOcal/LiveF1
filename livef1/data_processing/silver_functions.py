@@ -46,7 +46,9 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
             direction = -1
 
         # Calculate the initial distance from the starting line
+        print(start_line.X, start_x, start_line.Y, start_y)
         distance = direction * (((start_line.X - start_x)**2 + (start_line.Y - start_y)**2)**0.5) / 10
+        print(distance)
 
         # Adjust the cumulative distance with the initial distance
         # lap_df["Distance"] = distance + lap_df["Distance"].fillna(0)

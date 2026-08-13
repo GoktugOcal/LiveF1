@@ -2,6 +2,16 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.5] - 2026-08-13
+
+### Fixed
+
+- Raised bronze coordinate downcasting from `float16` to `float32` for `X`, `Y`, and `Z` to avoid precision loss in distance and track calculations.
+
+### Changed
+
+- Added `LapNo` to the bronze downcast map as `uint8`.
+
 ## [1.2.4] - 2026-08-04
 
 ### Fixed

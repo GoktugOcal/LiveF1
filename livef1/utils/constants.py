@@ -664,7 +664,8 @@ _DOWNCAST_MAP = {
     "Brake": "float32",
     "GearNo": "uint8",
     "DRS": "uint8",
-    "X": "float16", "Y": "float16", "Z": "float16"
+    "X": "float32", "Y": "float32", "Z": "float32",
+    "LapNo": "uint8"
 }
 
 _CATEGORICAL_COLUMNS = ["DriverNo", "Compound", "TrackStatus", "TrackRegion", "SessionKey", "tag", "Status"]
