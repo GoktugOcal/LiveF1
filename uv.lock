@@ -446,7 +446,7 @@ wheels = [
 
 [[package]]
 name = "livef1"
-version = "1.1.107"
+version = "1.2.4"
 source = { virtual = "." }
 dependencies = [
     { name = "basef1" },

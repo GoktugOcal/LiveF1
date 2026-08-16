@@ -78,7 +78,7 @@ def merge_meetings(
                 "Number": 3,
                 "Name": "Practice 3",
                 "StartDate": relocate_tz(
-                    to_datetime(meeting.third_practice.date + "T" + meeting.third_practice.time),
+                    to_datetime(meeting.date + "T" + meeting.time),
                     source_tz = "UTC",
                     target_location = meeting.circuit.location.country).strftime("%Y-%m-%dT%H:%M:%S")
             })
@@ -88,7 +88,7 @@ def merge_meetings(
                 "Type": "Qualifying",
                 "Name": "Qualifying",
                 "StartDate": relocate_tz(
-                    to_datetime(meeting.qualifying.date + "T" + meeting.qualifying.time),
+                    to_datetime(meeting.qualifying.date + "T" + (meeting.qualifying.time or "00:00:00")),
                     source_tz = "UTC",
                     target_location = meeting.circuit.location.country).strftime("%Y-%m-%dT%H:%M:%S")
             })

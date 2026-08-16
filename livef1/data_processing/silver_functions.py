@@ -46,9 +46,7 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
             direction = -1
 
         # Calculate the initial distance from the starting line
-        print(start_line.X, start_x, start_line.Y, start_y)
         distance = direction * (((start_line.X - start_x)**2 + (start_line.Y - start_y)**2)**0.5) / 10
-        print(distance)
 
         # Adjust the cumulative distance with the initial distance
         # lap_df["Distance"] = distance + lap_df["Distance"].fillna(0)
@@ -351,8 +349,6 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
             merged = merged[merged["LapStartDate"] <= merged["Utc"]]
             # Per pit row, take the lap with latest LapStartDate (pit happened during that lap)
             best = merged.loc[merged.groupby("_pit_idx")["LapStartDate"].idxmax(), ["_pit_idx", "LapNo"]]
-            print(best)
-            print(best.dtypes)
             df_pit.loc[best["_pit_idx"], "LapNo"] = best["LapNo"].values
 
         df_pit = df_pit.drop(columns=["Utc"], errors="ignore")

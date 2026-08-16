@@ -32,6 +32,8 @@ class Country:
                 setattr(self, k.lower(), v)
         
         if not self.code:
+            if self.name.lower() == "turkey":
+                self.name = "Türkiye"
             self.code = pycountry.countries.search_fuzzy(self.name)[0].alpha_3
     
     def get(self, key, default=None):

@@ -191,6 +191,7 @@ class Meeting:
             This method populates the `sessions` attribute with `Session` objects derived from `sessions_json`.
         """
         for session_data in self.sessions_json:
+            if "Name" not in session_data: continue
             if "Name" in session_data: k = session_data["Name"]
             else: k = session_data["Key"]
             self.sessions[k] = Session(
