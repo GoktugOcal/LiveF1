@@ -272,6 +272,8 @@ def jolpica_session_available_on_race(
     Mirrors key presence used in :func:`merge_meetings` (``FirstPractice``, ``Sprint``, etc.).
     The main grand prix ``Race`` is always considered present when the race row exists.
     """
+    if race is None:
+        return False
     d = _jolpica_race_dict(race)
     sn = _norm_schedule_str(session_name)
     st = _norm_schedule_str(session_type)

@@ -129,6 +129,7 @@ def test_get_season_meeting_session_and_generate_with_dummy_data(
     season_data,
     mock_circuit_requests,
     index_feeds,
+    mock_season_jolpica_loaders,
 ):
     """Use dummy inputs to get season, meeting, session and run generate(silver=True)."""
     with patch("livef1.api.download_data", return_value=season_data):

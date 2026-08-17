@@ -10,7 +10,7 @@ if str(_project_root) not in sys.path:
 import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 
 @pytest.fixture
@@ -21,34 +21,51 @@ def session_path():
 
 @pytest.fixture
 def season_data():
-    """Minimal season index response (Meetings list)."""
+    """Minimal livetiming-only season index response (Meetings list)."""
+    meetings = [
+        {
+            "Key": 1212,
+            "Code": "BAH",
+            "Number": 1,
+            "Location": "Sakhir",
+            "OfficialName": "Bahrain Grand Prix",
+            "Name": "Bahrain",
+            "Country": {"Key": 1, "Code": "BHR", "Name": "Bahrain"},
+            "Circuit": {"Key": 3, "ShortName": "Sakhir"},
+            "Sessions": [
+                {
+                    "Key": 9465,
+                    "Type": "Race",
+                    "Number": 5,
+                    "Name": "Race",
+                    "StartDate": "2024-03-02T15:00:00Z",
+                    "EndDate": "2024-03-02T17:00:00Z",
+                    "GmtOffset": "+03:00",
+                    "Path": "2024-03-02_Race",
+                }
+            ],
+        }
+    ]
     return {
         "Year": 2024,
-        "Meetings": [
-            {
-                "Key": 1212,
-                "Code": "BAH",
-                "Number": 1,
-                "Location": "Sakhir",
-                "OfficialName": "Bahrain Grand Prix",
-                "Name": "Bahrain",
-                "Country": {"Key": 1, "Code": "BHR", "Name": "Bahrain"},
-                "Circuit": {"Key": 3, "ShortName": "Sakhir"},
-                "Sessions": [
-                    {
-                        "Key": 9465,
-                        "Type": "Race",
-                        "Number": 5,
-                        "Name": "Race",
-                        "StartDate": "2024-03-02T15:00:00Z",
-                        "EndDate": "2024-03-02T17:00:00Z",
-                        "GmtOffset": "+03:00",
-                        "Path": "2024-03-02_Race",
-                    }
-                ],
-            }
-        ]
+        "Meetings": meetings,
+        "is_livetiming_available": True,
+        "is_jolpica_available": False,
+        "livetiming_data": {"Meetings": meetings},
+        "jolpica_data": None,
     }
+
+
+@pytest.fixture
+def mock_season_jolpica_loaders():
+    """No-op Season Jolpica loaders so generate tests stay offline."""
+    with (
+        patch("livef1.models.season.Season._load_drivers"),
+        patch("livef1.models.season.Season._load_constructors"),
+        patch("livef1.models.season.Season._load_driver_standings"),
+        patch("livef1.models.season.Season._load_constructor_standings"),
+    ):
+        yield
 
 
 @pytest.fixture

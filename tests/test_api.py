@@ -229,7 +229,7 @@ def _dummy_load_single_data_for_generate(dataName, session, stream):
     return dataName, raw, parsed
 
 
-def test_get_meeting_get_session_and_generate_explicit(season_data):
+def test_get_meeting_get_session_and_generate_explicit(season_data, mock_season_jolpica_loaders):
     """Explicitly call get_meeting, get_session, then session.generate() in the same test."""
     index_feeds = {
         "Feeds": {

@@ -71,7 +71,7 @@ class Season:
         self.is_livetiming_available = is_livetiming_available
         self.is_jolpica_available = is_jolpica_available
         self.wiki = wiki
-        self.drivers = []
+        self.drivers = {}
         self.constructors = {}
         self.livetiming_data = livetiming_data
         self.jolpica_data = jolpica_data
@@ -101,10 +101,24 @@ class Season:
 
         self.parse_sessions()  # Parse sessions from the meetings.
         self.set_meetings()  # Create Meeting objects for each meeting.
-        self._load_drivers()
-        self._load_constructors()
-        self._load_driver_standings()
-        self._load_constructor_standings()
+        if not self.is_jolpica_available:
+            return
+        try:
+            self._load_drivers()
+        except Exception:
+            logger.debug(f"Drivers not available for season {self.year}.")
+        try:
+            self._load_constructors()
+        except Exception:
+            logger.debug(f"Constructors not available for season {self.year}.")
+        try:
+            self._load_driver_standings()
+        except Exception:
+            logger.debug(f"Driver standings not available for season {self.year}.")
+        try:
+            self._load_constructor_standings()
+        except Exception:
+            logger.debug(f"Constructor standings not available for season {self.year}.")
     
     def _load_drivers(self):
         """

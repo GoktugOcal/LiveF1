@@ -2,6 +2,25 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.6] - 2026-08-18
+
+### Fixed
+
+- Fixed `Season.load()` to skip Jolpica driver, constructor, and standings fetches when Jolpica is unavailable, and to tolerate partial Jolpica failures without breaking season construction.
+- Fixed `Season.drivers` defaulting to a dict instead of a list.
+- Fixed `Session` Jolpica availability to resolve the meeting race row before checking session fields, and to respect `season.is_jolpica_available`.
+- Fixed `jolpica_session_available_on_race()` returning safely when the race row is `None`.
+- Fixed Jolpica-only meeting merge for Practice 3 and Qualifying start times (date/time fallbacks).
+- Fixed `Country` lookup for Turkey by normalizing to `Türkiye` before pycountry resolution.
+- Fixed `Meeting.set_sessions()` skipping session entries without a `Name`.
+- Removed leftover debug `print` calls from silver table generation.
+
+### Tests
+
+- Added `test_models_season.py` to verify livetiming-only seasons do not call Jolpica during load.
+- Updated test fixtures with explicit backend availability flags and a `mock_season_jolpica_loaders` helper for offline generate tests.
+- Added a unit test for `jolpica_session_available_on_race(None, ...)`.
+
 ## [1.2.5] - 2026-08-13
 
 ### Fixed

@@ -109,7 +109,15 @@ class Session:
             self.is_jolpica_available = False
         else:
             self.is_livetiming_available = livetiming_session_in_season_index(getattr(self.season, "livetiming_data", None), self.meeting.name, self.name, self.type, self.number)
-            self.is_jolpica_available = jolpica_session_available_on_race(getattr(self.season, "jolpica_data", None), self.name, self.type, self.number)
+            if not getattr(self.season, "is_jolpica_available", False):
+                self.is_jolpica_available = False
+            else:
+                race = jolpica_find_race_for_meeting(
+                    getattr(self.season, "jolpica_data", None), self.meeting.name
+                )
+                self.is_jolpica_available = jolpica_session_available_on_race(
+                    race, self.name, self.type, self.number
+                )
 
     def _check_if_livetiming_available(self):
         """

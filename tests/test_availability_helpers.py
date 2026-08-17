@@ -99,6 +99,10 @@ def test_jolpica_session_available_on_race(name, type_, num, keys, expected):
     assert jolpica_session_available_on_race(race, name, type_, num) is expected
 
 
+def test_jolpica_session_available_on_race_none():
+    assert jolpica_session_available_on_race(None, "Race", "Race", None) is False
+
+
 def test_jolpica_session_dict_race():
     class R:
         race_name = "Bahrain"
