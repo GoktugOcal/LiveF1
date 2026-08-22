@@ -23,13 +23,13 @@ def reset_logging():
     )
 
 
-def _handlers_of_type(handler_type):
-    return [h for h in logger.handlers if isinstance(h, handler_type)]
-
-
 def test_default_has_console_only():
-    assert len(_handlers_of_type(logging.StreamHandler)) >= 1
-    assert _handlers_of_type(logging.FileHandler) == []
+    # Inspect LiveF1-owned handlers. pytest 9.1+ also attaches capture
+    # handlers (LogCaptureHandler, _FileHandler /dev/null) to loggers with
+    # propagate=False, so scanning logger.handlers with isinstance() is unstable.
+    assert logger_module._console_handler is not None
+    assert logger_module._console_handler in logger.handlers
+    assert logger_module._file_handler is None
 
 
 def test_configure_log_level_string():
@@ -56,12 +56,11 @@ def test_configure_enables_file_logging(tmp_path):
     log_file = tmp_path / "livef1.log"
     configure(logging_file_path=log_file)
 
-    file_handlers = _handlers_of_type(logging.FileHandler)
-    assert len(file_handlers) == 1
+    assert logger_module._file_handler is not None
+    assert logger_module._file_handler in logger.handlers
 
     logger.info("hello from test")
-    for handler in file_handlers:
-        handler.flush()
+    logger_module._file_handler.flush()
 
     assert log_file.exists()
     assert "hello from test" in log_file.read_text()
@@ -72,28 +71,26 @@ def test_configure_creates_parent_directories(tmp_path):
     configure(logging_file_path=log_file)
 
     logger.info("nested path")
-    for handler in _handlers_of_type(logging.FileHandler):
-        handler.flush()
+    if logger_module._file_handler is not None:
+        logger_module._file_handler.flush()
 
     assert log_file.exists()
 
 
 def test_configure_disables_file_logging(tmp_path):
     configure(logging_file_path=tmp_path / "livef1.log")
-    assert _handlers_of_type(logging.FileHandler)
+    assert logger_module._file_handler is not None
+    assert logger_module._file_handler in logger.handlers
 
     configure(logging_file_path=None)
-    assert _handlers_of_type(logging.FileHandler) == []
+    assert logger_module._file_handler is None
 
 
 def test_configure_stream_format():
     configure(logging_stream_format="%(levelname)s :: %(message)s")
-    stream_handlers = [
-        h for h in logger.handlers
-        if isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
-    ]
-    assert stream_handlers
-    assert "%(levelname)s :: %(message)s" in stream_handlers[0].formatter._fmt
+    assert logger_module._console_handler is not None
+    assert logger_module._console_handler in logger.handlers
+    assert "%(levelname)s :: %(message)s" in logger_module._console_handler.formatter._fmt
 
 
 def test_configure_lives_in_config_module():
