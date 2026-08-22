@@ -2,6 +2,18 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.7] - 2026-08-22
+
+### Fixed
+
+- Fixed a circular import in `helper.py` by lazily importing `LivetimingF1adapters` inside `get_data()` and `get_car_data_stream()`.
+- Fixed logger tests for pytest 9.1+ by asserting LiveF1-owned handler references instead of scanning `logger.handlers` with `isinstance()`.
+
+### Changed
+
+- Moved `pycountry`, `pytz`, and `ZoneInfo` imports to the top of `helper.py`.
+- Synced `requirements.txt` with `pyproject.toml` dependencies (BaseF1, pycountry, pytz, timezonefinder, tqdm, and version pins).
+
 ## [1.2.6] - 2026-08-18
 
 ### Fixed
