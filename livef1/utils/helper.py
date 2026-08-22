@@ -7,11 +7,14 @@ import json
 import zlib
 from urllib.parse import urljoin
 from typing import List, Dict, Union
+from zoneinfo import ZoneInfo
 from jellyfish import jaro_similarity, jaro_winkler_similarity
 import re
 from string import punctuation
 import numpy as np
 import pandas as pd
+import pycountry
+import pytz
 import requests
 from bs4 import BeautifulSoup
 
@@ -19,7 +22,6 @@ from bs4 import BeautifulSoup
 from .constants import *
 from .logger import logger
 from .exceptions import LiveF1Error
-from ..adapters import LivetimingF1adapters
 
 def build_session_endpoint(session_path):
     """
@@ -69,6 +71,8 @@ def get_data(path, stream):
     Union[dict, str]
         A dictionary of records if `stream` is True, else a string response.
     """
+    from ..adapters.livetimingf1_adapter import LivetimingF1adapters
+
     adapters = LivetimingF1adapters()
     endpoint = path
     res_text = adapters.get(endpoint=endpoint)
@@ -94,6 +98,8 @@ def get_car_data_stream(path):
     dict
         A dictionary where keys are the first 12 characters of each record and values are the remaining data.
     """
+    from ..adapters.livetimingf1_adapter import LivetimingF1adapters
+
     adapters = LivetimingF1adapters()
     endpoint = path
     res_text = adapters.get(endpoint=endpoint)
@@ -448,10 +454,6 @@ def to_datetime(var):
         return pd.to_datetime(var.values, format='ISO8601').tz_localize(None).round("ms")
     elif isinstance(var, np.ndarray):
         return pd.to_datetime(var, format='ISO8601').tz_localize(None).round("ms")
-
-import pycountry
-import pytz
-from zoneinfo import ZoneInfo
 
 def get_country_code(country_name):
     country = pycountry.countries.search_fuzzy(country_name.replace("’", "'"))[0]
