@@ -595,6 +595,7 @@ silver_cartel_col_order = [
   'timestamp',
   'LapNo',
   'Position',
+  'IntervalToPositionAhead',
   'RPM',
   'Speed',
   'GearNo',

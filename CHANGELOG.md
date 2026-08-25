@@ -2,6 +2,18 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.8] - 2026-08-25
+
+### Added
+
+- Added `IntervalToPositionAhead` to silver car telemetry via `add_interval_to_position_ahead()`, merged from TimingData and included in the silver car telemetry column order.
+
+### Changed
+
+- Raised the minimum `pandas` dependency from `>=2.2.0` to `>=3.0.3` in `pyproject.toml`, `requirements.txt`, and `uv.lock`.
+- Raised the minimum supported Python version from `>=3.10` to `>=3.11` (required by pandas 3.x).
+- Added `ipykernel>=7.3.0` as a package dependency for notebook workflows.
+
 ## [1.2.7] - 2026-08-22
 
 ### Fixed

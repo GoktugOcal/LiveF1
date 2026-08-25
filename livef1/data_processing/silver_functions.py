@@ -78,6 +78,17 @@ def add_lineposition(telemetry_df, df_tmg):
     telemetry_df.Position = telemetry_df.Position.ffill()
     return telemetry_df.reset_index()
 
+def add_interval_to_position_ahead(telemetry_df, df_tmg):
+    temp_tmg = df_tmg[["timestamp", "IntervalToPositionAhead_Value"]]
+    temp_tmg = temp_tmg[
+        (~temp_tmg["IntervalToPositionAhead_Value"].str.contains("L"))
+        & (temp_tmg["IntervalToPositionAhead_Value"] != "")
+    ]
+    telemetry_df = pd.merge_asof(telemetry_df, temp_tmg[["timestamp", "IntervalToPositionAhead_Value"]], on="timestamp")
+    telemetry_df["IntervalToPositionAhead_Value"] = telemetry_df["IntervalToPositionAhead_Value"].astype(float)
+    telemetry_df.rename(columns={"IntervalToPositionAhead_Value": "IntervalToPositionAhead"}, inplace=True)
+    return telemetry_df
+
 def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
 
     def delete_laps(laps_df, df_rcm):
@@ -420,6 +431,10 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
     # Get tyre data
     df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
 
+    # Get timing data
+    df_tmg["timestamp"] = pd.to_timedelta(df_tmg["timestamp"])
+    df_tmg["timestamp"] = df_tmg["timestamp"].astype('timedelta64[ns]')
+
     # Join car and position data
     df = df_car \
         .set_index(["DriverNo", "Utc"]) \
@@ -480,6 +495,7 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
         
         df_driver = add_track_status_telemetry(df_driver, df_track)
         df_driver = add_lineposition(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
+        df_driver = add_interval_to_position_ahead(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
 
         ## TODO: Add race distance
         # if len(df_driver) > 0:
