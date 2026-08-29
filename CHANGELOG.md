@@ -2,6 +2,14 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.9] - 2026-08-29
+
+### Fixed
+
+- Rewrote `add_track_status()` for the laps table to derive lap end times and merge track status at lap boundaries, producing more reliable `TrackStatus` values per lap.
+- Fixed missing lap 1 `Position` values by backfilling from the first TimingData position per driver.
+- Guarded `IntervalToPositionAhead` enrichment in car telemetry so it runs only when TimingData exposes `IntervalToPositionAhead_Value`.
+
 ## [1.2.8] - 2026-08-25
 
 ### Added

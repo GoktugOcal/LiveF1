@@ -54,16 +54,34 @@ def add_distance_to_lap(lap_df, start_x, start_y, x_coeff, y_coeff):
 
     return lap_df
 
-def add_track_status(laps_df, df_track):
-    temp_df = laps_df.copy()
-    temp_df = temp_df.set_index("LapStartTime").join(df_track.set_index("timestamp")[["Status","Message"]], how="outer")
-    temp_df.LapNo = temp_df.LapNo.ffill()
+# def add_track_status(laps_df, df_track):
+#     temp_df = laps_df.copy()
+#     temp_df = temp_df.set_index("LapStartTime").join(df_track.set_index("timestamp")[["Status","Message"]], how="outer")
+#     temp_df.LapNo = temp_df.LapNo.ffill()
 
-    temp_df.Status = temp_df.Status.ffill().bfill()
-    laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Status.unique().apply(lambda x: ",".join(x))).reset_index().rename(columns={"Status":"TrackStatus"})
-    # temp_df.Message = temp_df.Message.ffill()
-    # laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Message.unique().apply(lambda x: ",".join(x))).reset_index()
+#     temp_df.Status = temp_df.Status.ffill().bfill()
+#     laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Status.unique().apply(lambda x: ",".join(x))).reset_index().rename(columns={"Status":"TrackStatus"})
+#     # temp_df.Message = temp_df.Message.ffill()
+#     # laps_df = laps_df.set_index("LapNo").join(temp_df.groupby("LapNo").Message.unique().apply(lambda x: ",".join(x))).reset_index()
 
+#     return laps_df
+
+def add_track_status(laps_df, df_trackstatus):
+    laps_df["LapEndTime"] = laps_df["LapStartTime"].shift(-1)
+
+    for i in range(1, len(laps_df)):
+        if pd.isna(laps_df.iloc[i].LapEndTime):
+            prev = laps_df.iloc[i-1].LapEndTime
+            prev_start = laps_df.iloc[i-1].LapStartTime
+            curr_start = laps_df.iloc[i].LapStartTime
+            interval = curr_start - prev_start
+            laps_df.iat[i, laps_df.columns.get_loc("LapEndTime")] = prev + interval
+
+    df = pd.merge(laps_df, df_trackstatus, left_on="LapEndTime", right_on="timestamp", how="outer")
+    df["LapNo"] = df["LapNo"].bfill()
+    status_df = df.groupby(["LapNo"]).Status.unique().apply(lambda x: ",".join(np.sort(np.asarray(x)[~pd.isna(np.asarray(x))]))).replace("","1").to_frame()
+    laps_df = pd.merge(laps_df, status_df, left_on="LapNo", right_on="LapNo", how="left")
+    laps_df.rename(columns={"Status":"TrackStatus"}, inplace=True)
     return laps_df
 
 def add_track_status_telemetry(telemetry_df, df_track):
@@ -333,6 +351,10 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
     all_laps_df["LapStartDate"] = (all_laps_df["LapStartTime"] + session.first_datetime).fillna(session.session_start_datetime)
     all_laps_df["LapStartTime"] = all_laps_df["LapStartTime"].fillna(all_laps_df.iloc[1].LapStartTime - (all_laps_df.iloc[1].LapStartDate - all_laps_df.iloc[0].LapStartDate))
     
+    # Fill position data with timing data
+    first_pos_map = df_exp[df_exp["RacingNumber"].notna()].sort_values(by="timestamp")[["DriverNo","timestamp","Position"]].groupby("DriverNo").first()["Position"].to_dict()
+    mask = (all_laps_df["LapNo"] == 1) & (all_laps_df["Position"].isna())
+    all_laps_df.loc[mask, "Position"] = all_laps_df.loc[mask, "DriverNo"].map(first_pos_map)
 
     # Delete laps
     all_laps_df = delete_laps(all_laps_df, df_rcm)
@@ -495,7 +517,7 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
         
         df_driver = add_track_status_telemetry(df_driver, df_track)
         df_driver = add_lineposition(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
-        df_driver = add_interval_to_position_ahead(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
+        if "IntervalToPositionAhead_Value" in df_tmg.columns: df_driver = add_interval_to_position_ahead(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
 
         ## TODO: Add race distance
         # if len(df_driver) > 0:
