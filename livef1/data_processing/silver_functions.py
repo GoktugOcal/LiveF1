@@ -77,8 +77,23 @@ def add_track_status(laps_df, df_trackstatus):
             interval = curr_start - prev_start
             laps_df.iat[i, laps_df.columns.get_loc("LapEndTime")] = prev + interval
 
+    # Converting LapEndTime to timedelta
+    # try:
+    if laps_df['LapEndTime'].dropna().empty:
+        laps_df["TrackStatus"] = None
+        return laps_df
+    else:
+        laps_df['LapEndTime'] = pd.to_timedelta(laps_df['LapEndTime'])
+    # except:
+    #     pass
+
+    # Merging laps dataframe with track status dataframe
     df = pd.merge(laps_df, df_trackstatus, left_on="LapEndTime", right_on="timestamp", how="outer")
+
+    # Filling missing LapNo values
     df["LapNo"] = df["LapNo"].bfill()
+
+    # Grouping by LapNo and getting unique Status values
     status_df = df.groupby(["LapNo"]).Status.unique().apply(lambda x: ",".join(np.sort(np.asarray(x)[~pd.isna(np.asarray(x))]))).replace("","1").to_frame()
     laps_df = pd.merge(laps_df, status_df, left_on="LapNo", right_on="LapNo", how="left")
     laps_df.rename(columns={"Status":"TrackStatus"}, inplace=True)
@@ -332,13 +347,18 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         # Aggregate all laps data of the driver
         laps_df = pd.DataFrame(laps)
         laps_df["DriverNo"] = driver_no
-
-        if "LapStartTime" in laps_df.columns: laps_df = add_track_status(laps_df, df_track)
-        else: laps_df["LapStartTime"] = None
-            
-
+        laps_df["LapTime"] = laps_df["LapTime"].fillna(pd.Timedelta("nan"))
+        laps_df["LapStartTime"] = laps_df["LapStartTime"].fillna(pd.Timedelta("nan")) if "LapStartTime" in laps_df.columns else pd.Timedelta("nan")
+        
+        # Calculating lap start time
         new_ts = ( laps_df["LapStartTime"] + laps_df["LapTime"] ).shift(1)
         laps_df["LapStartTime"] = new_ts.combine_first(laps_df["LapStartTime"])
+
+        # Adding track status to laps
+        if "LapStartTime" in laps_df.columns: laps_df = add_track_status(laps_df, df_track)
+        else: laps_df["TrackStatus"] = None
+
+        # Adding laps to all laps dataframe
         all_laps.append(laps_df)
 
     all_laps_df = pd.concat(all_laps, ignore_index=True)
@@ -402,7 +422,7 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         if col not in all_laps_df.columns:
             all_laps_df[col] = None
 
-    return all_laps_df[silver_laps_col_order]
+    return all_laps_df[silver_laps_col_order].sort_values(by=["DriverNo","LapNo"])
 
 def assign_regions(tel_cor, df_corners):
 

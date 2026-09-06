@@ -2,6 +2,14 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.10] - 2026-09-06
+
+### Fixed
+
+- Hardened `add_track_status()` to convert `LapEndTime` to timedelta and skip status merging when lap end times are empty, avoiding merge failures.
+- Fixed laps-table `LapStartTime` / `LapTime` handling by normalizing missing timedeltas and recalculating start times from previous lap end before attaching track status.
+- Sorted the generated laps table by `DriverNo` and `LapNo` for stable output order.
+
 ## [1.2.9] - 2026-08-29
 
 ### Fixed
