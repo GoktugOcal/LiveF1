@@ -24,7 +24,13 @@ from ..data_processing.etl import *
 from ..data_processing.jolpica_etl import parse_constructor_standings, parse_driver_standings
 from ..data_processing.data_models import *
 from ..data_processing.silver_functions import *
-from ..utils.constants import TOPICS_MAP, SILVER_SESSION_TABLES, TABLE_GENERATION_FUNCTIONS
+from ..utils.constants import (
+    TOPICS_MAP,
+    SILVER_SESSION_TABLES,
+    TABLE_GENERATION_FUNCTIONS,
+    TABLE_REQUIREMENTS,
+    TABLE_OPTIONAL_REQUIREMENTS,
+)
 from ..utils.exceptions import *
 from ..data_processing.lakes import DataLake
 from .driver import Driver, _jolpica_driver_dict
@@ -165,12 +171,20 @@ class Session:
 
     def _load_default_silver_tables(self):
         for table_name in SILVER_SESSION_TABLES:
-            self.create_silver_table(table_name, TABLE_REQUIREMENTS[table_name], include_session=True)(globals()[TABLE_GENERATION_FUNCTIONS[table_name]])
+            self.create_silver_table(
+                table_name,
+                TABLE_REQUIREMENTS[table_name],
+                include_session=True,
+                optional_source_tables=TABLE_OPTIONAL_REQUIREMENTS.get(table_name, []),
+            )(globals()[TABLE_GENERATION_FUNCTIONS[table_name]])
     
     def _load_circuit_data(self):
-        circuit = self.meeting.circuit
-        circuit._load_circuit_data()
-        self.data_lake.create_bronze_table(table_name="track_regions", raw_data=circuit._raw_circuit_data, parsed_data=circuit.track_regions)
+        try:
+            circuit = self.meeting.circuit
+            circuit._load_circuit_data()
+            self.data_lake.create_bronze_table(table_name="track_regions", raw_data=circuit._raw_circuit_data, parsed_data=circuit.track_regions)
+        except:
+            logger.debug(f"Circuit data not available for session: {self.meeting.name}: {self.name}. Skipping.")
 
     def load_session_data(self):
         """
@@ -763,23 +777,29 @@ class Session:
             logger.error("Circular dependencies detected. Please check your table dependencies.")
 
 
-    def _create_table(self, level, table_name, source_tables, include_session=False):
+    def _create_table(self, level, table_name, source_tables, include_session=False, optional_source_tables=None):
         """
-        Decorator factory that creates a SilverTable instance
+        Decorator factory that creates a SilverTable or GoldTable instance
         
         Args:
-            table_name: Name for the silver table
-            source_tables: List of source table names to use from bronze lake
+            table_name: Name for the table
+            source_tables: List of required source table names
+            optional_source_tables: Source tables that may be missing; the
+                callback receives ``None`` for each one that cannot be resolved.
         
         Returns:
             Decorator function that will register the callback for table generation
         """
         import inspect
 
+        source_tables = list(source_tables) if source_tables else []
+        optional_source_tables = list(optional_source_tables) if optional_source_tables else []
+        optional_set = set(optional_source_tables)
+
         if include_session:
-            param_table = ["_session"] + source_tables
+            param_table = ["_session"] + source_tables + optional_source_tables
         else:
-            param_table = source_tables
+            param_table = source_tables + optional_source_tables
         
        
         if level == "silver":
@@ -830,10 +850,18 @@ class Session:
                     if table == "_session": 
                         source_data[param_name] = self
                     else:
+                        if table in optional_set and not self.data_lake._is_resolvable_source(table):
+                            source_data[param_name] = None
+                            continue
+
                         # TODO: Add sources from different levels
                         table_level = self.data_lake._identify_table_level(table)
                         # source_dict[table_level].append(table)
-                        if table_level == None: raise TopicNotFoundError(f"The topic name you provided '{table}' is not included in any level.")
+                        if table_level == None:
+                            if table in optional_set:
+                                source_data[param_name] = None
+                                continue
+                            raise TopicNotFoundError(f"The topic name you provided '{table}' is not included in any level.")
                         elif table_level == "bronze":
                             topic_name = self.check_data_name(table)
                         else: topic_name = table
@@ -854,12 +882,19 @@ class Session:
 
             if level == "silver":
                 # Create a new SilverTable instance
-                new_table = SilverTable(table_name=table_name, sources=source_tables)
+                new_table = SilverTable(
+                    table_name=table_name,
+                    sources=source_tables,
+                    optional_sources=optional_source_tables,
+                )
                 new_table.callback = wrapped_callback
             
             elif level == "gold":
-                # Create a new SilverTable instance
-                new_table = GoldTable(table_name=table_name, sources=source_tables)
+                new_table = GoldTable(
+                    table_name=table_name,
+                    sources=source_tables,
+                    optional_sources=optional_source_tables,
+                )
                 new_table.callback = wrapped_callback
 
             # Store the table in the selected lake
@@ -872,22 +907,24 @@ class Session:
 
         return decorator
 
-    def create_silver_table(self, table_name, source_tables, include_session=False):
+    def create_silver_table(self, table_name, source_tables, include_session=False, optional_source_tables=None):
 
         return self._create_table(
             level = "silver",
             table_name = table_name,
             source_tables = source_tables,
-            include_session = include_session
+            include_session = include_session,
+            optional_source_tables = optional_source_tables,
             )
         
-    def create_gold_table(self, table_name, source_tables, include_session=False):
+    def create_gold_table(self, table_name, source_tables, include_session=False, optional_source_tables=None):
         
         return self._create_table(
             level = "gold",
             table_name = table_name,
             source_tables = source_tables,
-            include_session = include_session
+            include_session = include_session,
+            optional_source_tables = optional_source_tables,
             )
     
     def load_session_results(self):

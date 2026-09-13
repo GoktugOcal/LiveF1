@@ -74,6 +74,8 @@ def test_silver_table_init():
     assert t1.source_tables["silver"] == []
     assert t1.source_tables["gold"] == []
     assert t1.df is None
+    assert t1.optional_sources == []
+    assert t2.optional_sources == []
     
     # Verify t2 also has empty lists (ensures no shared state)
     assert t2.source_tables["bronze"] == []
@@ -89,6 +91,7 @@ def test_gold_table_init():
     t = GoldTable("gold1", sources=["SectorDiff"], data_lake=None)
     assert t.table_name == "gold1"
     assert t.sources == ["SectorDiff"]
+    assert t.optional_sources == []
 
 
 def test_simple_lake_put_has_data_get():
@@ -269,3 +272,75 @@ def test_data_lake__topo_sort_tables_cycle_raises():
     table_b.dependency_tables = [table_a]
     with pytest.raises(ValueError, match="Circular dependency"):
         dl._topo_sort_tables([table_a, table_b])
+
+
+def test_data_lake__is_resolvable_source_from_metadata_and_topics():
+    session = MagicMock()
+    session.topic_names_info = {"TimingData": {"key": "Timing_Data"}}
+    dl = DataLake(session)
+    dl.metadata["track_regions"] = {"table_type": "bronze", "created_at": None, "generated": False}
+
+    assert dl._is_resolvable_source("track_regions") is True
+    assert dl._is_resolvable_source("TimingData") is True
+    assert dl._is_resolvable_source("Timing_Data") is True
+    assert dl._is_resolvable_source("missing_table") is False
+
+
+def test_refine_sources_skips_missing_optional_source():
+    session = MagicMock()
+    session.topic_names_info = {"TimingData": {"key": "Timing_Data"}}
+    session._identify_data_level.side_effect = lambda name: "bronze" if name == "TimingData" else None
+    dl = DataLake(session)
+    dl.metadata["TimingData"] = {"table_type": "bronze", "created_at": None, "generated": False}
+
+    table = SilverTable(
+        "carTelemetry",
+        sources=["TimingData"],
+        optional_sources=["track_regions"],
+        data_lake=dl,
+    )
+    table.refine_sources()
+
+    assert "TimingData" in table.source_tables["bronze"]
+    assert "track_regions" not in table.source_tables["bronze"]
+    assert table.dependency_tables == []
+
+
+def test_refine_sources_binds_present_optional_source():
+    session = MagicMock()
+    session.topic_names_info = {"TimingData": {"key": "Timing_Data"}}
+    session._identify_data_level.side_effect = lambda name: "bronze" if name in ("TimingData", "track_regions") else None
+    dl = DataLake(session)
+    dl.metadata["TimingData"] = {"table_type": "bronze", "created_at": None, "generated": False}
+    dl.metadata["track_regions"] = {"table_type": "bronze", "created_at": None, "generated": False}
+
+    table = SilverTable(
+        "carTelemetry",
+        sources=["TimingData"],
+        optional_sources=["track_regions"],
+        data_lake=dl,
+    )
+    table.refine_sources()
+
+    assert "TimingData" in table.source_tables["bronze"]
+    assert "track_regions" in table.source_tables["bronze"]
+
+
+def test_refine_sources_optional_silver_dependency_skipped_when_missing():
+    session = MagicMock()
+    session.topic_names_info = {}
+    session._identify_data_level.side_effect = lambda name: "bronze" if name == "TimingData" else None
+    dl = DataLake(session)
+    dl.metadata["TimingData"] = {"table_type": "bronze", "created_at": None, "generated": False}
+
+    gold = GoldTable(
+        "G",
+        sources=["TimingData"],
+        optional_sources=["A"],
+        data_lake=dl,
+    )
+    gold.refine_sources()
+
+    assert "TimingData" in gold.source_tables["bronze"]
+    assert gold.dependency_tables == []
+    assert "A" not in gold.source_tables["silver"]

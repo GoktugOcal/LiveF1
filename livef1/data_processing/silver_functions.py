@@ -564,7 +564,7 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
     all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
     all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
 
-    if hasattr(session.meeting.circuit, "start_coordinates"):
+    if df_circuits is not None and hasattr(session.meeting.circuit, "start_coordinates"):
         all_drivers_df["TrackRegion"] = assign_regions(all_drivers_df, df_circuits)
     else:
         all_drivers_df["TrackRegion"] = None

@@ -2,6 +2,25 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.2.11] - 2026-09-13
+
+### Added
+
+- Added `TABLE_OPTIONAL_REQUIREMENTS` and `optional_source_tables` on `create_silver_table` / `create_gold_table` so tables can generate when optional sources are missing (callbacks receive `None`).
+- Added `DataLake._is_resolvable_source()` to decide whether an optional source is already in the lake or available as a livetiming topic.
+
+### Changed
+
+- Moved `track_regions` off `TABLE_REQUIREMENTS["carTelemetry"]` so silver telemetry still generates when circuit data is unavailable; `TrackRegion` is left empty in that case.
+
+### Documentation
+
+- Documented optional source tables in the medallion architecture user guide.
+
+### Tests
+
+- Added unit tests for optional requirements constants, source resolvability, optional refine-sources behavior, and silver-table callbacks receiving `None` for missing optional sources.
+
 ## [1.2.10] - 2026-09-06
 
 ### Fixed

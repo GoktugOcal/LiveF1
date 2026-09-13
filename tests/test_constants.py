@@ -30,6 +30,16 @@ def test_table_requirements():
     assert "raceControlMessages" in constants.TABLE_REQUIREMENTS
     assert "TimingData" in constants.TABLE_REQUIREMENTS["laps"]
     assert "CarData.z" in constants.TABLE_REQUIREMENTS["carTelemetry"]
+    assert "track_regions" not in constants.TABLE_REQUIREMENTS["carTelemetry"]
+
+
+def test_table_optional_requirements():
+    assert "laps" in constants.TABLE_OPTIONAL_REQUIREMENTS
+    assert "carTelemetry" in constants.TABLE_OPTIONAL_REQUIREMENTS
+    assert "raceControlMessages" in constants.TABLE_OPTIONAL_REQUIREMENTS
+    assert constants.TABLE_OPTIONAL_REQUIREMENTS["laps"] == []
+    assert constants.TABLE_OPTIONAL_REQUIREMENTS["raceControlMessages"] == []
+    assert "track_regions" in constants.TABLE_OPTIONAL_REQUIREMENTS["carTelemetry"]
 
 
 def test_topics_map_has_expected_keys():

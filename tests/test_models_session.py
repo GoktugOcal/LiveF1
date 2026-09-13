@@ -93,3 +93,68 @@ def test_session_create_silver_table_decorator():
 
     assert "CustomLaps" in session.data_lake.metadata
     assert session.data_lake.get("silver", "CustomLaps") is not None
+
+
+def test_session_create_silver_table_missing_optional_source_passes_none():
+    with patch("livef1.models.session.helper.build_session_endpoint", return_value="https://example.com/session"):
+        session = Session(key=9465, name="Race", path="x")
+    session.topic_names_info = {"TimingData": {"key": "Timing_Data"}}
+    bt = BronzeTable("TimingData", data={}, parsed_data=[{"SessionKey": 9465}], data_lake=session.data_lake)
+    session.data_lake.put("bronze", "TimingData", bt)
+
+    received = {}
+
+    @session.create_silver_table(
+        table_name="CustomLaps",
+        source_tables=["TimingData"],
+        optional_source_tables=["track_regions"],
+        include_session=True,
+    )
+    def custom_laps(_session, TimingData, track_regions):
+        received["track_regions"] = track_regions
+        return TimingData.head(1)
+
+    table = session.data_lake.get("silver", "CustomLaps")
+    assert table.optional_sources == ["track_regions"]
+    result = table.generate_table()
+    assert received["track_regions"] is None
+    assert result is not None
+    assert len(result) == 1
+
+
+def test_session_create_gold_table_missing_optional_source_passes_none():
+    with patch("livef1.models.session.helper.build_session_endpoint", return_value="https://example.com/session"):
+        session = Session(key=9465, name="Race", path="x")
+    session.topic_names_info = {"TimingData": {"key": "Timing_Data"}}
+    bt = BronzeTable("TimingData", data={}, parsed_data=[{"SessionKey": 9465}], data_lake=session.data_lake)
+    session.data_lake.put("bronze", "TimingData", bt)
+
+    received = {}
+
+    @session.create_gold_table(
+        table_name="CustomGold",
+        source_tables=["TimingData"],
+        optional_source_tables=["track_regions"],
+        include_session=True,
+    )
+    def custom_gold(_session, TimingData, track_regions):
+        received["track_regions"] = track_regions
+        return TimingData.head(1)
+
+    table = session.data_lake.get("gold", "CustomGold")
+    assert table.optional_sources == ["track_regions"]
+    result = table.generate_table()
+    assert received["track_regions"] is None
+    assert result is not None
+    assert len(result) == 1
+
+
+def test_load_default_silver_tables_marks_track_regions_optional():
+    with patch("livef1.models.session.helper.build_session_endpoint", return_value="https://example.com/session"):
+        session = Session(key=9465, name="Race", path="x")
+
+    session._load_default_silver_tables()
+    table = session.data_lake.get("silver", "carTelemetry")
+    assert "track_regions" not in table.sources
+    assert "track_regions" in table.optional_sources
+    assert "CarData.z" in table.sources

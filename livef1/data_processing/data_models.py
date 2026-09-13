@@ -154,47 +154,49 @@ def _fresh_source_tables_dict(source_tables=None):
     }
 
 
+def _refine_table_sources(table):
+    """Bind required sources, then optional sources that can be resolved."""
+    def bind(source, optional=False):
+        if optional and not table.data_lake._is_resolvable_source(source):
+            return
+        level = table.data_lake._identify_table_level(source)
+        if level:
+            table.source_tables[level].append(source)
+            if level in ["silver", "gold"]:
+                dependency_table = table.data_lake.get(level=level, table_name=source)
+                if dependency_table:
+                    table.dependency_tables.append(dependency_table)
+                elif not optional:
+                    raise ValueError(f"Source table '{source}' not found in data lake.")
+        elif not optional:
+            raise ValueError(f"Source table '{source}' not found in data lake.")
+
+    for source in table.sources:
+        bind(source, optional=False)
+    for source in getattr(table, "optional_sources", None) or []:
+        bind(source, optional=True)
+
+
 class SilverTable(Table):
-    def __init__(self, table_name, sources, source_tables=None, data_lake=None):
+    def __init__(self, table_name, sources, source_tables=None, data_lake=None, optional_sources=None):
         super().__init__(table_name, data_lake)
         self.sources = sources
+        self.optional_sources = list(optional_sources) if optional_sources else []
         self.source_tables = _fresh_source_tables_dict(source_tables)
         self.df = None
         self.dependency_tables = []
 
     def refine_sources(self):
-        for source in self.sources:
-            level = self.data_lake._identify_table_level(source)
-            if level:
-                self.source_tables[level].append(source)
-                if level in ["silver", "gold"]:
-                    dependency_table = self.data_lake.get(level = level, table_name = source)
-                    if dependency_table:
-                        self.dependency_tables.append(dependency_table)
-                    else:
-                        raise ValueError(f"Source table '{source}' not found in data lake.")
-            else:
-                raise ValueError(f"Source table '{source}' not found in data lake.")
+        _refine_table_sources(self)
 
 class GoldTable(Table):
-    def __init__(self, table_name, sources, source_tables=None, data_lake=None):
+    def __init__(self, table_name, sources, source_tables=None, data_lake=None, optional_sources=None):
         super().__init__(table_name, data_lake)
         self.sources = sources
+        self.optional_sources = list(optional_sources) if optional_sources else []
         self.source_tables = _fresh_source_tables_dict(source_tables)
         self.df = None
         self.dependency_tables = []
 
-
     def refine_sources(self):
-        for source in self.sources:
-            level = self.data_lake._identify_table_level(source)
-            if level:
-                self.source_tables[level].append(source)
-                if level in ["silver", "gold"]:
-                    dependency_table = self.data_lake.get(level = level, table_name = source)
-                    if dependency_table:
-                        self.dependency_tables.append(dependency_table)
-                    else:
-                        raise ValueError(f"Source table '{source}' not found in data lake.")
-            else:
-                raise ValueError(f"Source table '{source}' not found in data lake.")
+        _refine_table_sources(self)

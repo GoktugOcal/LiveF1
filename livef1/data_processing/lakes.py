@@ -465,6 +465,27 @@ class DataLake:
                 return table_level
             else:
                 return None
+
+    def _is_resolvable_source(self, source):
+        """
+        True if ``source`` is already in the lake or is a livetiming topic
+        available on this session.
+        """
+        if source in self.metadata:
+            return True
+
+        topic_info = getattr(self.session, "topic_names_info", None)
+        if not isinstance(topic_info, dict):
+            return False
+
+        source_lower = source.lower()
+        for topic, info in topic_info.items():
+            if topic.lower() == source_lower:
+                return True
+            key = info.get("key") if isinstance(info, dict) else None
+            if key and key.lower() == source_lower:
+                return True
+        return False
             
 
     def _expand_table_dependencies(self, seed_tables):

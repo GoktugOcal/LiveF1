@@ -135,6 +135,29 @@ In the previous examples, LiveF1 generates the silver tables that are already re
    session.generate() # Generate registered Silver lake
    print(session.RaceLeaders)
 
+Optional sources
+****************
+
+Required ``source_tables`` must be present or table generation fails. Pass extra inputs as ``optional_source_tables`` so the table still runs when those sources are missing; the callback receives ``None`` for each unresolved optional source.
+
+Default silver ``carTelemetry`` treats ``track_regions`` this way. If circuit data cannot be loaded, telemetry is still generated with ``TrackRegion`` left empty.
+
+.. code-block:: python
+   :caption: Example: Optional source tables
+
+   @session.create_silver_table(
+      table_name = "TelemetryWithRegions",
+      source_tables = ["CarData.z"],
+      optional_source_tables = ["track_regions"],
+      include_session = True
+   )
+   def telemetry_with_regions(session, car_data, track_regions):
+      if track_regions is None:
+         return car_data
+      return car_data
+
+The same ``optional_source_tables`` argument is available on ``create_gold_table``.
+
 .. code-block:: bash
 
    ...
