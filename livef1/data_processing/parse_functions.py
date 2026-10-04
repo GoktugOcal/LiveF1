@@ -381,6 +381,8 @@ def parse_team_radio(data, sessionKey, **kwargs):
         dict :
             A record containing the session key, timestamp, and captured radio messages.
     """
+    # The realtime client doesn't know the session path, so Path stays relative there
+    session_path = kwargs.get("session_path")
     for ts, ts_value in data:
     #data.items()::
         record = {
@@ -388,23 +390,19 @@ def parse_team_radio(data, sessionKey, **kwargs):
             "timestamp": ts
         }
 
-        if isinstance(ts_value["Captures"], list):
-            for capture in ts_value["Captures"]:
-                capture_record = {
-                    **record,
-                    **capture
-                }
-                capture_record["Path"] = urllib.parse.urljoin(build_session_endpoint(kwargs["session_path"]), capture_record["Path"])
-                print(capture_record)
-                yield capture_record
-        elif isinstance(ts_value["Captures"], dict):
-            for capture in ts_value["Captures"].values():
-                capture_record = {
-                    **record,
-                    **capture
-                }
-                capture_record["Path"] = urllib.parse.urljoin(build_session_endpoint(kwargs["session_path"]), capture_record["Path"])
-                yield capture_record
+        captures = ts_value["Captures"]
+        if isinstance(captures, dict):
+            captures = captures.values()
+        elif not isinstance(captures, list):
+            continue
+        for capture in captures:
+            capture_record = {
+                **record,
+                **capture
+            }
+            if session_path:
+                capture_record["Path"] = urllib.parse.urljoin(build_session_endpoint(session_path), capture_record["Path"])
+            yield capture_record
 
 def parse_tlarcm(data, sessionKey, **kwargs):
     """
