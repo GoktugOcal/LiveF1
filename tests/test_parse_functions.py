@@ -16,6 +16,7 @@ from livef1.data_processing.parse_functions import (
     parse_hearthbeat,
     parse_weather_data,
     parse_tlarcm,
+    parse_team_radio,
     parse_race_control_messages,
     parse_session_info,
     parse_pit_lane_time,
@@ -155,6 +156,40 @@ def test_parse_tlarcm():
     records = list(parse_tlarcm(data, SESSION_KEY))
     assert len(records) == 1
     assert records[0]["Message"] == "Safety car deployed"
+
+
+CAPTURE = {"Utc": "2026-09-26T11:05:00Z", "RacingNumber": "16", "Path": "TeamRadio/LEC_16_20260926_150500.mp3"}
+
+
+def test_parse_team_radio_without_session_path(capsys):
+    """The realtime client has no session path: Path must stay relative, and nothing is printed."""
+    data = [("2026-09-26T11:05:01Z", {"Captures": {"0": CAPTURE}})]
+    records = list(parse_team_radio(data, None))
+    assert len(records) == 1
+    assert records[0]["Path"] == CAPTURE["Path"]
+    assert records[0]["RacingNumber"] == "16"
+    assert capsys.readouterr().out == ""
+
+
+def test_parse_team_radio_list_with_session_path():
+    session_path = "2026/2026-09-26_Azerbaijan_Grand_Prix/2026-09-26_Race/"
+    data = [("0", {"Captures": [CAPTURE]})]
+    records = list(parse_team_radio(data, SESSION_KEY, session_path=session_path))
+    assert len(records) == 1
+    assert records[0]["Path"].startswith("https://livetiming.formula1.com/static/")
+    assert records[0]["Path"].endswith(session_path + CAPTURE["Path"])
+
+
+def test_parse_team_radio_dict_with_session_path():
+    session_path = "2026/2026-09-26_Azerbaijan_Grand_Prix/2026-09-26_Race/"
+    data = [("0", {"Captures": {"0": CAPTURE}})]
+    records = list(parse_team_radio(data, SESSION_KEY, session_path=session_path))
+    assert len(records) == 1
+    assert records[0]["Path"].endswith(session_path + CAPTURE["Path"])
+
+
+def test_parse_team_radio_ignores_unexpected_captures():
+    assert list(parse_team_radio([("0", {"Captures": "nothing"})], SESSION_KEY)) == []
 
 
 def test_parse_race_control_messages_list():
