@@ -15,7 +15,9 @@ All notable changes to LiveF1 will be documented in this file.
 ### Changed
 
 - `LivetimingF1adapters.get()` sends the token with every request and, on HTTP 401 (or 403 without a token), signs in once and retries.
-- `RealF1Client` sends the token with the SignalR negotiate request and the websocket handshake.
+- `RealF1Client` now uses SignalR Core (`/signalrcore`); the classic `/signalr` endpoint was retired and returns HTTP 401. It connects with the F1TV token (signing in via `livef1.login()` if needed), keeps the connection alive with pings, and reconnects with backoff when it drops. The callback API is unchanged.
+- Added a minimal built-in SignalR Core client (`livef1.adapters.signalrcore`) and removed the vendored classic `signalr_aio` client.
+- Requires `websockets>=14.0`.
 - Packaging now includes only the `livef1` package.
 
 ### Documentation
@@ -25,6 +27,7 @@ All notable changes to LiveF1 will be documented in this file.
 ### Tests
 
 - Added mocked tests for the sign-in flow, token decoding and storage, `.env` handling, and the adapter retry.
+- Added mocked tests for SignalR Core framing, handshake, subscribe, message dispatch, close, and the realtime sign-in retry.
 
 ## [1.2.11] - 2026-09-13
 

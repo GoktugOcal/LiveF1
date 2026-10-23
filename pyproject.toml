@@ -22,5 +22,5 @@ dependencies = [
     "timezonefinder>=8.2.0",
     "tqdm>=4.67.3",
     "ujson>=5.10.0",
-    "websockets>=13.0.1",
+    "websockets>=14.0",
 ]

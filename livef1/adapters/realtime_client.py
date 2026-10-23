@@ -1,31 +1,39 @@
 import asyncio
-import concurrent
-import requests
 import inspect
-import random
 
 import time
-import json
 from urllib.parse import urljoin
 
-from ..auth import auth_header
+import requests
+from websockets.exceptions import WebSocketException
+
+from ..auth import login
 from ..data_processing.etl import function_map
-from .signalr_aio._connection import Connection
+from .signalrcore import COMPLETION, connect
 from ..utils.logger import logger
 from ..utils.constants import (
-    DEFAULT_METHOD,
     BASE_URL,
     SIGNALR_ENDPOINT,
     REALTIME_CALLBACK_DEFAULT_PARAMETERS
     )
 from ..utils.exceptions import (
+    AdapterError,
     ArgumentError,
+    AuthenticationError,
     ParsingError
 )
+
+# seconds to wait before reconnecting; doubles after every failed attempt
+RECONNECT_DELAY = 1
+MAX_RECONNECT_DELAY = 30
+
 
 class RealF1Client:
     """
     A client for managing real-time Formula 1 data streaming.
+
+    The client connects to the live timing SignalR Core hub with the F1TV
+    token from :func:`livef1.login`, signing in first if needed.
 
     Attributes
     ----------
@@ -39,10 +47,8 @@ class RealF1Client:
         Path to the log file.
     _log_file_mode : str
         Mode for opening the log file.
-    _test : bool
-        Indicates if the client is in test mode.
     _log_file : file object
-        Log file object for writing messages (used in test mode).
+        Log file object for writing messages.
     _handlers : dict
         Mapping of methods to their respective handlers.
 
@@ -64,10 +70,7 @@ class RealF1Client:
         ):
 
         self._connection_url = urljoin(BASE_URL, SIGNALR_ENDPOINT)
-        self.headers = {
-            'User-agent': 'BestHTTP',
-            'Accept-Encoding': 'gzip, identity',
-            'Connection': 'keep-alive, Upgrade'}
+        self.headers = {'User-Agent': 'BestHTTP'}
 
         if isinstance(topics, str): self.topics = [topics]
         elif isinstance(topics, list): self.topics = topics
@@ -86,38 +89,6 @@ class RealF1Client:
                 for topic, data in records.items():
                     for record in data:
                         await self._file_logger(f"{topic} > {record}")
-
-    def _create_session(self):
-        """
-        Create an HTTP session with the required headers.
-
-        Returns
-        -------
-        requests.Session
-            A configured HTTP session.
-        """
-        session = requests.Session()
-        session.headers = {**self.headers, **auth_header()}
-        return session
-    
-    async def _on_message(self, msg):
-        """
-        Handle incoming messages asynchronously.
-
-        Parameters
-        ----------
-        msg : dict
-            The incoming message to process.
-        """
-        self._t_last_message = time.time()
-        loop = asyncio.get_running_loop()
-        try:
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                await loop.run_in_executor(
-                    pool, print, str(msg)
-                )
-        except Exception as e:
-            raise RealF1Error(e)
 
     async def _file_logger(self, msg):
         """
@@ -203,77 +174,99 @@ class RealF1Client:
 
     def run(self):
         """
-        Start the client in asynchronous mode.
+        Start the client and block until it is interrupted.
         """
         start = time.time()
-        self._async_engine_run()
-        logger.info(f"Client have run for {(time.time() - start):.2f} seconds.")
-
-    def _async_engine_run(self):
-        """
-        Execute the asynchronous engine.
-        """
         try:
-            asyncio.run(self._async_run())
+            asyncio.run(self._run())
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt - exiting...")
-    
-    async def _async_run(self):
-        """
-        Run the client asynchronously.
-        """
-        logger.info(f"Starting LiveF1 live timing client")
-        await asyncio.gather(
-            asyncio.ensure_future(self._forever_check()),
-            asyncio.ensure_future(self._run())
-            )
-        logger.info("Exiting...")
+        logger.info(f"Client have run for {(time.time() - start):.2f} seconds.")
 
-    async def _forever_check(self):
-        """
-        Keep the client running indefinitely.
-        """
-        while True:
-            await asyncio.sleep(1)
-        
-    def _sync_engine_run(self):
-        pass
-    
-    def _sync_engine(self):
-        pass
-    
     async def _run(self):
         """
-        Set up the SignalR connection and register handlers.
+        Keep a live timing connection open, reconnecting when it drops.
         """
-        # Create connection
-        self._connection = Connection(self._connection_url, session=self._create_session())
-        # Register hub
-        hub = self._connection.register_hub('Streaming')
-        # Set default message handler
-        for method, handler in self._handlers.items():
-            hub.client.on(method, handler)
+        logger.info("Starting LiveF1 live timing client")
+        delay = RECONNECT_DELAY
+        force_login = False
+        while True:
+            try:
+                async for _ in self._stream(force_login):
+                    # connected and subscribed; reset the retry state
+                    delay, force_login = RECONNECT_DELAY, False
+                logger.warning(f"Live timing closed the connection. Reconnecting in {delay} s...")
+            except AuthenticationError:
+                if force_login:
+                    raise
+                logger.info("Live timing rejected the token. Signing in again...")
+                force_login = True
+                continue
+            except (OSError, WebSocketException, requests.RequestException, asyncio.TimeoutError, AdapterError) as exc:
+                logger.warning(f"Live timing connection failed ({exc}). Reconnecting in {delay} s...")
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, MAX_RECONNECT_DELAY)
 
-        # Subscribe topics in interest
-        hub.server.invoke("Subscribe", self.topics)
-        # Start the client
-        loop = asyncio.get_event_loop()
-        executor = concurrent.futures.ThreadPoolExecutor()
-        await loop.run_in_executor(executor, self._connection.start)
+    async def _stream(self, force_login):
+        """
+        Connect, subscribe and dispatch messages until the connection closes.
+
+        Yields once after subscribing, so that the caller knows the connection is up.
+        """
+        headers = {**self.headers, **login(force=force_login).header}
+        async with await connect(self._connection_url, headers) as connection:
+            await connection.invoke("Subscribe", [self.topics])
+            logger.info(f"Connected to live timing, subscribed to: {', '.join(self.topics)}")
+            yield
+            async for frame in connection.messages():
+                await self._dispatch(frame)
+
+    async def _dispatch(self, frame):
+        """
+        Send the records of a hub frame to every registered handler.
+
+        Parameters
+        ----------
+        frame : dict
+            A SignalR Core frame: the ``Subscribe`` completion, holding a
+            snapshot of every topic, or a ``feed`` invocation with
+            ``[topic, data, timestamp]`` arguments.
+        """
+        if frame.get("type") == COMPLETION:
+            if frame.get("error"):
+                logger.error(f"Live timing subscription failed: {frame['error']}")
+                return
+            entries = [(topic, data, None) for topic, data in (frame.get("result") or {}).items()]
+        elif frame.get("target") == "feed":
+            arguments = frame.get("arguments") or []
+            if len(arguments) < 2:
+                return
+            entries = [(arguments[0], arguments[1], arguments[2] if len(arguments) > 2 else None)]
+        else:
+            return
+
+        for topic, data, timestamp in entries:
+            results = await asyncio.gather(
+                *(handler(topic, data, timestamp) for handler in list(self._handlers.values())),
+                return_exceptions=True,
+            )
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.error(f"Live timing handler failed for {topic}: {result}")
 
 
 class MessageHandlerTemplate:
     """
-    A template for handling incoming SignalR messages.
+    A template for handling incoming live timing messages.
 
-    This class serves as a message handler for SignalR streams, where incoming 
-    messages are processed and passed to a user-defined function.
+    Incoming topic data is parsed with `function_map` and the resulting
+    records are passed to a user-defined function.
 
     Parameters
     ----------
     func : callable
         A user-defined asynchronous function that processes the parsed records
-        from incoming SignalR messages. The function must accept the processed 
+        from incoming messages. The function must accept the processed 
         records as its input.
     """
     def __init__(
@@ -282,60 +275,21 @@ class MessageHandlerTemplate:
     ):
         self._func = func
     
-    async def get(self, msg):
+    async def get(self, topic, data, timestamp):
         """
-        Process incoming messages and invoke the handler function.
-
-         The method handles two types of incoming message formats:
-        - Messages in the "R" key: Representing topics with associated data.
-        - Messages in the "M" key: Representing method calls with data payloads.
-
-        For each message, the method uses a `function_map` to parse the data and 
-        sends the resulting records to the user-defined handler function.
+        Parse the data of a topic and invoke the handler function with ``{topic: records}``.
 
         Parameters
         ----------
-        msg : dict
-            The incoming message in SignalR format. It is expected to contain either:
-            - "R": A dictionary where the keys represent topic names and the values
-              are the associated data for that topic.
-            - "M": A list of dictionaries, where each dictionary contains:
-              - "M": The method name.
-              - "A": A list of message components including topic name, data, and timestamp.
-
+        topic : str
+            The topic name, e.g. ``"CarData.z"``.
+        data : dict or str
+            The topic data.
+        timestamp : str or None
+            The message timestamp; None for the initial snapshot.
         """
-        batch = msg
-
-        if ("R" in batch.keys()) or (batch.get("M") and batch.get("M") != []):
-            if batch.get("R"):
-                for key in batch.get("R").keys():
-                    try:
-                        topic_name = key
-                        data = batch.get("R")[key]
-                        timestamp = None
-                        records = list(function_map[topic_name]([(timestamp, data)], None))
-                        records = {topic_name: records}
-                        await self._func(records)
-                        # await self._func(
-                        #     topic_name = key,
-                        #     data = batch.get("R")[key],
-                        #     timestamp = None)
-                    except Exception as e:
-                        raise ParsingError(e)
-
-            elif batch.get("M"):
-                for data in batch.get("M"):
-                    method = data["M"]
-                    message = data["A"]
-
-                    topic_name = message[0]
-                    data = message[1]
-                    timestamp = message[2]
-                    records = list(function_map[topic_name]([(timestamp, data)], None))
-                    records = {topic_name: records}
-
-                    await self._func(records)
-                    # await self._func(
-                    #     topic_name = message[0],
-                    #     data = message[1],
-                    #     timestamp = message[2])
+        try:
+            records = list(function_map[topic]([(timestamp, data)], None))
+        except Exception as e:
+            raise ParsingError(f"Failed to parse {topic}: {e}") from e
+        await self._func({topic: records})
