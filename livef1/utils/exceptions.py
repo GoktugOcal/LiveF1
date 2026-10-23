@@ -47,9 +47,9 @@ class InvalidEndpointError(AdapterError):
     """Raised when an invalid endpoint is accessed."""
     pass
 
-# class AuthenticationError(AdapterError):
-#     """Raised when authentication fails."""
-#     pass
+class AuthenticationError(AdapterError):
+    """Raised when signing in to the F1 account fails or is not possible."""
+    pass
 
 # class TimeoutError(AdapterError):
 #     """Raised when a request times out."""

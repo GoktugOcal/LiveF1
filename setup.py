@@ -23,7 +23,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Göktuğ Öcal",
     url="https://github.com/GoktugOcal/LiveF1",
-    packages=find_packages(),
+    packages=find_packages(include=["livef1", "livef1.*"]),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

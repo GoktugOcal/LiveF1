@@ -8,6 +8,7 @@ import time
 import json
 from urllib.parse import urljoin
 
+from ..auth import auth_header
 from ..data_processing.etl import function_map
 from .signalr_aio._connection import Connection
 from ..utils.logger import logger
@@ -96,7 +97,7 @@ class RealF1Client:
             A configured HTTP session.
         """
         session = requests.Session()
-        session.headers = self.headers
+        session.headers = {**self.headers, **auth_header()}
         return session
     
     async def _on_message(self, msg):

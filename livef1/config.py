@@ -1,14 +1,14 @@
 """Package-level configuration for LiveF1.
 
 Call :func:`configure` before running LiveF1 code to adjust logging and
-(in the future) other runtime settings.
+F1 account authentication settings.
 """
 
 from .utils.logger import configure_logging
 
 _UNSET = object()
 
-# Reserved for future non-logging package settings.
+# Non-logging package settings, e.g. the defaults of :func:`livef1.login`.
 _settings = {}
 
 
@@ -20,15 +20,15 @@ def configure(
     logging_file_path=_UNSET,
     logging_file_format=None,
     logging_file_datefmt=None,
+    auth_save_token=None,
+    auth_token_path=None,
+    auth_env_path=None,
 ):
     """
     Configure LiveF1 package settings.
 
     Call this before running LiveF1 code when you need non-default behaviour
     (for example logging in read-only environments such as AWS Lambda).
-
-    Logging options are supported today; additional package settings may be
-    added in future releases.
 
     Parameters
     ----------
@@ -47,6 +47,15 @@ def configure(
         Format string for the file handler.
     logging_file_datefmt : str, optional
         Date/time format for the file handler.
+    auth_save_token : bool, optional
+        Default for :func:`livef1.login`: save the F1 account token to disk.
+        Set to False to keep it in memory only.
+    auth_token_path : str or pathlib.Path, optional
+        Default for :func:`livef1.login`: where the token is saved
+        (``~/.livef1/token.json`` if not set).
+    auth_env_path : str or pathlib.Path, optional
+        Default for :func:`livef1.login`: the ``.env`` file the F1 account
+        credentials are read from and saved to (``.env`` if not set).
 
     Examples
     --------
@@ -61,7 +70,17 @@ def configure(
     ...     logging_file_path="logs/livef1.log",
     ...     logging_file_format="%(asctime)s %(levelname)s %(message)s",
     ... )
+    >>> # Keep the F1 account token in memory only
+    >>> livef1.configure(auth_save_token=False)
     """
+    for name, value in (
+        ("auth_save_token", auth_save_token),
+        ("auth_token_path", auth_token_path),
+        ("auth_env_path", auth_env_path),
+    ):
+        if value is not None:
+            _settings[name] = value
+
     logging_kwargs = {}
     if log_level is not None:
         logging_kwargs["log_level"] = log_level

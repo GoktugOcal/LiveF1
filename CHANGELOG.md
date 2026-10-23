@@ -2,6 +2,30 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Added F1 account (F1TV) password authentication for livetiming.formula1.com in `livef1.auth`, with `livef1.login()` and `livef1.logout()`.
+- Credentials are read from `F1_USERNAME` / `F1_PASSWORD` in the environment or a `.env` file; if missing, the user is prompted and the values are saved to `.env` after a successful sign-in.
+- The subscription token is saved to `~/.livef1/token.json` and reused until it expires; `login()` accepts `force`, `save_token`, `token_path` and `env_path`.
+- Added `auth_save_token`, `auth_token_path` and `auth_env_path` options to `livef1.configure()`.
+- Added `AuthenticationError`.
+
+### Changed
+
+- `LivetimingF1adapters.get()` sends the token with every request and, on HTTP 401 (or 403 without a token), signs in once and retries.
+- `RealF1Client` sends the token with the SignalR negotiate request and the websocket handshake.
+- Packaging now includes only the `livef1` package.
+
+### Documentation
+
+- Added an Authentication section to the README and an Authentication user guide page.
+
+### Tests
+
+- Added mocked tests for the sign-in flow, token decoding and storage, `.env` handling, and the adapter retry.
+
 ## [1.2.11] - 2026-09-13
 
 ### Added

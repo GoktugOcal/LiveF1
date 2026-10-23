@@ -8,9 +8,12 @@ from typing import List, Dict
 
 # Internal Project Imports
 from ..utils.constants import *
+from ..auth import auth_header, login
 from ..utils.logger import logger
 from ..utils.exceptions import (
     AdapterError,
+    AuthenticationError,
+    DataDecodingError,
     InvalidEndpointError,
     ParsingError
 )
@@ -56,12 +59,22 @@ class LivetimingF1adapters:
 
         try:
             req_url = urllib.parse.urljoin(self.url, endpoint)  # Build the full request URL
+            headers = {**(header or {}), **auth_header()}
             logger.debug(f"Sending GET request to URL: {req_url}")
             response = requests.get(
                 url=req_url,
-                headers=header,
+                headers=headers,
                 timeout=300  # Timeout added for robustness
             )
+            if response.status_code == 401 or (response.status_code == 403 and "Authorization" not in headers):
+                logger.info("Live timing requires an F1 account. Signing in...")
+                headers.update(login(force=True).header)
+                response = requests.get(url=req_url, headers=headers, timeout=300)
+                if response.status_code == 401:
+                    raise AuthenticationError(
+                        "Live timing rejected the F1 account token. "
+                        "An active F1TV subscription is required."
+                    )
             response.raise_for_status()
 
             # Decode response
@@ -72,6 +85,8 @@ class LivetimingF1adapters:
                 raise DataDecodingError(f"Failed to decode response: {decode_err}") from decode_err
 
             return res_text
+        except AuthenticationError:
+            raise
         except requests.exceptions.Timeout as timeout_err:
             logger.error(f"Request timed out for URL: {req_url}", exc_info=True)
             raise TimeoutError(f"Request timed out: {timeout_err}") from timeout_err

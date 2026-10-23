@@ -121,6 +121,11 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Local auth experiments and third-party reference code
+f1account_from_fastf1/
+my_test.py
+auth_tokens.json
+
 # Environments
 .env
 .venv

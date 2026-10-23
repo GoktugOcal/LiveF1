@@ -40,6 +40,29 @@ Install using pip:
 pip install livef1
 ```
 
+## Authentication
+
+Live timing data requires an F1 account with an active F1TV subscription. Put your credentials in a `.env` file (or export them as environment variables):
+
+```bash
+F1_USERNAME='you@example.com'
+F1_PASSWORD='your-password'
+```
+
+If they are missing, LiveF1 asks for them and saves them to `.env`. The token is saved to `~/.livef1/token.json` and reused until it expires.
+
+```python
+import livef1
+
+livef1.login()                      # reuse the saved token, or sign in
+livef1.login(force=True)            # always sign in again
+livef1.login(save_token=False)      # keep the token in memory only
+livef1.login(token_path="token.json")
+livef1.logout()                     # delete the saved token
+```
+
+Calling `login()` is optional: LiveF1 signs in automatically when live timing rejects a request.
+
 ## Quick Start
 
 ### Historical Data

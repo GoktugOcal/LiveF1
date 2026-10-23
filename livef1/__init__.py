@@ -18,6 +18,7 @@ from .data_processing import (
 from .utils.helper import *
 from .adapters.livetimingf1_adapter import LivetimingF1adapters
 from .config import configure
+from .auth import login, logout
 from .utils.logger import set_log_level
 
 import warnings
@@ -33,6 +34,8 @@ __version__ = "1.2.11"
 
 __all__ = [
     'configure',
+    'login',
+    'logout',
     'set_log_level',
     'get_season',
     'get_meeting',
