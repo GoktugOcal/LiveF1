@@ -49,7 +49,7 @@ F1_USERNAME='you@example.com'
 F1_PASSWORD='your-password'
 ```
 
-If they are missing, LiveF1 asks for them and saves them to `.env`. The token is saved to `~/.livef1/token.json` and reused until it expires.
+LiveF1 uses the first `.env` found in the working directory or one of its parents, so notebooks in subfolders use your project's `.env`. If the credentials are missing, LiveF1 asks for them and saves them to `.env`. The token is saved to `~/.livef1/f1tv_auth_token.json` and reused until it expires.
 
 ```python
 import livef1
@@ -57,7 +57,7 @@ import livef1
 livef1.login()                      # reuse the saved token, or sign in
 livef1.login(force=True)            # always sign in again
 livef1.login(save_token=False)      # keep the token in memory only
-livef1.login(token_path="token.json")
+livef1.login(token_path="/path/to/token.json")  # also remembered in .env as LIVEF1_TOKEN_PATH
 livef1.logout()                     # delete the saved token
 ```
 

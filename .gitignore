@@ -121,11 +121,6 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Local auth experiments and third-party reference code
-f1account_from_fastf1/
-my_test.py
-auth_tokens.json
-
 # Environments
 .env
 .venv
@@ -165,3 +160,6 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# Misc
+./test*

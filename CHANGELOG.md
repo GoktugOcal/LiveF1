@@ -8,9 +8,11 @@ All notable changes to LiveF1 will be documented in this file.
 
 - Added F1 account (F1TV) password authentication for livetiming.formula1.com in `livef1.auth`, with `livef1.login()` and `livef1.logout()`.
 - Credentials are read from `F1_USERNAME` / `F1_PASSWORD` in the environment or a `.env` file; if missing, the user is prompted and the values are saved to `.env` after a successful sign-in.
-- The subscription token is saved to `~/.livef1/token.json` and reused until it expires; `login()` accepts `force`, `save_token`, `token_path` and `env_path`.
+- The subscription token is saved to `~/.livef1/f1tv_auth_token.json` and reused until it expires; `login()` accepts `force`, `save_token`, `token_path` and `env_path`.
 - Added `auth_save_token`, `auth_token_path` and `auth_env_path` options to `livef1.configure()`.
 - Added `AuthenticationError`.
+- Added `LIVEF1_TOKEN_PATH` (environment or `.env`) to set the token path; `login(token_path=...)` saves the absolute path there so later runs reuse the token without passing it again.
+- The default `.env` is the first one found in the working directory or its parents, so notebooks in subfolders use the project's `.env`.
 
 ### Changed
 

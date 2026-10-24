@@ -51,11 +51,14 @@ def configure(
         Default for :func:`livef1.login`: save the F1 account token to disk.
         Set to False to keep it in memory only.
     auth_token_path : str or pathlib.Path, optional
-        Default for :func:`livef1.login`: where the token is saved
-        (``~/.livef1/token.json`` if not set).
+        Default for :func:`livef1.login`: where the token is saved. If not
+        set, ``LIVEF1_TOKEN_PATH`` from the environment or the ``.env`` file
+        is used, else ``~/.livef1/f1tv_auth_token.json``.
     auth_env_path : str or pathlib.Path, optional
         Default for :func:`livef1.login`: the ``.env`` file the F1 account
-        credentials are read from and saved to (``.env`` if not set).
+        credentials are read from and saved to. If not set, the first ``.env``
+        in the working directory or one of its parents is used, else ``.env``
+        in the working directory.
 
     Examples
     --------

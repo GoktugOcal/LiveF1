@@ -7,9 +7,11 @@ to livetiming.formula1.com.
 
 Credentials are read from ``F1_USERNAME`` and ``F1_PASSWORD``, either from
 the environment or from a ``.env`` file. When they are missing, the user is
-prompted and the entered values are saved to the ``.env`` file.
+prompted and the entered values are saved to the ``.env`` file. The ``.env``
+file is the first one found in the working directory or one of its parents.
 
-The token is saved to ``~/.livef1/token.json`` and reused until it expires.
+The token is saved to ``~/.livef1/f1tv_auth_token.json``, or to ``LIVEF1_TOKEN_PATH``
+if set, and reused until it expires.
 """
 
 import base64
@@ -54,9 +56,10 @@ ENV_USERNAME = "F1_USERNAME"
 ENV_PASSWORD = "F1_PASSWORD"
 ENV_CLIENT_ID = "LIVEF1_F1_CLIENT_ID"
 ENV_POLICY_ID = "LIVEF1_F1_POLICY_ID"
+ENV_TOKEN_PATH = "LIVEF1_TOKEN_PATH"
 
-DEFAULT_TOKEN_PATH = Path.home() / ".livef1" / "token.json"
-DEFAULT_ENV_PATH = ".env"
+DEFAULT_TOKEN_PATH = Path.home() / ".livef1" / "f1tv_auth_token.json"
+ENV_FILE_NAME = ".env"
 
 # a token expiring within this many seconds is treated as expired
 EXPIRY_MARGIN = 300
@@ -130,10 +133,14 @@ def login(
         Save the token to ``token_path``. If False, the token is kept in
         memory only. Default is True.
     token_path : str or pathlib.Path, optional
-        Where the token is saved. Default is ``~/.livef1/token.json``.
+        Where the token is saved. If given, the absolute path is also saved
+        as ``LIVEF1_TOKEN_PATH`` in ``env_path``, so later runs find the
+        token without passing it again. Default is ``LIVEF1_TOKEN_PATH``
+        from the environment or ``env_path``, else ``~/.livef1/f1tv_auth_token.json``.
     env_path : str or pathlib.Path, optional
         The ``.env`` file credentials are read from and saved to. Default is
-        ``.env`` in the current working directory.
+        the first ``.env`` in the current working directory or one of its
+        parents, else ``.env`` in the current working directory.
 
     Defaults of ``save_token``, ``token_path`` and ``env_path`` can be set
     with :func:`livef1.configure`.
@@ -156,11 +163,17 @@ def login(
     """
     global _token
     save_token = _setting("auth_save_token", save_token, True)
-    token_path = _token_path(token_path)
-    env_path = Path(_setting("auth_env_path", env_path, DEFAULT_ENV_PATH)).expanduser()
+    env_path = _env_path(env_path)
+    remember = {}
+    if token_path is not None and save_token:
+        explicit = Path(token_path).expanduser().resolve()
+        if _token_path(None, env_path).resolve() != explicit:
+            remember[ENV_TOKEN_PATH] = str(explicit)
+    token_path = _token_path(token_path, env_path)
 
     if not force and (token := _valid_token(token_path)):
         logger.debug("Using the saved F1 account token.")
+        _save_env(env_path, remember)
         return token
 
     username, password, prompted = _credentials(username, password, env_path)
@@ -174,12 +187,7 @@ def login(
             _write_private(token_path, json.dumps({"token": token.value, "expires_at": token.expires_at}))
         except OSError as exc:
             logger.warning(f"Could not save the F1 account token to {token_path}: {exc}")
-    if prompted:
-        try:
-            _write_env(env_path, prompted)
-            logger.info(f"Saved the F1 account credentials to {env_path}.")
-        except OSError as exc:
-            logger.warning(f"Could not save the F1 account credentials to {env_path}: {exc}")
+    _save_env(env_path, {**prompted, **remember})
     return token
 
 
@@ -218,8 +226,36 @@ def _setting(name, value, default):
     return default if configured is None else configured
 
 
-def _token_path(token_path) -> Path:
-    return Path(_setting("auth_token_path", token_path, DEFAULT_TOKEN_PATH)).expanduser()
+def _env_path(env_path) -> Path:
+    configured = _setting("auth_env_path", env_path, None)
+    if configured is not None:
+        return Path(configured).expanduser()
+    cwd = Path.cwd()
+    for directory in (cwd, *cwd.parents):
+        if (candidate := directory / ENV_FILE_NAME).is_file():
+            return candidate
+    return cwd / ENV_FILE_NAME
+
+
+def _token_path(token_path, env_path=None) -> Path:
+    path = (
+        _setting("auth_token_path", token_path, None)
+        or os.environ.get(ENV_TOKEN_PATH)
+        or _read_env(env_path or _env_path(None)).get(ENV_TOKEN_PATH)
+        or DEFAULT_TOKEN_PATH
+    )
+    return Path(path).expanduser()
+
+
+def _save_env(env_path: Path, updates: dict):
+    """Save ``updates`` to the ``.env`` file, logging only the keys."""
+    if not updates:
+        return
+    try:
+        _write_env(env_path, updates)
+        logger.info(f"Saved {', '.join(updates)} to {env_path}.")
+    except OSError as exc:
+        logger.warning(f"Could not save {', '.join(updates)} to {env_path}: {exc}")
 
 
 def _valid_token(token_path: Path):
