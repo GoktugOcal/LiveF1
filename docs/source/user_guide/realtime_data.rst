@@ -5,7 +5,8 @@ Real-Time Data
 
 LiveF1 provides real-time data access through the `RealF1Client` class, allowing you to stream live Formula 1 data during race weekends.
 
-.. note::
+.. warning::
+
    The live timing stream requires an F1 account with an active F1TV subscription. ``RealF1Client`` signs in with :func:`livef1.login` when it starts, using the saved token, your ``.env`` file, or a prompt. See :ref:`authentication`.
 
 Creating a Real-Time Client

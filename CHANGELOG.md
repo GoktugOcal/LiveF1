@@ -2,7 +2,17 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
-## [Unreleased]
+## [1.3.0] - 2026-10-24
+
+### F1TV Subscription
+
+Formula 1 now asks for a signed-in F1 account with an active **F1TV subscription** before it will serve live timing data. Without that subscription, season indexes, session archives (timing, telemetry, weather), and the live stream are refused.
+
+LiveF1 1.3.0 signs in for you. Call `livef1.login()`, or do nothing: the first refused request signs in on its own. Put your account email and password in a `.env` file as `F1_USERNAME` and `F1_PASSWORD`. LiveF1 saves the resulting token and reuses it until it expires, so you are not asked again on every run. See the Authentication section of the README, and the Authentication page in the documentation, for the full setup.
+
+Calendar and championship data from Jolpica does not need an F1TV account. Timing, telemetry, and the real-time client do.
+
+Formula 1 also shut down the old live connection. The real-time client now uses the current one. Callbacks you already wrote keep working.
 
 ### Added
 

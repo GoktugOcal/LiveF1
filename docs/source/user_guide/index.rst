@@ -44,6 +44,12 @@ Before diving into specific features, it's important to understand these key con
 Getting Started with Data
 ------------------------
 
+.. warning::
+
+   Timing, telemetry, and the live stream need an F1 account with an active
+   F1TV subscription. See :ref:`authentication`. Calendar and championship
+   data from Jolpica does not.
+
 The package provides three main functions for accessing F1 data:
 
 1. :ref:`get_season`: Access an entire F1 season

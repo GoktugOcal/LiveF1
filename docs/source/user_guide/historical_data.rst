@@ -8,6 +8,11 @@ The LiveF1 package provides access to historical Formula 1 data through Session 
 .. note::
    Topic-level **telemetry and timing archives** (e.g. ``get_data``, ``generate``) generally require a session that is backed by **Livetiming** static data. **Calendar and metadata** may still come from **Jolpica** when meetings are merged or enriched. See :ref:`data_sources` for how availability flags behave.
 
+.. warning::
+
+   Livetiming archives need an F1 account with an active F1TV subscription.
+   See :ref:`authentication`. Jolpica calendar and championship data does not.
+
 Accessing Historical Data
 ------------------------
 

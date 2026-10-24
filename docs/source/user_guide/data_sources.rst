@@ -14,6 +14,12 @@ Formula 1 Livetiming
 
 Livetiming exposes a hierarchy of **static JSON** under ``https://livetiming.formula1.com/static/`` (season index, meeting and session paths, per-session ``Index.json`` listing **Feeds** / topics). LiveF1 uses this tree to **discover** meetings and sessions, to know which **topics** exist for a session, and to **download** archived high-frequency data (timing, car telemetry, position, weather, and related streams) for analysis and the medallion pipeline.
 
+.. warning::
+
+   Livetiming, including these archives and the live stream, needs an F1
+   account with an active F1TV subscription. See :ref:`authentication`.
+   Jolpica, described below, does not.
+
 Jolpica F1 API
 --------------
 

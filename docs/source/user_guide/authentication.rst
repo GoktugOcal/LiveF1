@@ -3,6 +3,20 @@
 Authentication
 ==============
 
+.. warning::
+
+   Live timing data from ``livetiming.formula1.com`` requires an F1 account
+   with an **active F1TV subscription**. Without it, season indexes, session
+   archives, and the live stream are refused.
+
+   LiveF1 asks for your account email and password (or reads them from a
+   ``.env`` file) and signs in for you. The password is saved only in that
+   ``.env`` file. The token file holds the subscription token, not the
+   password.
+
+   Calendar and championship data from Jolpica does not need an F1TV account.
+   Timing, telemetry, and the real-time client do.
+
 Formula 1 live timing data requires an F1 account with an active **F1TV
 subscription**. LiveF1 signs in with your account email and password and sends
 the resulting subscription token with every request to

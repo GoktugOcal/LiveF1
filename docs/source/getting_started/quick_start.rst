@@ -6,6 +6,12 @@ Quick Start
 
 Once LiveF1 is installed, you can start using it to fetch real-time or historical F1 data.
 
+.. warning::
+
+   Timing, telemetry, and the live stream need an F1 account with an active
+   F1TV subscription. See :ref:`authentication` to sign in. Calendar and
+   championship data from Jolpica does not need one.
+
 Import the library
 -------------------
 

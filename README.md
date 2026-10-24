@@ -65,6 +65,8 @@ Calling `login()` is optional: LiveF1 signs in automatically when live timing re
 
 ## Quick Start
 
+Timing, telemetry, and the live stream need an F1 account with an active F1TV subscription. Set that up in [Authentication](#authentication) above. Calendar and championship data does not need one.
+
 ### Historical Data
 
 Access data from past races:
