@@ -87,3 +87,25 @@ def test_generate_race_control_messages_table(mock_session):
     assert "SessionKey" in result.columns
     assert "Message" in result.columns
     assert "Category" in result.columns
+
+
+def test_generate_race_control_messages_table_unmatched_messages(mock_session):
+    """Unclassified 'Other' messages and unhandled flags must not fail the whole table."""
+    rcm_df = pd.DataFrame({
+        "SessionKey": [9465, 9465, 9465],
+        "timestamp": [pd.Timedelta("1h30m"), pd.Timedelta("1h31m"), pd.Timedelta("1h32m")],
+        "Utc": ["2024-03-02T15:30:00Z", "2024-03-02T15:31:00Z", "2024-03-02T15:32:00Z"],
+        "Category": ["Other", "Flag", "Other"],
+        "Scope": [None, "Driver", None],
+        "Status": [None, None, None],
+        "Flag": [None, "BLACK AND ORANGE", None],
+        "Message": ["TEST MESSAGE", "BLACK AND ORANGE FLAG FOR CAR 1 (VER)", "CAR 1 (VER) NOTED - TRACK LIMITS"],
+        "Lap": [1, 2, 3],
+    })
+    result = generate_race_control_messages_table(mock_session, rcm_df)
+    assert result[["Category", "Scope"]].values.tolist() == [
+        ["Other", "Unclassified"],
+        ["Flag", "Driver"],
+        ["Administrative", "Informational"],
+    ]
+    assert pd.isna(result["info"].iloc[1])

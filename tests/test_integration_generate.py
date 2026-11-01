@@ -37,7 +37,7 @@ def _minimal_timing_data_records():
 
 def _minimal_rcm_records():
     return [
-        {"SessionKey": 9465, "timestamp": "0", "Category": "Other", "Message": "Test"},
+        {"SessionKey": 9465, "timestamp": "0", "Category": "Other", "Message": "INCIDENT INVOLVING CAR 1 (VER) NOTED", "Scope": None, "Flag": None},
     ]
 
 
@@ -125,13 +125,20 @@ def index_feeds():
     return {"Feeds": feeds}
 
 
+@pytest.mark.parametrize("backend", ["pandas", "polars"])
 def test_get_season_meeting_session_and_generate_with_dummy_data(
+    backend,
+    monkeypatch,
     season_data,
     mock_circuit_requests,
     index_feeds,
     mock_season_jolpica_loaders,
 ):
-    """Use dummy inputs to get season, meeting, session and run generate(silver=True)."""
+    """Use dummy inputs to get season, meeting, session and run generate(silver=True) with each dataframe backend."""
+    if backend == "polars":
+        pytest.importorskip("polars")
+    from livef1.config import _settings
+    monkeypatch.setitem(_settings, "dataframe_backend", backend)
     with patch("livef1.api.download_data", return_value=season_data):
         with patch("livef1.models.season.download_data", return_value=season_data):
             with patch("livef1.models.circuit.requests.get", side_effect=mock_circuit_requests):
@@ -186,3 +193,11 @@ def test_get_season_meeting_session_and_generate_with_dummy_data(
     assert session_obj.session_start_datetime is not None
     assert session_obj.data_lake._check_circular_dependencies() is True
     assert "laps" in session_obj.data_lake.metadata or "raceControlMessages" in session_obj.data_lake.metadata
+
+    # The default silver tables use the backend's functions and come out in the backend's format
+    laps_callback = session_obj.data_lake.get("silver", "laps").callback.__wrapped__
+    assert laps_callback.__module__.endswith("silver_functions_polars" if backend == "polars" else "silver_functions")
+    rcm = session_obj.raceControlMessages
+    assert rcm is not None
+    assert type(rcm).__module__.split(".")[0] == backend
+    assert all(type(t.df).__module__.split(".")[0] == backend for t in session_obj.data_lake.bronze.lake.values())

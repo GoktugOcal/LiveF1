@@ -129,9 +129,14 @@ class Table:
         return self.df
 
 class BronzeTable(Table):
-    def __init__(self, table_name, data, parsed_data, data_lake = None):
+    def __init__(self, table_name, data, parsed_data, data_lake = None, dataframe_backend = "pandas"):
         super().__init__(table_name, data_lake)
         self.raw = data
+        if dataframe_backend == "polars":
+            from .bronze_polars import build_bronze_frame
+            self.df = build_bronze_frame(parsed_data)
+            return
+
         self.df = pd.DataFrame(parsed_data).rename(
             columns = column_mapping
         )

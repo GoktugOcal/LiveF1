@@ -80,7 +80,7 @@ def completed(session):
 
 @pytest.fixture(autouse=True)
 def isolated(tmp_path, monkeypatch):
-    for name in ("F1_USERNAME", "F1_PASSWORD", "LIVEF1_F1_CLIENT_ID", "LIVEF1_F1_POLICY_ID"):
+    for name in ("F1_USERNAME", "F1_PASSWORD", "LIVEF1_F1_CLIENT_ID", "LIVEF1_F1_POLICY_ID", "LIVEF1_TOKEN_PATH"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(auth, "_token", None)
     saved = dict(_settings)
@@ -297,6 +297,107 @@ def test_no_credentials_without_tty(monkeypatch):
     monkeypatch.setattr(auth, "_can_prompt", lambda: False)
     with pytest.raises(AuthenticationError, match="F1_USERNAME"):
         auth.login()
+
+
+# --- remembered token path and .env discovery ---
+
+@pytest.fixture
+def unconfigured(isolated, monkeypatch):
+    """No configure() paths: the working directory is a project folder and the default token path is in tmp."""
+    _settings.pop("auth_token_path", None)
+    _settings.pop("auth_env_path", None)
+    project = isolated / "project"
+    project.mkdir()
+    monkeypatch.chdir(project)
+    monkeypatch.setattr(auth, "DEFAULT_TOKEN_PATH", isolated / "default" / "token.json")
+    monkeypatch.setenv("F1_USERNAME", "user@example.com")
+    monkeypatch.setenv("F1_PASSWORD", "pw")
+    return project
+
+
+def test_custom_token_path_is_reused_in_a_new_run(unconfigured, isolated, monkeypatch):
+    custom = isolated / "custom" / "token.json"
+    with patch.object(auth, "_sign_in", return_value=make_access_token()[0]) as sign_in:
+        token = auth.login(token_path=custom)
+        assert auth._read_env(unconfigured / ".env")["LIVEF1_TOKEN_PATH"] == str(custom.resolve())
+
+        monkeypatch.setattr(auth, "_token", None)
+        assert auth.auth_header() == token.header
+        monkeypatch.setattr(auth, "_token", None)
+        assert auth.login().value == token.value
+
+    assert sign_in.call_count == 1
+    assert not (isolated / "default" / "token.json").exists()
+
+
+def test_token_path_not_rewritten_when_unchanged(unconfigured, isolated):
+    custom = isolated / "custom" / "token.json"
+    with patch.object(auth, "_sign_in", return_value=make_access_token()[0]):
+        auth.login(token_path=custom)
+    env_file = unconfigured / ".env"
+    before = env_file.stat().st_mtime_ns
+    with patch.object(auth, "_write_env") as write_env, \
+            patch.object(auth, "_sign_in", return_value=make_access_token()[0]):
+        auth.login(token_path=custom)
+        auth.login(token_path=custom, force=True)
+    write_env.assert_not_called()
+    assert env_file.stat().st_mtime_ns == before
+
+
+def test_token_path_not_saved_without_saving_token(unconfigured, isolated):
+    with patch.object(auth, "_sign_in", return_value=make_access_token()[0]):
+        auth.login(token_path=isolated / "custom.json", save_token=False)
+    assert not (unconfigured / ".env").exists()
+
+
+def test_token_path_not_saved_when_sign_in_fails(unconfigured, isolated):
+    with patch.object(auth, "_sign_in", side_effect=AuthenticationError("Invalid username or password")):
+        with pytest.raises(AuthenticationError):
+            auth.login(token_path=isolated / "custom.json")
+    assert not (unconfigured / ".env").exists()
+
+
+def test_token_path_precedence(unconfigured, isolated, monkeypatch):
+    assert auth._token_path(None) == isolated / "default" / "token.json"
+
+    (unconfigured / ".env").write_text(f"LIVEF1_TOKEN_PATH={isolated / 'from_dotenv.json'}\n")
+    assert auth._token_path(None) == isolated / "from_dotenv.json"
+
+    monkeypatch.setenv("LIVEF1_TOKEN_PATH", str(isolated / "from_environ.json"))
+    assert auth._token_path(None) == isolated / "from_environ.json"
+
+    configure(auth_token_path=isolated / "configured.json")
+    assert auth._token_path(None) == isolated / "configured.json"
+
+    assert auth._token_path(isolated / "argument.json") == isolated / "argument.json"
+
+
+def test_env_file_found_in_parent_directory(unconfigured, isolated, monkeypatch):
+    monkeypatch.delenv("F1_USERNAME")
+    monkeypatch.delenv("F1_PASSWORD")
+    (unconfigured / ".env").write_text(
+        f"F1_USERNAME=parent@example.com\nF1_PASSWORD=pw\nLIVEF1_TOKEN_PATH={isolated / 'parent_token.json'}\n"
+    )
+    notebooks = unconfigured / "notebooks"
+    notebooks.mkdir()
+    monkeypatch.chdir(notebooks)
+
+    with patch.object(auth, "_sign_in", return_value=make_access_token()[0]) as sign_in:
+        auth.login()
+    sign_in.assert_called_once_with("parent@example.com", "pw")
+    assert (isolated / "parent_token.json").exists()
+    assert not (notebooks / ".env").exists()
+
+
+def test_prompted_credentials_saved_in_cwd_without_env_file(unconfigured, monkeypatch):
+    monkeypatch.delenv("F1_USERNAME")
+    monkeypatch.delenv("F1_PASSWORD")
+    monkeypatch.setattr(auth, "_can_prompt", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt: "user@example.com")
+    monkeypatch.setattr(auth.getpass, "getpass", lambda prompt: "secret")
+    with patch.object(auth, "_sign_in", return_value=make_access_token()[0]):
+        auth.login()
+    assert auth._read_env(unconfigured / ".env") == {"F1_USERNAME": "user@example.com", "F1_PASSWORD": "secret"}
 
 
 # --- live timing adapter ---

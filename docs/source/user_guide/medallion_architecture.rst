@@ -35,6 +35,11 @@ LiveF1 implements a three-layer data processing architecture known as the `Medal
 
 .. image:: ../_static/data_lake.png
 
+.. note::
+   All tables of a session use one DataFrame library: pandas by default, or Polars
+   with ``livef1.configure(dataframe_backend="polars")``. The examples on this page
+   use pandas. See :ref:`dataframe_backend`.
+
 
 Layer Details
 ------------
@@ -134,6 +139,11 @@ In the previous examples, LiveF1 generates the silver tables that are already re
 
    session.generate() # Generate registered Silver lake
    print(session.RaceLeaders)
+
+Source tables reach the table function in the session's DataFrame backend, and the
+function must return a DataFrame of the same library (pandas by default). Returning a
+Polars DataFrame from a pandas session, or the other way around, raises ``TypeError``.
+See :ref:`dataframe_backend`.
 
 Optional sources
 ****************
@@ -286,6 +296,9 @@ Default Silver and Gold Tables
    * - ``Silver``
      - carTelemetry
      - Telemetry data with car and position telemetry and additional track informations.
+   * - ``Silver``
+     - raceControlMessages
+     - Race control messages with their category, scope, status, the cars they mention and extra info (e.g. penalty seconds).
 
 
 .. Best Practices

@@ -12,3 +12,5 @@ ujson
 numpy
 pandas
 beautifulsoup4
+polars>=2.0
+pyarrow>=14.0

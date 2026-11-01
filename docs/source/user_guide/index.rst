@@ -62,6 +62,10 @@ Once you have a session object, you can:
 - Generate processed tables using ``generate()``
 - Access specific data types through attributes like ``laps``, ``carTelemetry``, etc. The attribute names are defined while registering tables; have a look at :ref:`registering_custom_tables`.
 
+.. tip::
+   Tables are pandas DataFrames by default. Call ``livef1.configure(dataframe_backend="polars")``
+   to build every table with Polars instead; see :ref:`dataframe_backend`.
+
 Examples and Use Cases
 ---------------------
 
@@ -76,6 +80,7 @@ Where to Go Next
 * For detailed API documentation, see the :ref:`api_reference`
 * For examples and tutorials, check out the :ref:`examples` section
 * For understanding data organization, read about the :ref:`medallion_architecture`
+* For using Polars instead of pandas, see :ref:`dataframe_backend`
 * For available data feeds, browse the :ref:`data_topics`
 
 .. .. toctree::

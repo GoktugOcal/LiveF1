@@ -228,6 +228,12 @@ This method processes the raw data in the Bronze layer and creates cleaned and e
 
 The Silver tables provide high-quality data that is ready for analysis and reporting.
 
+.. tip::
+
+   The tables are pandas DataFrames by default. To get Polars DataFrames, call
+   ``livef1.configure(dataframe_backend="polars")`` before loading the session.
+   See :ref:`dataframe_backend`.
+
 Example Use Case: Analyzing Lap Times
 -----------------------------------
 

@@ -60,6 +60,7 @@ LiveF1
 
    user_guide/index
    user_guide/medallion_architecture
+   user_guide/dataframe_backend
    user_guide/data_models
    user_guide/data_sources
    user_guide/historical_data

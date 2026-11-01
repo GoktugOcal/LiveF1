@@ -101,13 +101,18 @@ def add_track_status(laps_df, df_trackstatus):
 
 def add_track_status_telemetry(telemetry_df, df_track):
 
-    telemetry_df = telemetry_df.set_index("timestamp").join(df_track.set_index("timestamp")[["Status"]]).rename(columns={"Status":"TrackStatus"})
+    # One status per timestamp, otherwise the join duplicates telemetry samples
+    track = df_track[["timestamp", "Status"]].drop_duplicates(subset="timestamp", keep="last")
+    telemetry_df = telemetry_df.set_index("timestamp").join(track.set_index("timestamp")).rename(columns={"Status":"TrackStatus"})
     telemetry_df.TrackStatus = telemetry_df.TrackStatus.astype(str).ffill()
     return telemetry_df.dropna(subset="SessionKey").reset_index()
 
 def add_lineposition(telemetry_df, df_tmg):
     # df_tmg.Position = df_tmg.Position.ffill() # TODO: Check if this is correct
-    telemetry_df = telemetry_df.set_index("timestamp").join(df_tmg.set_index("timestamp")[["Position"]], how="outer")
+    # TimingData can hold several rows per timestamp; keep the latest known Position so that a sample
+    # landing exactly on such a timestamp is not duplicated by the join (ffill below gives the same value)
+    positions = df_tmg[["timestamp", "Position"]].dropna(subset="Position").drop_duplicates(subset="timestamp", keep="last")
+    telemetry_df = telemetry_df.set_index("timestamp").join(positions.set_index("timestamp"), how="outer")
     telemetry_df.Position = telemetry_df.Position.ffill()
     return telemetry_df.reset_index()
 
@@ -410,13 +415,21 @@ def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):
         all_laps_df = all_laps_df.set_index(["DriverNo", "LapNo"]).join(df_pit.set_index(["DriverNo", "LapNo"])).reset_index()
     
     # Add tyre data
-    all_laps_df["LapEndTime"] = all_laps_df["LapStartTime"] + all_laps_df["LapTime"]
+    all_laps_df = all_laps_df.sort_values(["DriverNo", "LapNo"]).reset_index(drop=True)
+    # A lap without LapTime (e.g. lap 1) ends when the driver's next lap starts; without a next lap, use its own start
+    all_laps_df["LapEndTime"] = (
+        (all_laps_df["LapStartTime"] + all_laps_df["LapTime"])
+        .fillna(all_laps_df.groupby("DriverNo")["LapStartTime"].shift(-1))
+        .fillna(all_laps_df["LapStartTime"])
+    )
     all_laps_df = all_laps_df.set_index(["DriverNo", "LapEndTime"]).join(
         df_tyre.rename(columns={"timestamp":"LapEndTime", "TotalLaps":"TyreAge"}).set_index(["DriverNo", "LapEndTime"]),
         how="outer"
-    )
+    ).reset_index()
+    # ffill on a sorted, unique RangeIndex (the MultiIndex above can be non-unique, which misaligns the assignment)
+    all_laps_df = all_laps_df.sort_values(["DriverNo", "LapEndTime"], kind="stable").reset_index(drop=True)
     all_laps_df[["Compound","New","TyreAge"]] = all_laps_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
-    all_laps_df = all_laps_df.reset_index().dropna(subset = "SessionKey")
+    all_laps_df = all_laps_df.dropna(subset = "SessionKey")
 
     for col in silver_laps_col_order:
         if col not in all_laps_df.columns:
@@ -461,37 +474,53 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
     Raises:
         ValueError: If required data is missing or cannot be processed.
     """
-    # Get position data
-    df_pos["Utc"] = to_datetime(df_pos["Utc"])
-    df_pos["tag"] = "position"
+    # Only the columns this table uses are taken from the bronze tables, which are not modified
+    # (`timestamp` is recomputed from Utc). Everything below works one driver at a time, so only a
+    # single driver's samples are joined and processed at once.
+    car_cols = [c for c in ["SessionKey", "DriverNo", "Utc", "RPM", "Speed", "GearNo", "Throttle", "Brake", "DRS"] if c in df_car.columns]
+    df_car = df_car[car_cols].assign(Utc=to_datetime(df_car["Utc"]), _car=True)
+    df_pos = df_pos[["DriverNo", "Utc", "Status", "X", "Y", "Z"]].assign(Utc=to_datetime(df_pos["Utc"]), _pos=True)
 
-    # Get car data
-    df_car["Utc"] = to_datetime(df_car["Utc"])
-    df_car["timestamp"] = pd.to_timedelta(df_car["timestamp"])
-    df_car["tag"] = "car"
-
-    # Get tyre data
-    df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"])
+    # Tyre events forward-filled per driver: an as-of join on them gives the same values as an
+    # outer join with the telemetry followed by a per-driver forward fill
+    df_tyre = df_tyre[["DriverNo", "timestamp", "Compound", "New", "TotalLaps"]].rename(columns={"TotalLaps": "TyreAge"})
+    df_tyre["timestamp"] = pd.to_timedelta(df_tyre["timestamp"]).astype("timedelta64[ns]")
+    df_tyre = df_tyre.sort_values(["DriverNo", "timestamp"], kind="stable")
+    df_tyre[["Compound", "New", "TyreAge"]] = df_tyre.groupby("DriverNo", observed=True)[["Compound", "New", "TyreAge"]].ffill()
 
     # Get timing data
-    df_tmg["timestamp"] = pd.to_timedelta(df_tmg["timestamp"])
-    df_tmg["timestamp"] = df_tmg["timestamp"].astype('timedelta64[ns]')
+    tmg_cols = [c for c in ["DriverNo", "timestamp", "Position", "IntervalToPositionAhead_Value"] if c in df_tmg.columns]
+    df_tmg = df_tmg[tmg_cols].assign(timestamp=pd.to_timedelta(df_tmg["timestamp"]).astype("timedelta64[ns]"))
 
-    # Join car and position data
-    df = df_car \
-        .set_index(["DriverNo", "Utc"]) \
-        .join(df_pos.set_index(["DriverNo", "Utc"]), rsuffix="_pos", how="outer") \
-        .reset_index().sort_values(["DriverNo", "Utc"]) \
-        .rename(columns={"Status":"CarStatus"})
-    df["CarStatus"] = df["CarStatus"].ffill()
+    car_rows = df_car.groupby("DriverNo", observed=True).indices
+    pos_rows = df_pos.groupby("DriverNo", observed=True).indices
+    tyre_rows = df_tyre.groupby("DriverNo", observed=True).indices
+    tmg_rows = df_tmg.groupby("DriverNo", observed=True).indices
+    has_regions = df_circuits is not None and hasattr(session.meeting.circuit, "start_coordinates")
 
-    df["tag"] = df["tag"].fillna("") + df["tag_pos"].fillna("")
-
+    last_car_status = np.nan
     all_drivers_data = []
 
-    for driver_no in df["DriverNo"].unique():
-        
-        df_driver = df[df["DriverNo"] == driver_no].set_index("Utc")
+    # Sorted like the former global (DriverNo, Utc) sort, which CarStatus is forward-filled over
+    for driver_no in sorted(set(car_rows) | set(pos_rows)):
+
+        # Join car and position data of the driver
+        df_driver = (
+            df_car.iloc[car_rows.get(driver_no, [])].drop(columns="DriverNo").set_index("Utc")
+            .join(df_pos.iloc[pos_rows.get(driver_no, [])].drop(columns="DriverNo").set_index("Utc"), how="outer")
+            .reset_index().sort_values("Utc", kind="stable")
+            .rename(columns={"Status": "CarStatus"})
+        )
+        # CarStatus was forward-filled over all drivers at once, so it carries over from the previous driver
+        df_driver["CarStatus"] = df_driver["CarStatus"].ffill().fillna(last_car_status)
+        if len(df_driver):
+            last_car_status = df_driver["CarStatus"].iloc[-1]
+        df_driver["tag"] = (
+            np.where(df_driver.pop("_car").notna(), "car", "")
+            + np.where(df_driver.pop("_pos").notna(), "position", "")
+        )
+        df_driver.insert(1, "DriverNo", driver_no)
+        df_driver = df_driver.set_index("Utc")
 
         laps = session.data_lake.silver.lake["laps"].df
         laps_driver = laps[laps["DriverNo"] == driver_no]
@@ -536,41 +565,27 @@ def generate_car_telemetry_table(session, df_car, df_pos, df_tyre, laps, df_trac
                 df_driver.loc[lap_df.index, "Distance"] = None
         
         df_driver = add_track_status_telemetry(df_driver, df_track)
-        df_driver = add_lineposition(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
-        if "IntervalToPositionAhead_Value" in df_tmg.columns: df_driver = add_interval_to_position_ahead(df_driver, df_tmg[df_tmg.DriverNo == driver_no])
+        tmg_driver = df_tmg.iloc[tmg_rows.get(driver_no, [])]
+        df_driver = add_lineposition(df_driver, tmg_driver)
+        if "IntervalToPositionAhead_Value" in df_tmg.columns: df_driver = add_interval_to_position_ahead(df_driver, tmg_driver)
 
-        ## TODO: Add race distance
-        # if len(df_driver) > 0:
-        #     race_distance = add_distance_to_lap(
-        #         df_driver.copy(),
-        #         session.meeting.circuit.start_coordinates[0],
-        #         session.meeting.circuit.start_coordinates[1],
-        #         session.meeting.circuit.start_direction[0],
-        #         session.meeting.circuit.start_direction[1]
-        #     )["Distance"].values
-        #     df_driver["RaceDistance"] = race_distance
-        #     print("added race distance :", driver_no, race_distance)
+        # Drop the timing-only rows added by add_lineposition
+        df_driver = df_driver.dropna(subset=["SessionKey"])
+        if len(df_driver) == 0:
+            continue
 
-        all_drivers_data.append(df_driver)
+        # Add Tyre Data
+        tyre_driver = df_tyre.iloc[tyre_rows.get(driver_no, [])][["timestamp", "Compound", "New", "TyreAge"]]
+        df_driver = pd.merge_asof(df_driver, tyre_driver, on="timestamp", direction="backward")
 
-    del df # free memory
+        df_driver["TrackRegion"] = assign_regions(df_driver, df_circuits) if has_regions else None
+
+        all_drivers_data.append(df_driver[[col for col in silver_cartel_col_order if col in df_driver.columns]])
+
     all_drivers_df = pd.concat(all_drivers_data, ignore_index=True)
-
-    # Add Tyre Data
-    all_drivers_df = all_drivers_df.set_index(["DriverNo", "timestamp"]).join(
-        df_tyre.rename(columns={"TotalLaps":"TyreAge"}).set_index(["DriverNo", "timestamp"]),
-        how="outer"
-    )
-    all_drivers_df[["Compound","New","TyreAge"]] = all_drivers_df.groupby('DriverNo')[["Compound","New","TyreAge"]].ffill()
-    all_drivers_df = all_drivers_df.reset_index().dropna(subset = ["SessionKey"])
-
-    if df_circuits is not None and hasattr(session.meeting.circuit, "start_coordinates"):
-        all_drivers_df["TrackRegion"] = assign_regions(all_drivers_df, df_circuits)
-    else:
-        all_drivers_df["TrackRegion"] = None
-
-    cols_present = [col for col in silver_cartel_col_order if col in all_drivers_df.columns]
-    return all_drivers_df.loc[:, cols_present]
+    del all_drivers_data  # free the per-driver frames
+    all_drivers_df["DriverNo"] = all_drivers_df["DriverNo"].astype("str")
+    return all_drivers_df
 
 def generate_race_control_messages_table(session, rcm_df):
     """
@@ -712,6 +727,7 @@ def generate_race_control_messages_table(session, rcm_df):
             return "Unknown", "Unknown", None, None
 
         if category == "Flag":
+            info = None  # flags/scopes not handled below carry no info
             if scope == "Driver":
                 clean_message = message \
                     .replace(flag,"") \
@@ -773,9 +789,14 @@ def generate_race_control_messages_table(session, rcm_df):
                             
                         return category, scope, status, info
 
+            # No FIA rule matched the message
+            return "Other", "Unclassified", None, None
+
         else:
             return "Other", "Unclassified", None, None
 
+    # Work on a copy: the bronze RaceControlMessages is shared with other tables (e.g. laps uses the raw Category)
+    rcm_df = rcm_df.copy()
     rcm_df["RacingNumber"] = rcm_df.Message.apply(lambda x: parse_cars_from_message(x))
 
     rcm_df[["Category", "Scope", "Status", "info"]] = (

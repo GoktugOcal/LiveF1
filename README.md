@@ -40,6 +40,12 @@ Install using pip:
 pip install livef1
 ```
 
+To build tables with [Polars](https://pola.rs) instead of pandas, install the extra:
+
+```bash
+pip install "livef1[polars]"
+```
+
 ## Authentication
 
 Live timing data requires an F1 account with an active F1TV subscription. Put your credentials in a `.env` file (or export them as environment variables):
@@ -122,6 +128,16 @@ print(laps_data.head())
     |  2 |            3 | 0 days 00:01:50.519000 | NaT                    | NaT       | 0 days 00:00:31.833000 | 0 days 00:00:49.132000 | 0 days 00:00:29.554000 |        |        311 |        202 |        215 |        304 |         0 | 0 days 00:58:57.307000 |         16 | 2024-07-28 13:07:35.285000 |
     |  3 |            4 | 0 days 00:01:49.796000 | NaT                    | NaT       | 0 days 00:00:31.592000 | 0 days 00:00:48.778000 | 0 days 00:00:29.426000 |        |        312 |        201 |        217 |        309 |         0 | 0 days 01:00:47.870000 |         16 | 2024-07-28 13:09:25.848000 |
     |  4 |            5 | 0 days 00:01:49.494000 | NaT                    | NaT       | 0 days 00:00:31.394000 | 0 days 00:00:48.729000 | 0 days 00:00:29.371000 |        |        313 |        197 |        217 |        311 |         0 | 0 days 01:02:37.721000 |         16 | 2024-07-28 13:11:15.699000 |
+```
+
+Tables are pandas DataFrames by default. To build every table (Bronze, Silver and Gold) with Polars, configure it before loading data:
+
+```python
+livef1.configure(dataframe_backend="polars")
+
+session = livef1.get_session(2024, "Belgian", "Race")
+session.generate(silver=True)
+session.laps  # polars.DataFrame
 ```
 
 ### Real-Time Data

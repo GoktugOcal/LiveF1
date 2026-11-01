@@ -23,6 +23,7 @@ def configure(
     auth_save_token=None,
     auth_token_path=None,
     auth_env_path=None,
+    dataframe_backend=None,
 ):
     """
     Configure LiveF1 package settings.
@@ -59,6 +60,11 @@ def configure(
         credentials are read from and saved to. If not set, the first ``.env``
         in the working directory or one of its parents is used, else ``.env``
         in the working directory.
+    dataframe_backend : str, optional
+        DataFrame library of every table a session holds (bronze, silver and
+        gold): ``"pandas"`` (default) or ``"polars"`` (requires
+        ``pip install livef1[polars]``). A session uses the backend configured
+        when it builds its first table and keeps it from then on.
 
     Examples
     --------
@@ -75,7 +81,13 @@ def configure(
     ... )
     >>> # Keep the F1 account token in memory only
     >>> livef1.configure(auth_save_token=False)
+    >>> # Build all tables as polars DataFrames
+    >>> livef1.configure(dataframe_backend="polars")
     """
+    if dataframe_backend is not None:
+        from .data_processing.backends import validate_backend
+        _settings["dataframe_backend"] = validate_backend(dataframe_backend)
+
     for name, value in (
         ("auth_save_token", auth_save_token),
         ("auth_token_path", auth_token_path),

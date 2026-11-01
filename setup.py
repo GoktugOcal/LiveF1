@@ -31,6 +31,10 @@ setup(
     ],
     python_requires=">=3.7",  # Minimum Python version requirement
     install_requires=required,
+    extras_require={
+        # DataFrame backend: livef1.configure(dataframe_backend="polars")
+        "polars": ["polars>=2.0", "pyarrow>=14.0"],
+    },
     license="MIT",
     project_urls={
         "Bug Tracker": "https://github.com/GoktugOcal/LiveF1/issues",

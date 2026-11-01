@@ -2,6 +2,47 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.4.0] - 2026-11-01
+
+### Polars DataFrame backend
+
+LiveF1 can now build every table of a session with **Polars** instead of pandas. Install the extra with `pip install "livef1[polars]"` and call `livef1.configure(dataframe_backend="polars")` before loading data. Bronze tables are then built directly from the parsed livetiming records as `polars.DataFrame`, the default Silver tables are built with Polars, and custom Silver and Gold tables receive Polars inputs. Nothing is converted between pandas and Polars. pandas stays the default, and pandas code keeps working as before.
+
+On the 2026 British Grand Prix race, the Polars backend builds the Silver tables about 4.6x faster than pandas (0.8 s vs 3.7 s), with smaller tables. Both backends give the same tables. See the DataFrame Backend page in the documentation.
+
+### Added
+
+- Added the `dataframe_backend` option to `livef1.configure()` (`"pandas"` by default, or `"polars"`). It is the only way to choose the backend.
+- A session uses the backend configured when it builds its first table and keeps it from then on; `Session.dataframe_backend` reports it (read-only).
+- Added the `polars` extra (`polars>=2.0`, `pyarrow>=14.0`).
+- Added `livef1.data_processing.backends`, `livef1.data_processing.bronze_polars` (Bronze tables, track regions and session times built with Polars) and `livef1.data_processing.silver_functions_polars` (Polars versions of the `laps`, `carTelemetry` and `raceControlMessages` tables).
+- Added `examples/polars_silver_compare.py`, which builds a session with both backends, checks that the tables match, and reports time and memory.
+
+### Changed
+
+- A table function registered with `create_silver_table` / `create_gold_table` that returns a DataFrame of the other backend (for example a Polars DataFrame in a pandas session) now raises `TypeError`.
+- The pandas `carTelemetry` table is built one driver at a time and keeps only the columns it outputs. Peak memory while generating fell from about 520 MB to under 100 MB on a race, and the table builds about 1.5x faster. The values, row order and types are unchanged; the index is now `0..n-1`.
+- Generating `carTelemetry` and `raceControlMessages` no longer modifies the Bronze tables they read: `CarData.z` and `Position.z` keep their original `Utc` strings and get no `tag` column, and `RaceControlMessages` keeps its original `Category` values.
+
+### Fixed
+
+- Deleted laps (track limits) were never marked in the pandas `laps` table: `raceControlMessages` was generated first and overwrote the `Category` of the Bronze race control messages that `laps` reads. `IsDeleted` and `DeletionMessage` are now filled in.
+- `Compound` and `TyreAge` were wrong for lap 1 (which has no `LapTime`) and the lap after it. A lap without a `LapTime` now ends where the driver's next lap starts.
+- `carTelemetry` duplicated a sample when its timestamp matched two TimingData rows of the same driver. Each sample now appears once.
+- `raceControlMessages` failed for the whole session when an `Other` message matched none of the classification rules; such messages are now `Category="Other"`, `Scope="Unclassified"`. A driver flag other than blue or black-and-white (or a flag with an unhandled scope) no longer fails the table either.
+
+### Documentation
+
+- Added a DataFrame Backend user guide page, and the Polars extra to the installation page.
+- Documented the `raceControlMessages` default table and the custom table return type in the medallion architecture guide.
+- Added the backend and Polars modules to the API reference.
+
+### Tests
+
+- Added tests for the backend option, native Polars Bronze tables, session times and track regions against pandas, custom tables with both backends, and race control messages parity.
+- The integration test runs `generate()` with both backends.
+- Added regression tests for unclassified race control messages.
+
 ## [1.3.0] - 2026-10-24
 
 ### F1TV Subscription

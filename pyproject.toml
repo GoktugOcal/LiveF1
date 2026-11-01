@@ -24,3 +24,9 @@ dependencies = [
     "ujson>=5.10.0",
     "websockets>=14.0",
 ]
+
+[project.optional-dependencies]
+polars = [
+    "polars>=2.0",
+    "pyarrow>=14.0",
+]

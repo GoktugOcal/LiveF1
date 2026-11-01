@@ -21,7 +21,9 @@ environments such as containerized AWS Lambda functions.
 
 Use the package-level ``livef1.configure()`` (from ``livef1.config``) before
 running LiveF1 code to change log level, formats, or enable file logging.
-Additional non-logging options may be added to this API later:
+The same function also holds non-logging options: the F1 account options
+(see :ref:`authentication`) and ``dataframe_backend``, which builds all tables
+with pandas or Polars (see :ref:`dataframe_backend`):
 
 .. code-block:: python
 

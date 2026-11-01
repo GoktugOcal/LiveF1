@@ -449,7 +449,9 @@ class DataLake:
             table= BronzeTable(
                 table_name=table_name,
                 data=raw_data,  
-                parsed_data=parsed_data
+                parsed_data=parsed_data,
+                # Bronze tables are built with the session's dataframe backend (pinned from the first table on)
+                dataframe_backend=self.session._pin_dataframe_backend(),
             )
         )
     

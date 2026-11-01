@@ -11,6 +11,30 @@ Data Models
         BasicResult
 
 
+DataFrame Backends
+------------------
+.. automodule:: livef1.data_processing.backends
+   :members: configured_backend, validate_backend, get_silver_functions, check_backend_frame
+
+   .. rubric:: Functions
+   .. autosummary::
+      configured_backend
+      validate_backend
+      get_silver_functions
+      check_backend_frame
+
+Polars Bronze Tables
+--------------------
+.. automodule:: livef1.data_processing.bronze_polars
+   :members: build_bronze_frame, build_track_regions, first_datetime, session_start_datetime
+
+   .. rubric:: Functions
+   .. autosummary::
+      build_bronze_frame
+      build_track_regions
+      first_datetime
+      session_start_datetime
+
 Jolpica ETL
 -----------
 .. automodule:: livef1.data_processing.jolpica_etl

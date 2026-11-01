@@ -33,6 +33,7 @@ from ..utils.constants import (
 )
 from ..utils.exceptions import *
 from ..data_processing.lakes import DataLake
+from ..data_processing.backends import configured_backend, validate_backend, get_silver_functions, check_backend_frame
 from .driver import Driver, _jolpica_driver_dict
 
 from multiprocessing import Pool
@@ -71,6 +72,11 @@ class Session:
         Path information for accessing session data.
     loaded : :class:`bool`
         Indicates whether the session data has been loaded.
+    dataframe_backend : :class:`str`
+        DataFrame library of every table in the session's data lake (bronze, silver
+        and gold): ``"pandas"`` (default) or ``"polars"``. Set with
+        ``livef1.configure(dataframe_backend=...)``; fixed once the session builds its
+        first table.
     """
     
     def __init__(
@@ -91,6 +97,7 @@ class Session:
         is_jolpica_available: bool | None = None,
         **kwargs
     ):
+        self._dataframe_backend = None  # None until the first table is built -> follows livef1.configure()
         self.season = season
         self.loaded = loaded
         self.number = number
@@ -124,6 +131,22 @@ class Session:
                 self.is_jolpica_available = jolpica_session_available_on_race(
                     race, self.name, self.type, self.number
                 )
+
+    @property
+    def dataframe_backend(self):
+        """
+        DataFrame library of the session's tables (bronze, silver, gold): ``"pandas"`` or ``"polars"``.
+
+        Follows ``livef1.configure(dataframe_backend=...)`` until the session builds its
+        first table, then stays fixed.
+        """
+        return self._dataframe_backend if self._dataframe_backend is not None else configured_backend()
+
+    def _pin_dataframe_backend(self):
+        """Fix the backend once the session starts building tables, so all of them share one format."""
+        if self._dataframe_backend is None:
+            self._dataframe_backend = validate_backend(configured_backend())
+        return self._dataframe_backend
 
     def _check_if_livetiming_available(self):
         """
@@ -170,19 +193,25 @@ class Session:
         return self.is_jolpica_available
 
     def _load_default_silver_tables(self):
+        silver_functions = get_silver_functions(self._pin_dataframe_backend())
         for table_name in SILVER_SESSION_TABLES:
             self.create_silver_table(
                 table_name,
                 TABLE_REQUIREMENTS[table_name],
                 include_session=True,
                 optional_source_tables=TABLE_OPTIONAL_REQUIREMENTS.get(table_name, []),
-            )(globals()[TABLE_GENERATION_FUNCTIONS[table_name]])
+            )(getattr(silver_functions, TABLE_GENERATION_FUNCTIONS[table_name]))
     
     def _load_circuit_data(self):
         try:
             circuit = self.meeting.circuit
             circuit._load_circuit_data()
-            self.data_lake.create_bronze_table(table_name="track_regions", raw_data=circuit._raw_circuit_data, parsed_data=circuit.track_regions)
+            if self._pin_dataframe_backend() == "polars":
+                from ..data_processing.bronze_polars import build_track_regions
+                track_regions = build_track_regions(circuit._raw_circuit_data)
+            else:
+                track_regions = circuit.track_regions
+            self.data_lake.create_bronze_table(table_name="track_regions", raw_data=circuit._raw_circuit_data, parsed_data=track_regions)
         except:
             logger.debug(f"Circuit data not available for session: {self.meeting.name}: {self.name}. Skipping.")
 
@@ -687,6 +716,9 @@ class Session:
     def _get_first_datetime(self):
         pos_df = self.get_data("Position.z")
         car_df = self.get_data("CarData.z")
+        if self.dataframe_backend == "polars":
+            from ..data_processing.bronze_polars import first_datetime
+            return first_datetime(car_df, pos_df)
         first_date = np.amax(
             [
                 (helper.to_datetime(car_df["Utc"]) - pd.to_timedelta(car_df["timestamp"])).max(),
@@ -698,11 +730,17 @@ class Session:
     def _get_session_start_datetime(self):
         # return pd.to_timedelta(self.get_data(dataNames="SessionStatus").set_index("status").loc["Started"].timestamp[0])
         sess_data = self.get_data("Session_Data")
+        if self.dataframe_backend == "polars":
+            from ..data_processing.bronze_polars import session_start_datetime
+            return session_start_datetime(sess_data)
         first_date = helper.to_datetime(sess_data[sess_data["SessionStatus"] == "Started"].Utc).tolist()[0]
         return first_date
 
     def generate(self, silver=True, gold=False, tables=None):
-        
+
+        # All tables of the session (bronze, silver, gold) share one dataframe backend
+        self._pin_dataframe_backend()
+
         self._load_circuit_data()
 
         try:
@@ -786,6 +824,9 @@ class Session:
             source_tables: List of required source table names
             optional_source_tables: Source tables that may be missing; the
                 callback receives ``None`` for each one that cannot be resolved.
+
+        Source tables reach the callback in the session's dataframe backend, and the
+        callback must return a DataFrame of that backend (no conversion is done).
         
         Returns:
             Decorator function that will register the callback for table generation
@@ -875,6 +916,7 @@ class Session:
 
                 # Call the original function with source data as parameters
                 result = callback_func(**source_data)
+                check_backend_frame(result, self.dataframe_backend, table_name)
                 return result
             
             # if include_session:
