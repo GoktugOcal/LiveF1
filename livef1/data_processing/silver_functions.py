@@ -96,7 +96,7 @@ def add_track_status(laps_df, df_trackstatus):
     # Grouping by LapNo and getting unique Status values
     status_df = df.groupby(["LapNo"]).Status.unique().apply(lambda x: ",".join(np.sort(np.asarray(x)[~pd.isna(np.asarray(x))]))).replace("","1").to_frame()
     laps_df = pd.merge(laps_df, status_df, left_on="LapNo", right_on="LapNo", how="left")
-    laps_df.rename(columns={"Status":"TrackStatus"}, inplace=True)
+    laps_df = laps_df.rename(columns={"Status":"TrackStatus"})
     return laps_df
 
 def add_track_status_telemetry(telemetry_df, df_track):
@@ -124,7 +124,7 @@ def add_interval_to_position_ahead(telemetry_df, df_tmg):
     ]
     telemetry_df = pd.merge_asof(telemetry_df, temp_tmg[["timestamp", "IntervalToPositionAhead_Value"]], on="timestamp")
     telemetry_df["IntervalToPositionAhead_Value"] = telemetry_df["IntervalToPositionAhead_Value"].astype(float)
-    telemetry_df.rename(columns={"IntervalToPositionAhead_Value": "IntervalToPositionAhead"}, inplace=True)
+    telemetry_df = telemetry_df.rename(columns={"IntervalToPositionAhead_Value": "IntervalToPositionAhead"})
     return telemetry_df
 
 def generate_laps_table(session, df_exp, df_rcm, df_tyre, df_track):

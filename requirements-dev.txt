@@ -4,3 +4,6 @@ pytest>=7.0.0
 pytest-cov>=4.0.0
 pytest-mock>=3.10.0
 responses>=0.23.0
+# Optional polars dataframe backend (livef1[polars]), so its tests run instead of being skipped
+polars>=2.0
+pyarrow>=14.0
