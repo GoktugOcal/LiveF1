@@ -32,14 +32,15 @@ def utc_to_datetime(df, col="Utc"):
 
 
 def str_to_duration(col):
-    """'1:23.456' / '23.456' / 'HH:MM:SS.fff' -> Duration[us] (mirror of ``pd.to_timedelta`` on these strings)."""
+    """'1:23.456' / '23.456' / 'HH:MM:SS.fff' / 'D.HH:MM:SS.fff' -> Duration[us] (mirror of the pandas parsing)."""
     c = pl.col(col)
-    parts = c.str.split(":")
+    days = c.str.extract(r"^(\d+)\.\d+:", 1).cast(pl.Float64, strict=False).fill_null(0.0)
+    parts = c.str.replace(r"^\d+\.(\d+:)", "$1").str.split(":")
     n = parts.list.len()
     sec = parts.list.get(-1, null_on_oob=True).cast(pl.Float64, strict=False)
     mins = pl.when(n >= 2).then(parts.list.get(-2, null_on_oob=True).cast(pl.Float64, strict=False)).otherwise(0.0)
     hrs = pl.when(n >= 3).then(parts.list.get(-3, null_on_oob=True).cast(pl.Float64, strict=False)).otherwise(0.0)
-    total_us = ((hrs * 3600 + mins * 60 + sec) * 1e6).round()
+    total_us = ((days * 86400 + hrs * 3600 + mins * 60 + sec) * 1e6).round()
     return total_us.cast(pl.Int64).cast(pl.Duration("us")).alias(col)
 
 

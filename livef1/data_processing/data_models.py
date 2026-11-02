@@ -145,7 +145,10 @@ class BronzeTable(Table):
         self.df = categorize(self.df)
 
         if "timestamp" in self.df.columns:
-            self.df.timestamp = pd.to_timedelta(self.df.timestamp)
+            # Streams longer than a day have "D.HH:MM:SS.fff" keys: "1.02:03:04.567" -> "1 days 02:03:04.567"
+            self.df.timestamp = pd.to_timedelta(
+                self.df['timestamp'].str.replace(r'^(\d+)\.(?=\d+:)', r'\1 days ', regex=True),
+                errors='coerce')
 
 def _fresh_source_tables_dict(source_tables=None):
     """Return a new dict with new lists (avoids mutable default)."""

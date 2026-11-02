@@ -96,6 +96,15 @@ def test_bronze_table_is_built_natively_per_backend():
     assert polars_df["timestamp"].to_list() == list(pandas_df["timestamp"])
 
 
+
+def test_bronze_timestamps_longer_than_a_day_match():
+    stamps = ["00:00:01.234", "23:59:59.999", "1.00:00:00.500", "1.02:03:04.567", "12.10:00:00.000"]
+    records = [{"timestamp": t, "A": 1} for t in stamps]
+    pd_ts = BronzeTable("t", None, records).df["timestamp"]
+    pl_ts = BronzeTable("t", None, records, dataframe_backend="polars").df["timestamp"]
+    assert pd_ts.iloc[3] == pd.Timedelta(days=1, hours=2, minutes=3, seconds=4.567)
+    assert list(pd_ts) == pl_ts.to_list()
+
 def test_bronze_table_all_null_column_is_string():
     df = BronzeTable("RaceControlMessages", {}, [{"Message": "X", "Flag": None}], dataframe_backend="polars").df
     assert df.schema["Flag"] == pl.String

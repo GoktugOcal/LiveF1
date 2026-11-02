@@ -2,6 +2,23 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [1.4.1] - 2026-11-02
+
+### Fixed
+
+- Sessions whose data stream runs longer than a day (for example a suspended race resumed the next day) can be loaded. From the second day on, the stream keys have a day prefix (`1.02:03:04.567`); they were cut at 12 characters before, which failed parsing. Keys of any length are now read, and the Bronze `timestamp` column turns `D.HH:MM:SS.fff` into a duration of D days plus the time, with both the pandas and the Polars backends.
+- A stream record that is not valid JSON raises `ParsingError` again.
+
+### Changed
+
+- The pandas Bronze `timestamp` column is `NaT` for a key it cannot parse, instead of failing the table.
+- Replaced the deprecated `DataFrame.rename(..., inplace=True)` calls in the pandas Silver functions, which warn on pandas 3.1.
+
+### Tests
+
+- Added tests for stream keys longer than a day, an invalid stream record, and `timestamp` parsing with both backends.
+- The CI test dependencies include `polars` and `pyarrow`, so the Polars backend tests run instead of being skipped.
+
 ## [1.4.0] - 2026-11-01
 
 ### Polars DataFrame backend

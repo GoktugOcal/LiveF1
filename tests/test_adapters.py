@@ -67,6 +67,22 @@ def test_livetimingF1_getdata_stream():
     assert result[0][0] == "000000000001"
 
 
+
+def test_livetimingF1_getdata_stream_longer_than_a_day():
+    text = '23:59:59.999{"k":1}\r\n1.00:00:00.500{"k":2}\r\n12.03:04:05.678[3]\r\n'
+    with patch("livef1.adapters.livetimingf1_adapter.LivetimingF1adapters") as mock_cls:
+        mock_cls.return_value.get.return_value = text
+        result = livetimingF1_getdata("https://example.com/Stream.jsonStream", stream=True)
+    assert result == [("23:59:59.999", {"k": 1}), ("1.00:00:00.500", {"k": 2}), ("12.03:04:05.678", [3])]
+
+
+def test_livetimingF1_getdata_stream_bad_record_raises():
+    from livef1.utils.exceptions import ParsingError
+    with patch("livef1.adapters.livetimingf1_adapter.LivetimingF1adapters") as mock_cls:
+        mock_cls.return_value.get.return_value = '00:00:01.234{bad\r\n'
+        with pytest.raises(ParsingError):
+            livetimingF1_getdata("https://example.com/Stream.jsonStream", stream=True)
+
 def test_get_table_from_wikipedia():
     with patch("livef1.adapters.other.requests.get") as mock_get:
         mock_get.return_value.content = b"<html><table class='wikitable'><caption>Test</caption><tr><th>A</th></tr><tr><td>1</td></tr></table></html>"

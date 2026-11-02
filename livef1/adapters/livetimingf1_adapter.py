@@ -147,13 +147,23 @@ def livetimingF1_getdata(url, stream):
     adapters = LivetimingF1adapters()  # Initialize the adapter class
     res_text = adapters.get(endpoint=url)  # Perform the GET request
 
+    def parse_record(r):
+        # The key is "HH:MM:SS.fff" (12 characters), or "D.HH:MM:SS.fff" once a
+        # session's stream runs longer than a day, so try longer keys until the rest parses.
+        for tl in range(12, len(r)):
+            try:
+                return (r[:tl], json.loads(r[tl:]))
+            except json.JSONDecodeError:
+                continue
+        return (r[:12], json.loads(r[12:]))  # Raises the original parsing error
+
     if stream:
         try:
             # Streamed data is split by newline and each record is processed
             records = res_text.split('\r\n')[:-1]  # Remove the last empty line
-            tl = 12  # Record key length (first 12 characters are the key)
-            # Return a dictionary of keys and their parsed JSON values
-            parsed_data = list((r[:tl], json.loads(r[tl:])) for r in records)
+            # Return a list of keys and their parsed JSON values
+            parsed_data = list(parse_record(r) for r in records)
+
             logger.debug("Successfully parsed streamed data.")
             return parsed_data
         except (json.JSONDecodeError, IndexError) as parse_err:
