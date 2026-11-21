@@ -20,6 +20,7 @@ from .adapters.livetimingf1_adapter import LivetimingF1adapters
 from .config import configure
 from .auth import login, logout
 from .utils.logger import set_log_level
+from . import analysis
 
 import warnings
 warnings.filterwarnings('ignore')

@@ -24,6 +24,8 @@ def configure(
     auth_token_path=None,
     auth_env_path=None,
     dataframe_backend=None,
+    fuel_correction_per_lap=None,
+    lap_one_distances=None,
 ):
     """
     Configure LiveF1 package settings.
@@ -65,6 +67,12 @@ def configure(
         gold): ``"pandas"`` (default) or ``"polars"`` (requires
         ``pip install livef1[polars]``). A session uses the backend configured
         when it builds its first table and keeps it from then on.
+    fuel_correction_per_lap : float, optional
+        Seconds added per completed lap in the ``FuelCorrectedLaps`` gold table
+        (default 0.047). Read when the table is generated.
+    lap_one_distances : sequence of float, optional
+        Distances from the start line (metres) at which the ``LapOneStart`` gold
+        table reports position and speed (default ``(100, 250, 500, 1000)``).
 
     Examples
     --------
@@ -83,7 +91,17 @@ def configure(
     >>> livef1.configure(auth_save_token=False)
     >>> # Build all tables as polars DataFrames
     >>> livef1.configure(dataframe_backend="polars")
+    >>> # Defaults of the analysis gold tables
+    >>> livef1.configure(fuel_correction_per_lap=0.035, lap_one_distances=[200, 600])
     """
+    if fuel_correction_per_lap is not None:
+        _settings["fuel_correction_per_lap"] = float(fuel_correction_per_lap)
+    if lap_one_distances is not None:
+        distances = tuple(float(d) for d in lap_one_distances)
+        if not distances:
+            raise ValueError("lap_one_distances needs at least one distance.")
+        _settings["lap_one_distances"] = distances
+
     if dataframe_backend is not None:
         from .data_processing.backends import validate_backend
         _settings["dataframe_backend"] = validate_backend(dataframe_backend)

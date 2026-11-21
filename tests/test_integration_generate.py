@@ -174,7 +174,8 @@ def test_get_season_meeting_session_and_generate_with_dummy_data(
     assert hasattr(session_obj, "drivers")
 
     def mock_load_circuit_data():
-        if not hasattr(session_obj.meeting.circuit, "track_regions"):
+        # track_regions is a lazy property that would fetch the circuit API; check the stored value
+        if session_obj.meeting.circuit.__dict__.get("_track_regions") is None:
             session_obj.meeting.circuit._raw_circuit_data = {"corners": []}
             session_obj.meeting.circuit.track_regions = pd.DataFrame({
                 "name": ["T1"], "corner_start": [0], "corner_end": [100],

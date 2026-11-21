@@ -2,6 +2,22 @@
 
 All notable changes to LiveF1 will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Default analysis tables, built with the session's own table system (pandas backend; skipped with Polars):
+  - Silver: `driverInfo` (driver display fields, `TeamColour` with `#`), `enrichedLaps` (`laps` plus `Stint`, `LapTimeSeconds`, `LapTrackStatus`, `IsGreen`, `IsValid`), `trackEvents` (SC / VSC / red flag windows with start and end time and lap) and `sessionSchedule` (the meeting's sessions in UTC and track-local time).
+  - Gold: `ValidLaps`, `FastestLaps`, `LapTimeStats`, `BestSectors`, `Stints`, `FuelCorrectedLaps`, `LapOneStart` and `DriveCharacter`. `session.generate(gold=True, tables=[...])` builds the requested tables and everything they depend on.
+- `livef1.analysis`: the functions behind those tables, with parameters, plus analyses that compare chosen drivers (`gap_between_drivers`, `track_region_times`, `track_dominance`) and `rotate_circuit` for the circuit map.
+- `Session.get_lap_telemetry(pairs)`: car telemetry of chosen `(DriverNo, LapNo)` laps.
+- `Circuit.corners` (number, name, distance in metres, X, Y, angle) and `Circuit.load_circuit_data()`; `Circuit.corners` and `Circuit.track_regions` load the circuit layout on first access.
+- `livef1.configure(fuel_correction_per_lap=..., lap_one_distances=...)` sets the defaults of `FuelCorrectedLaps` and `LapOneStart`.
+
+### Changed
+
+- `Session.generate()` fetches the circuit layout only once per circuit.
+
 ## [1.4.1] - 2026-11-02
 
 ### Fixed

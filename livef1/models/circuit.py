@@ -64,7 +64,58 @@ class Circuit:
                 pass
         else:
             raise Exception(f"Failed to load start coordinates: {response.status_code}")
-        
+
+    @property
+    def is_circuit_data_loaded(self):
+        """True once the circuit layout (corners, track regions) has been fetched."""
+        return self.__dict__.get("_raw_circuit_data") is not None
+
+    def load_circuit_data(self, force=False):
+        """
+        Fetch the circuit layout (corners and track regions) from the circuit API.
+
+        Does nothing if it is already loaded, unless ``force`` is True. :attr:`corners`
+        and :attr:`track_regions` call this on first access.
+        """
+        if force or not self.is_circuit_data_loaded:
+            self._load_circuit_data()
+        return self
+
+    @property
+    def raw_circuit_data(self):
+        """The circuit API response (loaded on first access)."""
+        self.load_circuit_data()
+        return self._raw_circuit_data
+
+    @property
+    def corners(self):
+        """
+        Corners of the circuit, loaded on first access.
+
+        Returns
+        -------
+        pandas.DataFrame
+            ``Number``, ``Letter``, ``Name`` (``"T1"``), ``Distance`` (metres from the
+            start line), ``X``, ``Y`` (map coordinates) and ``Angle`` (degrees, for
+            label placement), ordered by distance.
+        """
+        from livef1.analysis.track import corners_table
+        return corners_table(self.raw_circuit_data.get("corners"))
+
+    @property
+    def track_regions(self):
+        """
+        Corner and straight regions of the circuit (``type``, ``name``, ``corner_start``,
+        ``corner_end`` in metres ...), loaded on first access.
+        """
+        if self.__dict__.get("_track_regions") is None:
+            self.load_circuit_data()
+        return self._track_regions
+
+    @track_regions.setter
+    def track_regions(self, value):
+        self._track_regions = value
+
     def _load_circuit_data(self):
         HEADERS = {'User-Agent': 'LiveF1/user'}
         response = requests.get("https://api.multiviewer.app/api/v1/circuits", headers=HEADERS)
@@ -86,11 +137,11 @@ class Circuit:
         circuit_ref_years = circuit_ref["years"]
 
         response = requests.get(f"https://api.multiviewer.app/api/v1/circuits/{circuit_key}/{circuit_ref_years[0]}/", headers=HEADERS)
-        self._raw_circuit_data = response.json()
+        raw_circuit_data = response.json()
 
-        for corner in self._raw_circuit_data["corners"]:
+        for corner in raw_circuit_data["corners"]:
             corner.update(corner["trackPosition"])
-        df_corners = pd.DataFrame(self._raw_circuit_data["corners"]).rename(
+        df_corners = pd.DataFrame(raw_circuit_data["corners"]).rename(
                 columns = {
                     "length": "Distance",
                     "x": "X",
@@ -118,7 +169,9 @@ class Circuit:
         df_straights["type"] = "Straight"
         df_straights["name"] = "S" + df_straights["number"].astype(str)
 
+        # Set both only once the layout is fully parsed, so a failed load can be retried
         self.track_regions = pd.concat([df_corners, df_straights])
+        self._raw_circuit_data = raw_circuit_data
     
     def get(self, key, default=None):
         return getattr(self, key, default)

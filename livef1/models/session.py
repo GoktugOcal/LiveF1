@@ -34,6 +34,7 @@ from ..utils.constants import (
 from ..utils.exceptions import *
 from ..data_processing.lakes import DataLake
 from ..data_processing.backends import configured_backend, validate_backend, get_silver_functions, check_backend_frame
+from ..data_processing.analysis_tables import ANALYSIS_SILVER_TABLES, ANALYSIS_GOLD_TABLES
 from .driver import Driver, _jolpica_driver_dict
 
 from multiprocessing import Pool
@@ -105,6 +106,9 @@ class Session:
         self.etl_parser = livef1SessionETL(session=self)  # Create an ETL parser for the session.
         # Silver Data
         for attr in SILVER_SESSION_TABLES:
+            setattr(self, attr, None)
+        # Default analysis tables (silver and gold), set once generated
+        for attr in list(ANALYSIS_SILVER_TABLES) + list(ANALYSIS_GOLD_TABLES):
             setattr(self, attr, None)
 
         # Iterate over the kwargs and set them as attributes of the instance
@@ -201,11 +205,37 @@ class Session:
                 include_session=True,
                 optional_source_tables=TABLE_OPTIONAL_REQUIREMENTS.get(table_name, []),
             )(getattr(silver_functions, TABLE_GENERATION_FUNCTIONS[table_name]))
-    
+        self._register_analysis_tables("silver", ANALYSIS_SILVER_TABLES)
+
+    def _load_default_gold_tables(self):
+        self._register_analysis_tables("gold", ANALYSIS_GOLD_TABLES)
+
+    def _register_analysis_tables(self, level, tables):
+        """
+        Register the default analysis tables of ``level`` (see
+        :mod:`livef1.data_processing.analysis_tables`).
+
+        They are pandas-only: with the polars backend they are not registered. A table
+        already registered under the same name (for example your own) is kept.
+        """
+        if self._pin_dataframe_backend() != "pandas":
+            logger.debug(f"Default {level} analysis tables are only available with the pandas backend. Skipping.")
+            return
+        create = self.create_silver_table if level == "silver" else self.create_gold_table
+        for table_name, (function, sources, optional_sources, include_session) in tables.items():
+            if table_name in self.data_lake.metadata:
+                continue
+            create(
+                table_name,
+                sources,
+                include_session=include_session,
+                optional_source_tables=optional_sources,
+            )(function)
+
     def _load_circuit_data(self):
         try:
             circuit = self.meeting.circuit
-            circuit._load_circuit_data()
+            circuit.load_circuit_data()
             if self._pin_dataframe_backend() == "polars":
                 from ..data_processing.bronze_polars import build_track_regions
                 track_regions = build_track_regions(circuit._raw_circuit_data)
@@ -712,7 +742,36 @@ class Session:
         else:
             logger.info("Car Telemetry table is not generated yet. Use .generate() to load required data and generate silver tables.")
             return None
-    
+
+    def get_lap_telemetry(self, pairs):
+        """
+        Car telemetry of the given laps.
+
+        Parameters
+        ----------
+        pairs : iterable of (driver_no, lap_no) or pandas.DataFrame
+            Laps to select, as ``(DriverNo, LapNo)`` tuples or a DataFrame with
+            ``DriverNo`` and ``LapNo`` columns (for example ``session.FastestLaps``).
+            Driver numbers match as strings and lap numbers as numbers.
+
+        Returns
+        -------
+        pandas.DataFrame or None
+            Rows of ``carTelemetry`` for those laps, or None if ``carTelemetry`` is
+            not generated yet.
+
+        Examples
+        --------
+        >>> session.generate(gold=True, tables=["FastestLaps"])
+        >>> tel = session.get_lap_telemetry(session.FastestLaps.head(2))
+        >>> tel = session.get_lap_telemetry([("1", 12), ("16", 14)])
+        """
+        car_telemetry = self.get_car_telemetry()
+        if car_telemetry is None:
+            return None
+        from ..analysis import select_lap_telemetry
+        return select_lap_telemetry(car_telemetry, pairs)
+
     def _get_first_datetime(self):
         pos_df = self.get_data("Position.z")
         car_df = self.get_data("CarData.z")
@@ -756,6 +815,8 @@ class Session:
         # either level is requested so dependency expansion can resolve them.
         if silver or gold:
             self._load_default_silver_tables()
+        if gold:
+            self._load_default_gold_tables()
 
         seeds = []
         if silver:
