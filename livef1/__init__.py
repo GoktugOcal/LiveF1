@@ -23,13 +23,9 @@ from .utils.logger import set_log_level
 from . import analysis
 
 import warnings
-warnings.filterwarnings('ignore')
-warnings.filterwarnings("ignore", category=UserWarning)
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-# from pandas.errors import SettingWithCopyWarning
-# warnings.simplefilter(action="ignore", category=SettingWithCopyWarning)
-# warnings.simplefilter(action='ignore', category=FutureWarning)
+# Silence warnings raised from LiveF1's own code (pandas FutureWarnings and the
+# like) without touching the rest of the user's process.
+warnings.filterwarnings("ignore", module=r"livef1(\.|$)")
 
 __version__ = "1.4.1"
 

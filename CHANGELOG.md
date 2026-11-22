@@ -14,9 +14,31 @@ All notable changes to LiveF1 will be documented in this file.
 - `Circuit.corners` (number, name, distance in metres, X, Y, angle) and `Circuit.load_circuit_data()`; `Circuit.corners` and `Circuit.track_regions` load the circuit layout on first access.
 - `livef1.configure(fuel_correction_per_lap=..., lap_one_distances=...)` sets the defaults of `FuelCorrectedLaps` and `LapOneStart`.
 
+- Logging that adapts to where LiveF1 runs:
+  - Terminals get coloured lines and progress bars for topic downloads and table builds.
+  - Notebooks get coloured lines; `INFO` goes to stdout, so it is not shown in the red stderr box, and warnings and errors go to stderr. Progress bars are widgets when `ipywidgets` is installed.
+  - In AWS Lambda and Google Cloud Functions/Run, records go to the platform's log handler, so Lambda adds the request id and applies `AWS_LAMBDA_LOG_FORMAT` and `AWS_LAMBDA_LOG_LEVEL`. Without such a handler, each record is one line (a traceback stays one CloudWatch event).
+  - Piped output gets plain lines.
+- New `livef1.configure()` options:
+  - `log_style`: `"auto"`, `"pretty"`, `"plain"` or `"json"`; also settable with the `LIVEF1_LOG_STYLE` environment variable. `NO_COLOR` and `FORCE_COLOR` are honoured.
+  - `progress`: turns the progress bars on or off.
+  - `log_propagate`: hands LiveF1's records to the application's own logging setup.
+- `log_style="json"` prints one JSON object per line. Records from `generate()` carry structured fields (`event`, `layer`, `table`, `rows`, `duration_ms`, `tables`, `failed`) that CloudWatch Logs Insights can query.
+
 ### Changed
 
 - `Session.generate()` fetches the circuit layout only once per circuit.
+- `Session.generate()` logs a few summary lines instead of one or two lines per table: the session, the topics downloaded, one line per layer with timings, and the tables built. Row counts and timings per table are logged at `DEBUG`.
+- A table that fails to build is logged as one error line naming the table and the exception. The traceback is logged at `DEBUG` level, for gold tables too, which had none before.
+- "The callback function for the SILVER table ... was set." is logged at `DEBUG` as "Registered silver/gold table ...". It was logged at `INFO` and named every table SILVER, including gold tables.
+- The selected meeting and session are logged on one line (`Meeting: ...`, `Session: ...`).
+- Loaded results, starting grid and standings are logged at `DEBUG`.
+- `import livef1` silences only warnings raised from LiveF1's own modules. Before, it turned off all warnings in the process.
+- Messages that LiveF1 wrote with `print()` now go through the logger: results-page scraping failures, meeting reloads, and the debug output of two parsers.
+
+### Fixed
+
+- The logging guide used `configure()` parameter names that do not exist (`file_path`, `stream_format`). It now uses `logging_file_path` and `logging_stream_format`.
 
 ## [1.4.1] - 2026-11-02
 

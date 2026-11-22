@@ -20,6 +20,9 @@ def configure(
     logging_file_path=_UNSET,
     logging_file_format=None,
     logging_file_datefmt=None,
+    log_style=None,
+    log_propagate=_UNSET,
+    progress=_UNSET,
     auth_save_token=None,
     auth_token_path=None,
     auth_env_path=None,
@@ -50,6 +53,23 @@ def configure(
         Format string for the file handler.
     logging_file_datefmt : str, optional
         Date/time format for the file handler.
+    log_style : str, optional
+        Console output style: ``"auto"`` (default), ``"pretty"`` (colours),
+        ``"plain"`` or ``"json"`` (one JSON object per line with structured
+        fields such as ``event``, ``table``, ``rows`` and ``duration_ms``).
+        ``"auto"`` uses colours in terminals and notebooks and plain lines
+        elsewhere; in AWS Lambda and Google Cloud Functions/Run it hands records
+        to the platform's log handler. The ``LIVEF1_LOG_STYLE`` environment
+        variable sets the style too; ``NO_COLOR`` and ``FORCE_COLOR`` are honoured.
+    log_propagate : bool or None, optional
+        True: send records to your own logging setup (the root logger) and
+        print nothing of LiveF1's own, so lines are not printed twice. False:
+        always use LiveF1's console handler. None (default): propagate only in
+        cloud runtimes that have a root handler.
+    progress : bool or None, optional
+        Progress bars for topic downloads and table generation. None (default):
+        shown in terminals and notebooks only. False turns them off; True also
+        shows them when output is piped (never in cloud runtimes).
     auth_save_token : bool, optional
         Default for :func:`livef1.login`: save the F1 account token to disk.
         Set to False to keep it in memory only.
@@ -87,6 +107,10 @@ def configure(
     ...     logging_file_path="logs/livef1.log",
     ...     logging_file_format="%(asctime)s %(levelname)s %(message)s",
     ... )
+    >>> # JSON lines for CloudWatch Logs Insights, no progress bars
+    >>> livef1.configure(log_style="json", progress=False)
+    >>> # Let the application's own logging setup print LiveF1's records
+    >>> livef1.configure(log_propagate=True)
     >>> # Keep the F1 account token in memory only
     >>> livef1.configure(auth_save_token=False)
     >>> # Build all tables as polars DataFrames
@@ -127,6 +151,12 @@ def configure(
         logging_kwargs["file_format"] = logging_file_format
     if logging_file_datefmt is not None:
         logging_kwargs["file_datefmt"] = logging_file_datefmt
+    if log_style is not None:
+        logging_kwargs["log_style"] = log_style
+    if log_propagate is not _UNSET:
+        logging_kwargs["log_propagate"] = log_propagate
+    if progress is not _UNSET:
+        logging_kwargs["progress"] = progress
 
     if logging_kwargs:
         configure_logging(**logging_kwargs)

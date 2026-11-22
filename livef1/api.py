@@ -113,9 +113,10 @@ def get_meeting(
     print_found_model(
         df = season_obj.season_table,
         key = meeting_key,
-        cols = required_cols
+        cols = required_cols,
+        label = "Meeting"
     )
-    logger.info("Got the meeting.")
+    logger.debug("Got the meeting.")
 
     return meeting_obj
 
@@ -188,9 +189,10 @@ def get_session(
     print_found_model(
         df = meeting_obj.sessions_table,
         key = session_key,
-        cols = required_cols
+        cols = required_cols,
+        label = "Session"
     )
-    logger.info("The session was received successfully.")
+    logger.debug("The session was received successfully.")
 
     if session_obj.is_livetiming_available or session_obj.is_jolpica_available:
         session_obj.load_session_data()

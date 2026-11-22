@@ -22,6 +22,7 @@ from ..models.session import Session
 from ..models.circuit import Circuit
 from ..utils.helper import json_parser_for_objects, build_session_endpoint
 from ..utils.constants import SESSIONS_COLUMN_MAP
+from ..utils.logger import logger
 from livef1.models.country import Country
 
 
@@ -165,7 +166,7 @@ class Meeting:
         """
         if (not self.loaded) | (force):
             if force:
-                print("Force load...")
+                logger.debug("Reloading the meeting (force=True).")
 
             if hasattr(self, "year"):
                 self.json_data = download_data(self.year, self.location)
@@ -181,7 +182,7 @@ class Meeting:
             self.parse_sessions()
             self.set_sessions()
         else:
-            print("The meeting has already been loaded. If you want to load anyway, use `force=True`.")
+            logger.info("The meeting is already loaded. Use load(force=True) to reload it.")
 
     def set_sessions(self):
         """

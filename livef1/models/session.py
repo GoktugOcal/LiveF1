@@ -19,7 +19,8 @@ from ..adapters.functions import (
     jolpica_session_available_on_race,
 )
 from ..utils import helper
-from ..utils.logger import logger
+from ..utils.logger import logger, progress, Timer, format_duration, format_count
+import logging
 from ..data_processing.etl import *
 from ..data_processing.jolpica_etl import parse_constructor_standings, parse_driver_standings
 from ..data_processing.data_models import *
@@ -368,7 +369,7 @@ class Session:
         """
         Load the driver list for the session.
         """
-        logger.info(f"Fetching drivers.")
+        logger.debug("Fetching drivers.")
         self.drivers = {}
 
         if self.is_livetiming_available:
@@ -470,22 +471,44 @@ class Session:
         validated_names = dataNames
 
         results = {}
-        if parallel and len(validated_names) > 1:
-            # Parallel loading
-            n_processes = max(1, multiprocessing.cpu_count() - 1)
-            with Pool(processes=n_processes) as pool:
-                loaded_results = pool.starmap(
-                    load_single_data, 
-                    zip(
-                        np.asarray(validated_names)[:,0],
-                        repeat(self),
-                        np.asarray(validated_names)[:,1]))
-                results = {name: {"data": data, "parsed_data": parsed_data} for name, data, parsed_data in loaded_results}
-        else:
-            # Sequential loading
-            for name, stream in validated_names:
-                name, data, parsed_data = load_single_data(name, self, stream)
-                results[name] = {"data": data, "parsed_data": parsed_data}
+        names = [name for name, _ in validated_names]
+        with Timer() as total:
+            if parallel and len(validated_names) > 1:
+                # Parallel loading
+                logger.info(f"Downloading {_count(len(names), 'topic')} in parallel: {', '.join(names)}")
+                n_processes = max(1, multiprocessing.cpu_count() - 1)
+                with Pool(processes=n_processes) as pool:
+                    loaded_results = pool.starmap(
+                        load_single_data,
+                        zip(
+                            np.asarray(validated_names)[:,0],
+                            repeat(self),
+                            np.asarray(validated_names)[:,1]))
+                    results = {name: {"data": data, "parsed_data": parsed_data} for name, data, parsed_data in loaded_results}
+                bar_shown = False
+            else:
+                # Sequential loading
+                with progress(len(validated_names), "Downloading", unit="topic") as bar:
+                    bar_shown = bar.enabled
+                    for name, stream in validated_names:
+                        bar.step(name)
+                        with Timer() as t:
+                            name, data, parsed_data = load_single_data(name, self, stream)
+                        results[name] = {"data": data, "parsed_data": parsed_data}
+                        records = _row_count(parsed_data)
+                        # With a bar (or a summary line to follow) per-topic lines are detail.
+                        level = logging.DEBUG if bar_shown or len(validated_names) > 1 else logging.INFO
+                        logger.log(
+                            level,
+                            f"Downloaded '{name}': {format_count(records)} records in {format_duration(t.seconds)}",
+                            extra={"event": "topic_loaded", "topic": name, "rows": records, "duration_ms": t.ms},
+                        )
+                        bar.advance()
+        if len(validated_names) > 1 or bar_shown:
+            logger.info(
+                f"Downloaded {_count(len(names), 'topic')} in {format_duration(total.seconds)}: {', '.join(names)}",
+                extra={"event": "topics_loaded", "topics": names, "duration_ms": total.ms},
+            )
 
         # Save all results to bronze lake
         for name, result in results.items():
@@ -796,6 +819,11 @@ class Session:
         return first_date
 
     def generate(self, silver=True, gold=False, tables=None):
+        started = time()
+        logger.info(
+            f"Generating tables for {self._label()}",
+            extra={"event": "generate_started", "session": self._label()},
+        )
 
         # All tables of the session (bronze, silver, gold) share one dataframe backend
         self._pin_dataframe_backend()
@@ -843,37 +871,78 @@ class Session:
         silver_tables_to_generate = self.data_lake._topo_sort_tables(silver_in_closure)
         gold_tables_to_generate = self.data_lake._topo_sort_tables(gold_in_closure)
 
-        # Use the unified get_data method instead of get_data_parallel
-        logger.info(f"Topics to be loaded : {list(required_data)}")
-        self.get_data(list(required_data), parallel=False)
+        logger.debug(f"Topics needed: {', '.join(sorted(required_data))}")
+        self.get_data(sorted(required_data), parallel=False)
 
         self.first_datetime = self._get_first_datetime()
         self.session_start_datetime = self._get_session_start_datetime()
 
-        if self.data_lake._check_circular_dependencies():
-            if silver_tables_to_generate:
-                logger.info(f"Silver tables are being generated.")
-                for silver_table in silver_tables_to_generate:
-                    try:
-                        table_name = silver_table.table_name
-                        silver_table.generate_table()
-                        setattr(self, table_name, self.get_data(dataNames = table_name, level = "silver"))
-                        logger.info(f"'{table_name}' has been generated and saved to the silver lake. You can access it from 'session.{table_name}'.")
-                    except Exception as e:
-                        logger.error(f"Failed to generate silver table '{table_name}': {e}")
-                        logger.debug(f"Traceback: ", exc_info=True)
-            if gold_tables_to_generate:
-                logger.info("Gold tables are being generated.")
-                for gold_table in gold_tables_to_generate:
-                    try:
-                        table_name = gold_table.table_name
-                        gold_table.generate_table()
-                        setattr(self, table_name, self.get_data(dataNames = table_name, level = "gold"))
-                        logger.info(f"'{table_name}' has been generated and saved to the gold lake. You can access it from 'session.{table_name}'.")
-                    except Exception as e:
-                        logger.error(f"Failed to generate gold table '{table_name}': {e}")
-        else:
+        if not self.data_lake._check_circular_dependencies():
             logger.error("Circular dependencies detected. Please check your table dependencies.")
+            return
+
+        to_build = [("silver", t) for t in silver_tables_to_generate] + [("gold", t) for t in gold_tables_to_generate]
+        built = {"silver": [], "gold": []}
+        failed = {"silver": [], "gold": []}
+        seconds = {"silver": 0.0, "gold": 0.0}
+        with progress(len(to_build), "Building tables", unit="table") as bar:
+            for level, table in to_build:
+                table_name = table.table_name
+                bar.step(table_name)
+                timer = Timer()
+                try:
+                    with timer:
+                        table.generate_table()
+                        result = self.get_data(dataNames=table_name, level=level)
+                        setattr(self, table_name, result)
+                    rows = _row_count(getattr(result, "df", result))
+                    built[level].append(table_name)
+                    logger.debug(
+                        f"Built {level} table '{table_name}': {format_count(rows)} rows in {format_duration(timer.seconds)}",
+                        extra={"event": "table_generated", "layer": level, "table": table_name,
+                               "rows": rows, "duration_ms": timer.ms},
+                    )
+                except Exception as e:
+                    failed[level].append(table_name)
+                    _log_table_failure(level, table_name, e, timer)
+                seconds[level] += timer.seconds
+                bar.advance()
+
+        for level in ("silver", "gold"):
+            n_built, n_failed = len(built[level]), len(failed[level])
+            if not n_built and not n_failed:
+                continue
+            summary = f"{level.capitalize()}: {_count(n_built, 'table')} in {format_duration(seconds[level])}"
+            if n_failed:
+                summary += f", {n_failed} failed ({', '.join(failed[level])})"
+            logger.log(
+                logging.WARNING if n_failed else logging.INFO,
+                summary,
+                extra={"event": "tables_generated", "layer": level, "tables": built[level],
+                       "failed": failed[level], "duration_ms": int(round(seconds[level] * 1000))},
+            )
+
+        names = built["silver"] + built["gold"]
+        if names:
+            shown = ", ".join(f"session.{name}" for name in names[:6])
+            if len(names) > 6:
+                shown += f" (+{len(names) - 6} more)"
+            done = f"Done in {format_duration(time() - started)}. Tables: {shown}"
+        else:
+            done = f"Done in {format_duration(time() - started)}. No tables were built."
+        logger.info(
+            done,
+            extra={"event": "generate_finished", "session": self._label(), "tables": names,
+                   "failed": failed["silver"] + failed["gold"],
+                   "duration_ms": int(round((time() - started) * 1000))},
+        )
+
+    def _label(self):
+        """``"2024 Saudi Arabian Grand Prix · Race"`` for log lines."""
+        year = getattr(getattr(self, "season", None), "year", None)
+        meeting = getattr(getattr(self, "meeting", None), "name", None)
+        parts = " ".join(str(p) for p in (year, meeting) if p)
+        return f"{parts} · {self.name}" if parts else str(self.name)
 
 
     def _create_table(self, level, table_name, source_tables, include_session=False, optional_source_tables=None):
@@ -1006,7 +1075,7 @@ class Session:
             # Return the original function for documentation purposes
             return callback_func
         
-        logger.info(f"The callback function for the SILVER table '{table_name}' was set.")
+        logger.debug(f"Registered {level} table '{table_name}'.")
 
         return decorator
 
@@ -1054,26 +1123,26 @@ class Session:
             target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/{session_type}-results"
 
         self.sessionResults = helper.scrape_f1_results(target_url)
-        logger.info(f"Session results have been loaded and saved to 'session.sessionResults'.")
+        logger.debug(f"Session results have been loaded and saved to 'session.sessionResults'.")
 
         if session_type == "race":
             target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/starting-grid"
             self.startingGrid = helper.scrape_f1_results(target_url)
-            logger.info(f"Starting grid have been loaded and saved to 'session.startingGrid'.")
+            logger.debug("Starting grid has been loaded and saved to 'session.startingGrid'.")
         elif session_type == "sprint":
             target_url = f"https://www.formula1.com/en/results/{season}/races/{meeting_key}/{circuit_identifier}/sprint-grid"
             self.startingGrid = helper.scrape_f1_results(target_url)
-            logger.info(f"Starting grid have been loaded and saved to 'session.startingGrid'.")
+            logger.debug("Starting grid has been loaded and saved to 'session.startingGrid'.")
 
     def _load_driver_standings(self):
         driver_standings = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_driver_standings(limit=100).data.standings_lists[0].to_dict()["DriverStandings"]
         self.driverStandings = parse_driver_standings(self.meeting.season, driver_standings)
-        logger.info(f"Driver standings have been loaded and saved to 'session.driverStandings'.")
+        logger.debug(f"Driver standings have been loaded and saved to 'session.driverStandings'.")
 
     def _load_constructor_standings(self):
         rows = jolpica_client.query().season(self.season.year).round(self.meeting.round).get_constructor_standings(limit=100).data.standings_lists[0].to_dict()["ConstructorStandings"]
         self.constructorStandings = parse_constructor_standings(self.meeting.season, rows)
-        logger.info("Constructor standings have been loaded and saved to 'session.constructorStandings'.")
+        logger.debug("Constructor standings have been loaded and saved to 'session.constructorStandings'.")
 
 def load_single_data(dataName, session, stream):
 
@@ -1086,12 +1155,33 @@ def load_single_data(dataName, session, stream):
         urljoin(session.full_path, session.topic_names_info[dataName][dataType]),
         stream=stream
     )
-    logger.debug(f"Fetched in {round(time() - start,3)} seconds")
+    logger.debug(f"Fetched '{dataName}' in {round(time() - start,3)} seconds")
     # Parse the retrieved data using the ETL parser and return the result.
     start = time()
     parsed_data = list(session.etl_parser.unified_parse(dataName, data))
 
-    logger.debug(f"Parsed in {round(time() - start,3)} seconds")
-    logger.info(f"'{dataName}' has been fetched and parsed")
+    logger.debug(f"Parsed '{dataName}' in {round(time() - start,3)} seconds")
 
     return dataName, data, parsed_data
+
+def _count(n, noun):
+    """``_count(1, "table")`` -> ``"1 table"``, ``_count(3, "table")`` -> ``"3 tables"``."""
+    return f"{n} {noun}" + ("" if n == 1 else "s")
+
+
+def _row_count(data):
+    try:
+        return len(data)
+    except TypeError:
+        return 0
+
+
+def _log_table_failure(level, table_name, exc, timer=None):
+    """One error line; the traceback only at DEBUG level."""
+    message = f"Could not build {level} table '{table_name}': {type(exc).__name__}: {exc}"
+    extra = {"event": "table_failed", "layer": level, "table": table_name,
+             "error": type(exc).__name__, "duration_ms": timer.ms if timer is not None else None}
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.error(message, exc_info=exc, extra=extra)
+    else:
+        logger.error(message + ' (log_level="DEBUG" shows the traceback)', extra=extra)

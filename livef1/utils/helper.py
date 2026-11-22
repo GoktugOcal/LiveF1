@@ -381,10 +381,15 @@ def string_match_ratio(s1: str, s2: str) -> float:
     
     return matches / length
 
-def print_found_model(df, key, cols):
+def print_found_model(df, key, cols, label="Selected"):
+    """Log the selected meeting or session on one line, e.g. ``Meeting: A · B · C``."""
     found_meeting_info = df.loc[[key], cols].drop_duplicates().iloc[0]
-    found_info = "\n".join([f"\t{col} : {found_meeting_info[col]}" for col in cols])
-    logger.info(f"""Selected meeting/session is:\n{found_info}""")
+    values = []
+    for col in cols:
+        value = str(found_meeting_info[col]).strip()
+        if value and value.lower() != "nan" and value not in values:
+            values.append(value)
+    logger.info(f"{label}: {' · '.join(values)}")
 
 def scrape_f1_results(url):
     # F1 website often requires a User-Agent header to allow requests
@@ -394,7 +399,7 @@ def scrape_f1_results(url):
     
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(f"Failed to retrieve page: {response.status_code}")
+        logger.warning(f"Could not load F1 results page (HTTP {response.status_code}): {url}")
         return None
 
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -408,7 +413,7 @@ def scrape_f1_results(url):
         table = soup.find('table')
 
     if not table:
-        print("Could not find the results table.")
+        logger.warning(f"No results table on the F1 results page: {url}")
         return None
 
     headers = [th.get_text(strip=True) for th in table.find_all("th")]
@@ -439,7 +444,7 @@ def scrape_f1_results(url):
 
         return df
     else:
-        print("Could not find the results table on the page.")
+        logger.warning(f"No results table on the F1 results page: {url}")
         return None
 
 def get_circuit_keys():
@@ -464,7 +469,7 @@ def localize_dt(local_dt, country_code, target_tz="UTC"):
     try:
         timezone_str = pytz.country_timezones.get(country_code)[0]
     except Exception as e:
-        print(e)
+        logger.debug(f"No timezone for country code {country_code!r}: {e}")
         return "Country not found or no timezone mapping available."
 
     # 2. Parse the local time (assuming format: YYYY-MM-DD HH:MM:SS)

@@ -187,3 +187,73 @@ def test_circuit_track_regions_setter_skips_loading():
     circuit.track_regions = pd.DataFrame({"name": ["S0"]})
     with patch.object(Circuit, "_load_circuit_data", side_effect=AssertionError("should not load")):
         assert circuit.track_regions["name"].tolist() == ["S0"]
+
+
+# --- what generate() logs ---------------------------------------------------
+
+import logging
+
+from livef1.utils import logger as logger_module
+
+
+@pytest.fixture
+def records():
+    handler = logging.Handler()
+    handler.records = []
+    handler.emit = handler.records.append
+    logger_module.logger.addHandler(handler)
+    yield handler.records
+    logger_module.logger.removeHandler(handler)
+    logger_module.reset_logging()
+
+
+def _messages(records, level):
+    return [r.getMessage() for r in records if r.levelno == level]
+
+
+def test_generate_logs_a_few_summary_lines(session, records):
+    livef1.configure(log_level="DEBUG")
+    _generate(session, gold=True)
+    info = _messages(records, logging.INFO)
+    assert info == [
+        "Generating tables for Belgian Grand Prix · Race",
+        *[m for m in info if m.startswith("Silver: 6 tables in ")],
+        *[m for m in info if m.startswith("Gold: 8 tables in ")],
+        *[m for m in info if m.startswith("Done in ") and m.endswith("(+8 more)")],
+    ]
+    # Registering a table is detail, and names the right level
+    debug = _messages(records, logging.DEBUG)
+    assert "Registered gold table 'FastestLaps'." in debug
+    assert "Registered silver table 'driverInfo'." in debug
+    assert any(m.startswith("Built gold table 'FastestLaps': 3 rows in ") for m in debug)
+
+
+def test_generate_summary_records_carry_structured_fields(session, records):
+    livef1.configure(log_level="DEBUG")
+    _generate(session, gold=True, tables=["FastestLaps"])
+    built = [r for r in records if getattr(r, "event", None) == "table_generated"]
+    assert {r.table for r in built} >= {"laps", "enrichedLaps", "ValidLaps", "FastestLaps"}
+    assert all(isinstance(r.rows, int) and isinstance(r.duration_ms, int) for r in built)
+    finished = [r for r in records if getattr(r, "event", None) == "generate_finished"]
+    assert len(finished) == 1 and "FastestLaps" in finished[0].tables and finished[0].failed == []
+
+
+def test_failed_table_is_one_error_line_with_traceback_only_at_debug(session, records):
+    @session.create_gold_table("Broken", ["laps"])
+    def broken(laps):
+        return laps["NoSuchColumn"]
+
+    _generate(session, gold=True, tables=["Broken"])
+    errors = [r for r in records if r.levelno == logging.ERROR]
+    assert len(errors) == 1
+    assert errors[0].getMessage().startswith("Could not build gold table 'Broken': KeyError")
+    assert 'log_level="DEBUG"' in errors[0].getMessage() and errors[0].exc_info is None
+    summary = [r for r in records if getattr(r, "event", None) == "tables_generated" and r.layer == "gold"]
+    assert summary[0].levelno == logging.WARNING and summary[0].failed == ["Broken"]
+
+    records.clear()
+    livef1.configure(log_level="DEBUG")
+    session.data_lake.metadata["Broken"]["generated"] = False
+    _generate(session, gold=True, tables=["Broken"])
+    errors = [r for r in records if r.levelno == logging.ERROR]
+    assert errors[0].exc_info is not None

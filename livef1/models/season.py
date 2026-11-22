@@ -149,12 +149,12 @@ class Season:
     def _load_driver_standings(self):
         driver_standings = jolpica_client.query().season(self.year).get_driver_standings(limit=100).data.standings_lists[0].to_dict()["DriverStandings"]
         self.driverStandings = parse_driver_standings(self, driver_standings)
-        logger.info(f"Driver standings have been loaded and saved to 'season.driverStandings'.")
+        logger.debug(f"Driver standings have been loaded and saved to 'season.driverStandings'.")
 
     def _load_constructor_standings(self):
         ctor_standings = jolpica_client.query().season(self.year).get_constructor_standings(limit=100).data.standings_lists[0].to_dict()["ConstructorStandings"]
         self.constructorStandings = parse_constructor_standings(self, ctor_standings)
-        logger.info("Constructor standings have been loaded and saved to 'season.constructorStandings'.")
+        logger.debug("Constructor standings have been loaded and saved to 'season.constructorStandings'.")
     
     def get_driver(self, identifier: str) -> Driver:
         """

@@ -1,5 +1,6 @@
 from ..utils.helper import *
 from ..utils.constants import channel_name_map
+from ..utils.logger import logger
 import urllib
 
 def parse_tyre_stint_series(data, sessionKey, **kwargs):
@@ -632,7 +633,7 @@ def parse_pit_stop_series(data, sessionKey, **kwargs):
 
                     
 def parse_printer(data, sessionKey, **kwargs):
-    print(data)
+    logger.debug(f"parse_printer: {data!r}")
 
 
 def parse_basic(data, sessionKey, **kwargs):
@@ -657,7 +658,6 @@ def parse_championship_prediction(data, sessionKey, **kwargs):
             The key of the current session.
     """
 
-    print(data)
     drivers = data["Drivers"]
     # records_drivers = []
     for driver in drivers.values():

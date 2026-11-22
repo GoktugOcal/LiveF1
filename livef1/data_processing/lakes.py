@@ -261,7 +261,7 @@ class SimpleLake:
         if self.has_data(table_name):
             return self.lake[table_name]
         else:
-            logger.info(f"Table '{table_name}' is not present in BronzeLake.")
+            logger.debug(f"Table '{table_name}' is not present in {type(self).__name__}.")
             return None
 
     def has_data(self, table_name):
