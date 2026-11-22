@@ -23,6 +23,7 @@ All notable changes to LiveF1 will be documented in this file.
   - `log_style`: `"auto"`, `"pretty"`, `"plain"` or `"json"`; also settable with the `LIVEF1_LOG_STYLE` environment variable. `NO_COLOR` and `FORCE_COLOR` are honoured.
   - `progress`: turns the progress bars on or off.
   - `log_propagate`: hands LiveF1's records to the application's own logging setup.
+- `Session.catalog()`: every table of the session as a DataFrame (bronze topics, silver and gold tables, results), with whether it is built, row and column counts, sources, how to access it and a description. It also lists the default tables `generate()` has not built yet, for example the gold tables after `generate()` without `gold=True`.
 - `log_style="json"` prints one JSON object per line. Records from `generate()` carry structured fields (`event`, `layer`, `table`, `rows`, `duration_ms`, `tables`, `failed`) that CloudWatch Logs Insights can query.
 
 ### Changed
@@ -31,6 +32,8 @@ All notable changes to LiveF1 will be documented in this file.
 - `Session.generate()` logs a few summary lines instead of one or two lines per table: the session, the topics downloaded, one line per layer with timings, and the tables built. Row counts and timings per table are logged at `DEBUG`.
 - A table that fails to build is logged as one error line naming the table and the exception. The traceback is logged at `DEBUG` level, for gold tables too, which had none before.
 - "The callback function for the SILVER table ... was set." is logged at `DEBUG` as "Registered silver/gold table ...". It was logged at `INFO` and named every table SILVER, including gold tables.
+- `generate()` downloads `SessionData` and, when `laps` is built, `PitStopSeries` together with the other topics. Before, they were fetched separately later on, each with its own log line. A topic that a table fetches by itself while tables are building is logged at `DEBUG`, without a second progress bar.
+- In notebooks without `ipywidgets`, a log line printed while the text progress bar is shown no longer lands at the end of the bar's line.
 - The selected meeting and session are logged on one line (`Meeting: ...`, `Session: ...`).
 - Loaded results, starting grid and standings are logged at `DEBUG`.
 - `import livef1` silences only warnings raised from LiveF1's own modules. Before, it turned off all warnings in the process.

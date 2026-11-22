@@ -676,3 +676,30 @@ _DOWNCAST_MAP = {
 }
 
 _CATEGORICAL_COLUMNS = ["DriverNo", "Compound", "TrackStatus", "TrackRegion", "SessionKey", "tag", "Status"]
+
+# One-line descriptions shown by Session.catalog()
+TABLE_DESCRIPTIONS = {
+    # Core silver tables
+    "laps": "One row per driver lap: lap and sector times, tyres, pit stops and track status.",
+    "carTelemetry": "Car and position samples (speed, throttle, brake, gear, X/Y/Z) with lap number and distance.",
+    "raceControlMessages": "Race control messages: flags, penalties, investigations.",
+    # Analysis silver tables
+    "driverInfo": "Driver number, abbreviation, names, team and team colour.",
+    "enrichedLaps": "laps plus stint, lap time in seconds, the track status in force and lap validity.",
+    "trackEvents": "Safety car, VSC and red flag periods with start and end time and lap.",
+    "sessionSchedule": "The meeting's sessions with start and end in UTC and track-local time.",
+    # Analysis gold tables
+    "ValidLaps": "Valid green-flag laps without slow outliers, fastest first.",
+    "FastestLaps": "Each driver's fastest valid lap, ranked, with the gap to the fastest.",
+    "LapTimeStats": "Lap time distribution per driver (min, quartiles, mean, max) and mean gap to the leader.",
+    "BestSectors": "Each driver's best sector times and theoretical best lap.",
+    "Stints": "One row per driver stint: compound, laps, tyre age and mean lap time.",
+    "FuelCorrectedLaps": "enrichedLaps with lap times corrected for the fuel load.",
+    "LapOneStart": "Race start per driver: time to 100 km/h, position and speed at set distances.",
+    "DriveCharacter": "Share of full throttle, heavy braking and cornering on each driver's fastest lap.",
+    # Results loaded with the session
+    "sessionResults": "Classification from formula1.com.",
+    "startingGrid": "Starting grid from formula1.com.",
+    "driverStandings": "Drivers' championship standings after this round.",
+    "constructorStandings": "Constructors' championship standings after this round.",
+}

@@ -31,6 +31,7 @@ from ..utils.constants import (
     TABLE_GENERATION_FUNCTIONS,
     TABLE_REQUIREMENTS,
     TABLE_OPTIONAL_REQUIREMENTS,
+    TABLE_DESCRIPTIONS,
 )
 from ..utils.exceptions import *
 from ..data_processing.lakes import DataLake
@@ -487,8 +488,10 @@ class Session:
                     results = {name: {"data": data, "parsed_data": parsed_data} for name, data, parsed_data in loaded_results}
                 bar_shown = False
             else:
-                # Sequential loading
-                with progress(len(validated_names), "Downloading", unit="topic") as bar:
+                # Sequential loading. While generate() builds tables, a topic a
+                # table fetches on its own is logged at DEBUG, without a second bar.
+                building = getattr(self, "_building_tables", False)
+                with progress(len(validated_names), "Downloading", unit="topic", show=not building) as bar:
                     bar_shown = bar.enabled
                     for name, stream in validated_names:
                         bar.step(name)
@@ -497,14 +500,14 @@ class Session:
                         results[name] = {"data": data, "parsed_data": parsed_data}
                         records = _row_count(parsed_data)
                         # With a bar (or a summary line to follow) per-topic lines are detail.
-                        level = logging.DEBUG if bar_shown or len(validated_names) > 1 else logging.INFO
+                        level = logging.DEBUG if bar_shown or building or len(validated_names) > 1 else logging.INFO
                         logger.log(
                             level,
                             f"Downloaded '{name}': {format_count(records)} records in {format_duration(t.seconds)}",
                             extra={"event": "topic_loaded", "topic": name, "rows": records, "duration_ms": t.ms},
                         )
                         bar.advance()
-        if len(validated_names) > 1 or bar_shown:
+        if (len(validated_names) > 1 or bar_shown) and not getattr(self, "_building_tables", False):
             logger.info(
                 f"Downloaded {_count(len(names), 'topic')} in {format_duration(total.seconds)}: {', '.join(names)}",
                 extra={"event": "topics_loaded", "topics": names, "duration_ms": total.ms},
@@ -871,6 +874,17 @@ class Session:
         silver_tables_to_generate = self.data_lake._topo_sort_tables(silver_in_closure)
         gold_tables_to_generate = self.data_lake._topo_sort_tables(gold_in_closure)
 
+        # Topics read outside the table sources: SessionData by
+        # _get_session_start_datetime, PitStopSeries by the laps table. Fetching
+        # them with the others gives one download step instead of extra ones later.
+        if not hasattr(self, "topic_names_info"):
+            self.get_topic_names()
+        available = self.topic_names_info or {}
+        if "SessionData" in available:
+            required_data.add("SessionData")
+        if "PitStopSeries" in available and any(t.table_name == "laps" for t in silver_tables_to_generate):
+            required_data.add("PitStopSeries")
+
         logger.debug(f"Topics needed: {', '.join(sorted(required_data))}")
         self.get_data(sorted(required_data), parallel=False)
 
@@ -885,28 +899,33 @@ class Session:
         built = {"silver": [], "gold": []}
         failed = {"silver": [], "gold": []}
         seconds = {"silver": 0.0, "gold": 0.0}
-        with progress(len(to_build), "Building tables", unit="table") as bar:
-            for level, table in to_build:
-                table_name = table.table_name
-                bar.step(table_name)
-                timer = Timer()
-                try:
-                    with timer:
-                        table.generate_table()
-                        result = self.get_data(dataNames=table_name, level=level)
-                        setattr(self, table_name, result)
-                    rows = _row_count(getattr(result, "df", result))
-                    built[level].append(table_name)
-                    logger.debug(
-                        f"Built {level} table '{table_name}': {format_count(rows)} rows in {format_duration(timer.seconds)}",
-                        extra={"event": "table_generated", "layer": level, "table": table_name,
-                               "rows": rows, "duration_ms": timer.ms},
-                    )
-                except Exception as e:
-                    failed[level].append(table_name)
-                    _log_table_failure(level, table_name, e, timer)
-                seconds[level] += timer.seconds
-                bar.advance()
+        # Topics a table fetches on its own while building are logged at DEBUG.
+        self._building_tables = True
+        try:
+            with progress(len(to_build), "Building tables", unit="table") as bar:
+                for level, table in to_build:
+                    table_name = table.table_name
+                    bar.step(table_name)
+                    timer = Timer()
+                    try:
+                        with timer:
+                            table.generate_table()
+                            result = self.get_data(dataNames=table_name, level=level)
+                            setattr(self, table_name, result)
+                        rows = _row_count(getattr(result, "df", result))
+                        built[level].append(table_name)
+                        logger.debug(
+                            f"Built {level} table '{table_name}': {format_count(rows)} rows in {format_duration(timer.seconds)}",
+                            extra={"event": "table_generated", "layer": level, "table": table_name,
+                                   "rows": rows, "duration_ms": timer.ms},
+                        )
+                    except Exception as e:
+                        failed[level].append(table_name)
+                        _log_table_failure(level, table_name, e, timer)
+                    seconds[level] += timer.seconds
+                    bar.advance()
+        finally:
+            self._building_tables = False
 
         for level in ("silver", "gold"):
             n_built, n_failed = len(built[level]), len(failed[level])
@@ -924,10 +943,12 @@ class Session:
 
         names = built["silver"] + built["gold"]
         if names:
-            shown = ", ".join(f"session.{name}" for name in names[:6])
-            if len(names) > 6:
-                shown += f" (+{len(names) - 6} more)"
-            done = f"Done in {format_duration(time() - started)}. Tables: {shown}"
+            listed = names if len(names) <= 8 else names[:6]
+            shown = ", ".join(f"session.{name}" for name in listed)
+            if len(listed) < len(names):
+                shown += f" (+{len(names) - len(listed)} more)"
+            done = (f"Done in {format_duration(time() - started)}. Built {_count(len(names), 'table')}: {shown}. "
+                    "session.catalog() lists all tables.")
         else:
             done = f"Done in {format_duration(time() - started)}. No tables were built."
         logger.info(
@@ -935,6 +956,86 @@ class Session:
             extra={"event": "generate_finished", "session": self._label(), "tables": names,
                    "failed": failed["silver"] + failed["gold"],
                    "duration_ms": int(round((time() - started) * 1000))},
+        )
+
+    def catalog(self):
+        """
+        Every table of the session, built or not, as a pandas DataFrame.
+
+        Lists the topics downloaded so far (bronze), the silver and gold tables
+        (yours and the default ones, including those that ``generate()`` has not
+        built yet), and the results loaded with the session.
+
+        Returns
+        -------
+        pandas.DataFrame
+            One row per table: ``Table``, ``Layer`` (bronze, silver, gold, results),
+            ``Built``, ``Rows``, ``Columns``, ``Sources``, ``Access`` (how to get it,
+            e.g. ``session.FastestLaps``) and ``Description``.
+
+        Examples
+        --------
+        >>> session.generate(gold=True)
+        >>> session.catalog()
+        >>> session.catalog().query("Layer == 'gold' and Built")
+        """
+        rows = []
+
+        def add(name, layer, built, data, sources, callback=None):
+            n_rows = n_cols = None
+            if built and data is not None:
+                n_rows = _row_count(data)
+                columns = getattr(data, "columns", None)
+                n_cols = len(columns) if columns is not None else None
+            description = TABLE_DESCRIPTIONS.get(name)
+            if description is None and layer == "bronze":
+                description = TOPICS_MAP.get(name, {}).get("description")
+            if description is None and callback is not None and callback.__doc__:
+                description = callback.__doc__.strip().splitlines()[0]
+            rows.append({
+                "Table": name,
+                "Layer": layer,
+                "Built": bool(built),
+                "Rows": n_rows,
+                "Columns": n_cols,
+                "Sources": ", ".join(sources),
+                "Access": f'session.get_data("{name}")' if layer == "bronze" else f"session.{name}",
+                "Description": description or "",
+            })
+
+        registered = set(self.data_lake.metadata)
+        for layer in ("bronze", "silver", "gold"):
+            for name, info in self.data_lake.metadata.items():
+                if info["table_type"] != layer:
+                    continue
+                table = self.data_lake.get(layer, name)
+                sources = list(getattr(table, "sources", None) or [])
+                sources += [f"{src} (optional)" for src in getattr(table, "optional_sources", None) or []]
+                built = True if layer == "bronze" else info["generated"]
+                add(name, layer, built, getattr(table, "df", None), sources, getattr(table, "callback", None))
+
+            # Default tables generate() can build that are not registered yet
+            if layer == "silver":
+                defaults = {name: TABLE_REQUIREMENTS[name] for name in SILVER_SESSION_TABLES}
+                if self.dataframe_backend == "pandas":
+                    defaults.update({name: entry[1] for name, entry in ANALYSIS_SILVER_TABLES.items()})
+            elif layer == "gold":
+                defaults = {}
+                if self.dataframe_backend == "pandas":
+                    defaults = {name: entry[1] for name, entry in ANALYSIS_GOLD_TABLES.items()}
+            else:
+                defaults = {}
+            for name, sources in defaults.items():
+                if name not in registered:
+                    add(name, layer, False, None, list(sources))
+
+        for name in ("sessionResults", "startingGrid", "driverStandings", "constructorStandings"):
+            data = getattr(self, name, None)
+            if data is not None and hasattr(data, "columns"):
+                add(name, "results", True, data, [])
+
+        return pd.DataFrame(rows, columns=["Table", "Layer", "Built", "Rows", "Columns", "Sources", "Access", "Description"]).astype(
+            {"Rows": "Int64", "Columns": "Int64"}
         )
 
     def _label(self):

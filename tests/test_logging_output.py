@@ -320,3 +320,24 @@ def test_import_only_silences_livef1_warnings():
     root = Path(__file__).resolve().parent.parent
     out = subprocess.run([sys.executable, "-c", code], cwd=root, capture_output=True, text=True, check=True).stdout
     assert out.strip() == "['user code']"
+
+
+def test_notebook_text_bar_is_cleared_before_a_log_line(env, capsys):
+    # A notebook without ipywidgets draws a text bar on stdout; a log line must
+    # not be appended to the bar's line.
+    env.setattr(logger_module, "_in_notebook", lambda: True)
+    env.setattr(logger_module, "_notebook_widgets_available", lambda: False)
+    logger_module.reset_logging()
+    bar = Progress(3, "Building tables")
+    try:
+        assert bar.enabled and bar.is_text
+        bar.step("laps")
+        logger.info("between steps")
+    finally:
+        bar.close()
+    out = capsys.readouterr().out
+    idx = out.index("between steps")
+    line_start = max(out.rfind("\r", 0, idx), out.rfind("\n", 0, idx))
+    # tqdm.write cleared the bar, so the log line starts on a fresh line
+    assert "Building tables" not in out[line_start:idx] and "laps" not in out[line_start:idx]
+    assert "Building tables" in out and "laps" in out

@@ -18,10 +18,21 @@ topics download and tables build:
     12:33:42 INFO  Silver: 6 tables in 0.8s
     12:33:42 ERROR Could not build gold table 'LapOneStart': KeyError: 'Distance' (log_level="DEBUG" shows the traceback)
     12:33:42 WARN  Gold: 7 tables in 0.3s, 1 failed (LapOneStart)
-    12:33:42 INFO  Done in 36.1s. Tables: session.driverInfo, session.laps, ... (+8 more)
+    12:33:42 INFO  Done in 36.1s. Built 14 tables: session.driverInfo, session.laps, ... (+8 more). session.catalog() lists all tables.
 
 Each table's row count and build time, and the traceback of a failed table, are
 logged at ``DEBUG`` level.
+
+``session.catalog()`` returns every table of the session as a DataFrame:
+``Table``, ``Layer`` (bronze, silver, gold, results), ``Built``, ``Rows``,
+``Columns``, ``Sources``, ``Access`` (for example ``session.FastestLaps``) and
+``Description``. It also lists the default tables ``generate()`` has not built
+yet:
+
+.. code-block:: python
+
+    session.catalog()
+    session.catalog().query("Layer == 'gold' and Built")
 
 Output by environment
 ---------------------

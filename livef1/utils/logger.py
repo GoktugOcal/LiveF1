@@ -280,9 +280,10 @@ class ConsoleHandler(logging.StreamHandler):
     capture redirections are honoured.
 
     ``split_streams`` sends INFO and below to stdout and warnings and errors to
-    stderr; otherwise ``stream_name`` picks the stream. While a terminal
-    progress bar is shown, lines go through ``tqdm.write`` so they appear above
-    the bar instead of breaking it.
+    stderr; otherwise ``stream_name`` picks the stream. While a text progress
+    bar is shown (terminal, or a notebook without ipywidgets), lines go through
+    ``tqdm.write``, which clears the bar, writes the line and redraws the bar,
+    so a line never lands at the end of the bar.
     """
 
     def __init__(self, stream_name="stderr", split_streams=False):
@@ -300,7 +301,7 @@ class ConsoleHandler(logging.StreamHandler):
             stream = self._target(record)
             self.stream = stream
             msg = self.format(record)
-            if _active_bars and _resolved["environment"] == "terminal":
+            if any(bar.is_text for bar in _active_bars):
                 from tqdm import tqdm as _tqdm
                 _tqdm.write(msg, file=stream)
             else:
@@ -493,8 +494,9 @@ class Progress:
     callers can log one line per step when there is no bar.
     """
 
-    def __init__(self, total, desc, unit="it"):
-        self.enabled = progress_enabled()
+    def __init__(self, total, desc, unit="it", show=True):
+        self.enabled = bool(show) and progress_enabled()
+        self.is_text = False
         self._bar = None
         self._stop = threading.Event()
         self._thread = None
@@ -513,6 +515,7 @@ class Progress:
                     dynamic_ncols=True, ascii=None if _supports_unicode(stream) else True,
                     bar_format="{desc} {bar:20} {n_fmt}/{total_fmt} · {elapsed}{postfix}",
                 )
+                self.is_text = True
         except Exception:
             self.enabled = False
             self._bar = None
@@ -555,9 +558,9 @@ class Progress:
 
 
 @contextmanager
-def progress(total, desc, unit="it"):
+def progress(total, desc, unit="it", show=True):
     """
-    Context manager yielding a :class:`Progress`.
+    Context manager yielding a :class:`Progress`. ``show=False`` gives a no-op bar.
 
     >>> with progress(len(topics), "Downloading", unit="topic") as bar:
     ...     for topic in topics:
@@ -565,7 +568,7 @@ def progress(total, desc, unit="it"):
     ...         download(topic)
     ...         bar.advance()
     """
-    bar = Progress(total, desc, unit)
+    bar = Progress(total, desc, unit, show=show)
     try:
         yield bar
     finally:

@@ -219,7 +219,9 @@ def test_generate_logs_a_few_summary_lines(session, records):
         "Generating tables for Belgian Grand Prix · Race",
         *[m for m in info if m.startswith("Silver: 6 tables in ")],
         *[m for m in info if m.startswith("Gold: 8 tables in ")],
-        *[m for m in info if m.startswith("Done in ") and m.endswith("(+8 more)")],
+        *[m for m in info if m.startswith("Done in ")
+          and "Built 14 tables: session.driverInfo" in m
+          and m.endswith("(+8 more). session.catalog() lists all tables.")],
     ]
     # Registering a table is detail, and names the right level
     debug = _messages(records, logging.DEBUG)
@@ -257,3 +259,104 @@ def test_failed_table_is_one_error_line_with_traceback_only_at_debug(session, re
     _generate(session, gold=True, tables=["Broken"])
     errors = [r for r in records if r.levelno == logging.ERROR]
     assert errors[0].exc_info is not None
+
+
+def test_generate_lists_every_table_when_there_are_few(session, records):
+    _generate(session, gold=False, tables=["driverInfo", "laps"])
+    done = [m for m in _messages(records, logging.INFO) if m.startswith("Done in ")][0]
+    assert "Built 2 tables: session.driverInfo, session.laps." in done and "more" not in done
+
+
+def test_topics_read_by_tables_are_fetched_with_the_others(session, records):
+    session.topic_names_info = {"SessionData": {"key": "Session_Data"}, "PitStopSeries": {"key": "PitStopSeries"}}
+    requested = []
+
+    def fake_get_data(self, dataNames, level="bronze", **kwargs):
+        if level == "bronze" and isinstance(dataNames, list):
+            requested.extend(dataNames)
+            return {}
+        return _original_get_data(self, dataNames, level=level, **kwargs)
+
+    with patch("livef1.models.session.SILVER_SESSION_TABLES", []), \
+         patch.object(Session, "_load_circuit_data"), \
+         patch.object(Session, "load_session_results"), \
+         patch.object(Session, "get_data", fake_get_data), \
+         patch.object(Session, "_get_first_datetime", return_value=FIRST_DATETIME), \
+         patch.object(Session, "_get_session_start_datetime", return_value=FIRST_DATETIME):
+        session.generate(tables=["laps"])
+    assert "SessionData" in requested and "PitStopSeries" in requested
+
+
+def test_topic_fetched_while_building_is_logged_at_debug_without_a_bar(session, records, monkeypatch):
+    from livef1.models import session as session_module
+    livef1.configure(log_level="DEBUG", progress=True)
+    session.topic_names_info = {"WeatherData": {"key": "WeatherData", "default_is_stream": True}}
+    monkeypatch.setattr(Session, "check_data_name", lambda self, name: name)
+    # The topics generate() always reads are already in the bronze lake
+    for topic in ["CarData.z", "Position.z", "SessionStatus"]:
+        session.data_lake.create_bronze_table(table_name=topic, raw_data={}, parsed_data=[{"timestamp": "00:00:01"}])
+    monkeypatch.setattr(session_module, "load_single_data",
+                        lambda name, s, stream: (name, {}, [{"timestamp": "00:00:01", "Utc": "2024-07-28T13:00:00Z"}]))
+    bars = []
+    real_progress = session_module.progress
+
+    def spy_progress(total, desc, unit="it", show=True):
+        bars.append((desc, show))
+        return real_progress(total, desc, unit, show=show)
+
+    monkeypatch.setattr(session_module, "progress", spy_progress)
+
+    @session.create_silver_table("weather", [], include_session=True)
+    def weather(_session):
+        return _session.get_data("WeatherData")
+
+    with patch("livef1.models.session.SILVER_SESSION_TABLES", []), \
+         patch.object(Session, "_load_circuit_data"), \
+         patch.object(Session, "load_session_results"), \
+         patch.object(Session, "_get_first_datetime", return_value=FIRST_DATETIME), \
+         patch.object(Session, "_get_session_start_datetime", return_value=FIRST_DATETIME):
+        session.generate(tables=["weather"])
+    assert ("Downloading", False) in bars
+    loaded = [r for r in records if getattr(r, "event", None) == "topic_loaded"]
+    assert [r.levelno for r in loaded] == [logging.DEBUG]
+    assert not [r for r in records if getattr(r, "event", None) == "topics_loaded"]
+    assert session._building_tables is False
+
+
+# --- session.catalog() ---------------------------------------------------------
+
+def test_catalog_before_generate_lists_default_tables_as_not_built():
+    cat = Session(name="Race").catalog()
+    assert list(cat.columns) == ["Table", "Layer", "Built", "Rows", "Columns", "Sources", "Access", "Description"]
+    assert {"laps", "carTelemetry", "driverInfo", "enrichedLaps"} <= set(cat.query("Layer == 'silver'").Table)
+    assert {"FastestLaps", "LapOneStart"} <= set(cat.query("Layer == 'gold'").Table)
+    assert not cat.Built.any() and cat.Rows.isna().all()
+    assert all(cat.Description != "")
+
+
+def test_catalog_after_generate(session):
+    _generate(session, gold=True, tables=["FastestLaps"])
+    cat = session.catalog().set_index("Table")
+    fastest = cat.loc["FastestLaps"]
+    assert fastest.Layer == "gold" and fastest.Built and fastest.Rows == 3 and fastest.Columns > 5
+    assert fastest.Sources == "ValidLaps, driverInfo" and fastest.Access == "session.FastestLaps"
+    assert fastest.Description.startswith("Each driver's fastest valid lap")
+    # Registered by generate(gold=True) but not requested: listed, not built
+    assert cat.loc["LapOneStart"].Built == False
+    assert cat.loc["TrackStatus"].Layer == "bronze" and cat.loc["TrackStatus"].Access == 'session.get_data("TrackStatus")'
+    assert cat.loc["startingGrid"].Layer == "results" and cat.loc["startingGrid"].Rows == 3
+    assert list(cat.Layer.drop_duplicates()) == ["bronze", "silver", "gold", "results"]
+
+
+def test_catalog_uses_the_docstring_of_your_own_tables(session):
+    @session.create_gold_table("LapCounts", ["laps"])
+    def lap_counts(laps):
+        """Laps per driver.
+
+        Longer text.
+        """
+        return laps.groupby("DriverNo").size().reset_index(name="Laps")
+
+    cat = session.catalog().set_index("Table")
+    assert cat.loc["LapCounts"].Description == "Laps per driver."
+    assert cat.loc["LapCounts"].Built == False
