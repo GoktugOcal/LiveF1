@@ -27,7 +27,7 @@ import warnings
 # like) without touching the rest of the user's process.
 warnings.filterwarnings("ignore", module=r"livef1(\.|$)")
 
-__version__ = "1.4.1"
+__version__ = "1.5.0"
 
 __all__ = [
     'configure',

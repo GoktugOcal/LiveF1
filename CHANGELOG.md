@@ -4,6 +4,8 @@ All notable changes to LiveF1 will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-23
+
 ### Added
 
 - Default analysis tables, built with the session's own table system (pandas backend; skipped with Polars):
