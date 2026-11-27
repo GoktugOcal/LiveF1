@@ -4,6 +4,8 @@ All notable changes to LiveF1 will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-11-27
+
 ### Added
 
 - `livef1.next_session()`, `previous_session()`, `next_meeting()` and `previous_meeting()` find a session or meeting by time without loading a season. "Next" is the one running or the next to start, "previous" the last that ended. `next_session("Race")` filters by session name; `now=` looks from another moment. Times are UTC. The calendar comes from Jolpica, so upcoming sessions are known without an F1 account; live timing adds session keys, paths and exact end times once it lists the meeting.
