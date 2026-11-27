@@ -163,6 +163,24 @@ async def handle_data(records):
 client.run()
 ```
 
+### Next and Previous Sessions
+
+Find a session or meeting by time, without loading a season. The calendar needs no F1 account:
+
+```python
+import livef1
+
+livef1.next_session()                  # the session running, else the next to start
+livef1.next_session("Race").start      # UTC
+livef1.next_meeting()                  # the meeting under way, else the next one
+livef1.previous_meeting()
+
+session = livef1.previous_session()
+status = session.status()              # live timing's view of the session
+if status and status.is_data_available:
+    session.load().generate()
+```
+
 ## Documentation
 
 For detailed documentation, examples, and API reference, visit our [documentation page](https://livef1.readthedocs.io/).

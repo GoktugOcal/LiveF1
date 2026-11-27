@@ -71,6 +71,7 @@ Examples and Use Cases
 
 - :ref:`historical_data`: Learn how to analyze past race data
 - :ref:`realtime_data`: Learn how to work with live session data
+- :ref:`schedule`: Find the next or previous session and meeting, and whether a session's data is ready
 - :ref:`quick_start`: Quick examples to get started
 
 Where to Go Next

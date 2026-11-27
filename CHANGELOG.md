@@ -4,6 +4,15 @@ All notable changes to LiveF1 will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `livef1.next_session()`, `previous_session()`, `next_meeting()` and `previous_meeting()` find a session or meeting by time without loading a season. "Next" is the one running or the next to start, "previous" the last that ended. `next_session("Race")` filters by session name; `now=` looks from another moment. Times are UTC. The calendar comes from Jolpica, so upcoming sessions are known without an F1 account; live timing adds session keys, paths and exact end times once it lists the meeting.
+- `ScheduledSession.status()`: live timing's `session_status` and `archive_status` of a session, with `is_live`, `is_finished` and `is_data_available`. Free for the session live timing currently shows (public `SessionInfo.json`); other sessions need an F1 account. `ScheduledSession.load()` and `ScheduledMeeting.load()` return the full `Session` and `Meeting`.
+
+### Fixed
+
+- `livetimingF1_request` raised `NameError` instead of `ParsingError` when a response was not JSON.
+
 ## [1.5.0] - 2026-11-23
 
 ### Added

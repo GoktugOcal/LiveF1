@@ -65,6 +65,7 @@ LiveF1
    user_guide/data_sources
    user_guide/historical_data
    user_guide/realtime_data
+   user_guide/schedule
 
 .. toctree::
    :maxdepth: 1

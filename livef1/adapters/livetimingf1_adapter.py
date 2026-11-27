@@ -122,8 +122,8 @@ def livetimingF1_request(url):
     response = adapters.get(url)  # Perform the GET request
     try:
         data = json.loads(response)  # Parse the JSON response
-    except:
-        logger.error("Error parsing request .", exc_info=True)
+    except json.JSONDecodeError as parse_err:
+        logger.error("Error parsing request.", exc_info=True)
         raise ParsingError(f"Error parsing request: {parse_err}") from parse_err
     return data
 

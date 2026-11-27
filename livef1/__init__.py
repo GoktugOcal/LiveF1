@@ -19,6 +19,15 @@ from .utils.helper import *
 from .adapters.livetimingf1_adapter import LivetimingF1adapters
 from .config import configure
 from .auth import login, logout
+from .schedule import (
+    ScheduledSession,
+    ScheduledMeeting,
+    SessionStatus,
+    next_session,
+    previous_session,
+    next_meeting,
+    previous_meeting,
+)
 from .utils.logger import set_log_level
 from . import analysis
 
@@ -36,5 +45,9 @@ __all__ = [
     'set_log_level',
     'get_season',
     'get_meeting',
-    'get_session'
+    'get_session',
+    'next_session',
+    'previous_session',
+    'next_meeting',
+    'previous_meeting',
 ]

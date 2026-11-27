@@ -23,6 +23,20 @@ Session Access
       get_meeting
       get_session
 
+Next and Previous Sessions
+--------------------------
+See :ref:`schedule` for a guide.
+
+.. automodule:: livef1.schedule
+   :members: next_session, previous_session, next_meeting, previous_meeting, ScheduledSession, ScheduledMeeting, SessionStatus
+
+   .. rubric:: Functions
+   .. autosummary::
+      next_session
+      previous_session
+      next_meeting
+      previous_meeting
+
 .. .. automodule:: livef1.api
 ..    :members: download_data
 
